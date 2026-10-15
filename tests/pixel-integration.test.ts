@@ -94,8 +94,8 @@ test('resonance rank styling stays distinct from contribution stages across choi
     }
     const weapon = g.state.inventory.find((i) => i.branch === 'blade')!;
     click(`[data-pack-item="${weapon.id}"]`);
-    for (let rank = 1; rank <= 3; rank++)
-      assert.ok(w.document.querySelector('#equipment-detail .resonance-rank-' + rank));
+    assert.match(w.document.querySelector('#equipment-detail')!.textContent, /升阶效果/);
+    assert.equal(w.document.querySelector('#equipment-detail .resonance-rank-1'), null);
     click('[data-pack-action="close"]');
     g.retreat();
     ui.render();

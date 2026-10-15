@@ -7,7 +7,7 @@ import { parseSave } from '../src/save';
 import { start, add, positionEvent, recruitToConfigure } from './helpers';
 function board(templates: string[], positions: [number, number, number][]) {
   const g = start();
-  g.state.run.kills = 14;
+  g.state.run.kills = 20;
   g.state.inventory = templates.map((t) => g.makeItem(t));
   g.state.draft = positions.map(([x, y, rotation], n) => ({
     id: g.state.inventory[n].id,
@@ -143,7 +143,7 @@ test('drag merging conserves resonance score and exact receiver anchor, no stone
   assert.equal(g.state.player.hp, 12);
   assert.equal(g.state.run.points, 0);
 });
-test('every merge grade is correct through Lv5; Lv5 duplicates relocate rather than merge', () => {
+test('every merge grade is correct through Lv4; Lv4 duplicates relocate rather than merge', () => {
   const g = board(['warrior_pole_3'], [[0, 0, 0]]),
     target = g.state.inventory[0];
   g.state.player.hp = 20;
@@ -151,19 +151,18 @@ test('every merge grade is correct through Lv5; Lv5 duplicates relocate rather t
     [1, 'green'],
     [2, 'blue'],
     [3, 'purple'],
-    [4, 'orange'],
   ] as const) {
     const donor = add(g, target.templateId, level);
     assert.equal(g.moveItem(donor.id, 0, 0), null);
     assert.equal(target.quality, q);
     assert.equal(g.state.player.hp, 20);
   }
-  const max = add(g, 'warrior_pole_3', 5);
-  assert.match(g.mergeItems(max.id, target.id)!, /5 级/);
+  const max = add(g, 'warrior_pole_3', 4);
+  assert.match(g.mergeItems(max.id, target.id)!, /4 级/);
   assert.equal(g.previewMove(max.id, 0, 0).kind, 'eject');
   assert.equal(g.moveItem(max.id, 0, 0), null);
   assert.equal(g.state.inventory.length, 2);
-  assert.equal(target.level, 5);
+  assert.equal(target.level, 4);
   assert.ok(g.looseItems().includes(target));
 });
 test('redemption requires a manual call and exactly six points; it persists and cannot create currency', () => {
@@ -199,6 +198,16 @@ test('points/discard/movement freeze during combat; final weapon cannot be disca
 test('starter drag claims only its item; next batch requires all three or explicit continue', () => {
   const g = new Game();
   recruitToConfigure(g);
+  if (g.state.phase === 'configure' && !g.state.run.trainee?.tomeId) g.confirmAllocation();
+  g.selectTome(
+    (
+      {
+        warrior: 'warrior_sword_tome',
+        mage: 'mage_flame_tome',
+        rogue: 'rogue_poison_tome',
+      } as const
+    )[g.state.run.profession],
+  );
   g.startRun();
   const first = g.state.run.starterOffers.map((i) => i.id);
   assert.equal(g.moveItem(first[0], 1, 1), null);

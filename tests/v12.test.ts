@@ -22,6 +22,16 @@ test('route maps every retained video year exactly once and excludes unsupported
 test('opening gifts stay available across the two supply batches; unplaced gear expires before initial resonance', () => {
   const g = new Game();
   recruitToConfigure(g);
+  if (g.state.phase === 'configure' && !g.state.run.trainee?.tomeId) g.confirmAllocation();
+  g.selectTome(
+    (
+      {
+        warrior: 'warrior_sword_tome',
+        mage: 'mage_flame_tome',
+        rogue: 'rogue_poison_tome',
+      } as const
+    )[g.state.run.profession],
+  );
   g.startRun();
   g.claimStarterRound();
   const weapon = g.state.inventory.find((i) => i.slot === 'weapon')!;
@@ -57,7 +67,7 @@ test('open cells have a bright contour exactly where they meet closed cells', ()
   assert.equal(bagCellClass(open, 3, 2), 'open ');
   assert.match(bagCellClass(open, 5, 3), /edge-bottom.*edge-right/);
 });
-test('every active phase keeps reforge left and speed right; event equipment always reveals bag', () => {
+test('active phases keep bag or reforge left and speed right; event equipment reveals bag', () => {
   const win = new Window({ url: 'http://localhost/' });
   try {
     Object.assign(globalThis, {
@@ -72,7 +82,10 @@ test('every active phase keeps reforge left and speed right; event equipment alw
     const check = () => {
       ui.render();
       const footer = win.document.querySelector('#adventure-footer')!;
-      assert.equal((footer.firstElementChild as any).dataset.action, 'redeem');
+      assert.equal(
+        (footer.firstElementChild as any).dataset.action,
+        (win.document.querySelector('#view-pack') as any).hidden ? 'open-pack' : 'redeem',
+      );
       assert.equal((footer.lastElementChild as any).dataset.action, 'cycle-speed');
       assert.equal(win.document.querySelector('#battle-panel #point-redeem'), null);
       assert.equal(win.document.querySelectorAll('.route-step').length, RUN_LENGTH);

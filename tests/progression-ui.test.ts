@@ -54,24 +54,24 @@ test('stage elite gifts all drops inline and opens mandatory resonance; four slo
   click(`[data-inspect-resonance="${key}"]`);
   assert.ok(win.document.querySelector('.pack-piece.resonant'));
 });
-test('all five merge grades change tint, equipment artwork remains one piece and footprint remains fixed', () => {
+test('all four merge grades change tint, equipment artwork remains one piece and footprint remains fixed', () => {
   const item = game.state.inventory.find((i) => i.templateId === 'warrior_guard_2')!,
     styles = new Set<string>(),
     paints = new Set<string>(),
     shape = cells(item);
-  for (let level = 1; level <= 5; level++) {
+  for (let level = 1; level <= 4; level++) {
     ui.render();
     styles.add(el(`.pack-piece[data-pack-item="${item.id}"]`).getAttribute('style')!);
     paints.add(el(`.pack-piece[data-pack-item="${item.id}"] .item-painting`).innerHTML);
-    if (level < 5) {
+    if (level < 4) {
       const donor = add(game, item.templateId, level);
       assert.equal(game.mergeItems(donor.id, item.id), null);
     }
     assert.deepEqual(cells(item), shape);
   }
-  assert.equal(styles.size, 5);
+  assert.equal(styles.size, 4);
   assert.equal(paints.size, 1);
-  assert.equal(item.quality, 'orange');
+  assert.equal(item.quality, 'purple');
 });
 test('jobs have distinct art and descriptions, neutral gem contributes profession points', () => {
   for (const p of ['warrior', 'mage', 'rogue'] as const) {
@@ -80,8 +80,8 @@ test('jobs have distinct art and descriptions, neutral gem contributes professio
     assert.equal(el('.pack-piece .item-painting').getAttribute('data-profession'), p);
     const gem = game.state.inventory.find((i) => i.branch === 'neutral')!;
     click(`[data-pack-item="${gem.id}"]`);
-    assert.match(el('#equipment-detail').textContent, /共鸣贡献/);
-    assert.match(el('#equipment-detail').textContent, /共鸣贡献 1 点/);
+    assert.match(el('#equipment-detail').textContent, /贡献标签/);
+    assert.match(el('#equipment-detail').textContent, /贡献标签.*1 点/);
     click('#equipment-detail [data-pack-action="close"]');
   }
 });
@@ -100,7 +100,7 @@ test('guild roster displays fixed hero power and details after a failed run', ()
 });
 test('random recruitment becomes a fixed-profession dossier and energy recovery updates the same screen', () => {
   game = new Game();
-  game.state.meta.energy.value = 9;
+  game.state.meta.energy.value = 4;
   game.enterChapters();
   ui.replace(game);
   assert.equal((el('[data-action="recruit"]') as any).disabled, true);
@@ -113,8 +113,22 @@ test('random recruitment becomes a fixed-profession dossier and energy recovery 
   const profession = game.state.run.profession;
   assert.equal(win.document.querySelectorAll('.talent-badge').length, 4);
   assert.equal(win.document.querySelectorAll('.attribute-row').length, 4);
-  assert.equal((el('[data-action="start"]') as any).disabled, true);
+  assert.equal((el('[data-action="confirm-allocation"]') as any).disabled, true);
   click('[data-action="balance-allocation"]');
+  click('[data-action="confirm-allocation"]');
+  if (!game.state.run.trainee?.tomeId) {
+    game.confirmAllocation();
+    game.selectTome(
+      (
+        {
+          warrior: 'warrior_sword_tome',
+          mage: 'mage_flame_tome',
+          rogue: 'rogue_poison_tome',
+        } as const
+      )[game.state.run.profession],
+    );
+    ui.render();
+  }
   click('[data-action="start"]');
   assert.equal(game.state.run.profession, profession);
   assert.equal(game.state.meta.energy.value, 0);
@@ -122,7 +136,7 @@ test('random recruitment becomes a fixed-profession dossier and energy recovery 
 });
 test('recruit countdown frames retain the same button so a held touch is not interrupted', () => {
   game = new Game();
-  game.state.meta.energy.value = 9;
+  game.state.meta.energy.value = 4;
   game.enterChapters();
   game.chooseChapter(1);
   ui.replace(game);

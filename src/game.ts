@@ -1,81 +1,78 @@
-import { weaponEffect, shieldMultiplier } from './combat-effects';
-import { resonanceAvailable, itemResonanceTiers } from './resonances';
-import { ENEMIES } from './data';
-import {
-  eventStory,
-  STAGES,
-  TRIALS,
-  stageGrowth,
-  trialGain,
-  RUN_LENGTH,
-  TRIAL_NODES,
-  trialIndex,
-  ROUTE_KINDS,
-  GRADUATION_NODE,
-  ENDING_NODE,
-  EXTREME_START,
-} from './journey';
 import {
   analysis,
-  openBagCells,
-  bagCapacity,
   availableItems,
   BUFF_KEYS,
   BUFFS,
+  buildSources,
   definition,
+  finalAttributes,
   itemStats,
-  LEVEL_POWER,
   occupiedCells,
+  planMove,
   PROFESSION_KEYS,
   PROFESSIONS,
-  planMove,
   RESONANCE_KEYS,
   RESONANCES,
   resonanceScore,
+  runBagCapacity,
+  runBagCells,
   validateLayout,
 } from './backpack';
+import { BattleEngine, battleRuntime, fighter, fighterSpeed } from './combat';
+import { generateEnemy } from './enemies';
 import {
   ATTRIBUTE_KEYS,
   ATTRIBUTE_POINTS,
-  BASE_ATTRIBUTES,
   emptyAllocation,
   heroAttributes,
   pointsSpent,
   rollTalents,
 } from './hero';
+import { chapterRoute, eventStory, runRoute, stageGrowth, trialGain, TRIALS } from './journey';
+import {
+  emptyTomes,
+  guildConditions,
+  heroRating,
+  realmName,
+  startingRealm,
+  tome,
+  tomeBranch,
+  TOMES,
+  upgradeCost,
+} from './progression';
+import { resonanceAvailable } from './resonances';
 import type {
   Actor,
-  Attribute,
   AdventureEvent,
+  Attribute,
   BuffKey,
   Contribution,
   Equipment,
   EventKind,
   GameState,
   HeroRecord,
+  JourneyEntry,
   Outcome,
   Profession,
-  Rating,
   ResonanceKey,
   Reward,
   TrialTier,
-  JourneyEntry,
 } from './types';
 export const ENERGY_CAP = 60,
-  RECRUIT_COST = 10,
+  RECRUIT_COST = 5,
   ENERGY_INTERVAL = 5 * 60 * 1000;
 export const TARGET_RECRUIT_COST = 20,
   ACTION_SECONDS = 0.7,
   STORY_SECONDS = 3.2;
 export function storyDuration(event: AdventureEvent) {
-  return ['elite', 'graduation', 'ending'].includes(event.kind)
+  return ['boss', 'elite', 'graduation', 'ending'].includes(event.kind)
     ? STORY_SECONDS
     : Math.min(2.5, Math.max(1.2, eventStory(event.kind, event.variant).length * 0.065));
 }
 export const EVENT_NAMES: Record<EventKind, string> = {
   battle: '遭遇战',
   elite: '晋阶试炼',
-  boss: '毕业试炼',
+  boss: '守关试炼',
   treasure: '遗物宝箱',
   supply: '旅人补给',
   rest: '月泉营地',
@@ -89,8 +86,9 @@ export const EVENT_NAMES: Record<EventKind, string> = {
 const emptyBuffs = () =>
   Object.fromEntries(BUFF_KEYS.map((k) => [k, 0])) as Record<BuffKey, number>;
 const emptyCombat = (): GameState['combat'] => ({
-  stamina: 20,
-  mana: 12,
+  stamina: 0,
+  runtime: null,
+  mana: 0,
   timers: {},
   heals: {},
   seconds: 0,
@@ -108,10 +106,15 @@ const emptyCombat = (): GameState['combat'] => ({
 });
 export function createState(now = Date.now()): GameState {
   return {
-    version: 14,
+    version: 15,
     phase: 'home',
     meta: {
       gold: 100,
+      guildLevel: 1,
+      staminaSpent: 0,
+      tomes: emptyTomes(),
+      tomeGifts: [],
+      pendingPages: [],
       energy: { value: ENERGY_CAP, updatedAt: now },
       heroes: [],
       heroSerial: 0,
@@ -147,6 +150,11 @@ export function createState(now = Date.now()): GameState {
       storyElapsed: 0,
       autoExplore: false,
       dig: null,
+      realm: 0,
+      peakStrength: 0,
+      encounter: null,
+      enemyHistory: [],
+      boundTome: null,
     },
     awakening: null,
     player: { hp: 190, maxHp: 190, defense: 3, shield: 0 },
@@ -166,19 +174,16 @@ export function createState(now = Date.now()): GameState {
     lastSaveTime: now,
   };
 }
-export function generateEvents(random = Math.random): AdventureEvent[] {
-  const events: AdventureEvent[] = ROUTE_KINDS.map((kind) => ({
+export function generateEvents(random = Math.random, chapter = 4): AdventureEvent[] {
+  const events: AdventureEvent[] = chapterRoute(chapter).kinds.map((kind) => ({
     kind,
     completed: false,
     variant: Math.floor(random() * 5),
   }));
-  // Preserve the observed order; vary choices within implemented event categories.
-  events[1].variant = 0;
-  events[10].variant = 4;
-  events[15].variant = 1;
-  events[19].variant = Math.floor(random() * 2);
-  events[21].variant = 2;
-  events[25].variant = 3;
+  events.forEach((e, n) => {
+    if (e.kind === 'chance') e.variant = Math.floor(random() * 2);
+    if (e.kind === 'choice') e.variant = n % 5;
+  });
   return events;
 }
 
@@ -261,7 +266,7 @@ export class Game {
   }
   enterChapters() {
     const s = this.state;
-    if (!['home', 'chapter', 'configure'].includes(s.phase)) return false;
+    if (!['home', 'chapter', 'configure', 'tome'].includes(s.phase)) return false;
     if (s.phase === 'home' && !s.run.trainee) s.run.chapter = s.meta.highestChapter;
     s.phase = 'chapter';
     s.revision++;
@@ -281,7 +286,7 @@ export class Game {
     return true;
   }
   backHome() {
-    if (!['chapter', 'configure'].includes(this.state.phase)) return false;
+    if (!['chapter', 'configure', 'tome'].includes(this.state.phase)) return false;
     this.state.phase = 'home';
     this.state.revision++;
     return true;
@@ -305,6 +310,7 @@ export class Game {
         target ?? PROFESSION_KEYS[Math.floor(this.random() * PROFESSION_KEYS.length)],
       chapter = s.run.chapter;
     s.meta.energy.value -= cost;
+    s.meta.staminaSpent += cost;
     s.run = createState(this.clock()).run;
     s.run.chapter = chapter;
     s.lastReport = null;
@@ -331,8 +337,12 @@ export class Game {
       recruitment: target ? 'targeted' : 'random',
       talents: rollTalents(this.random),
       allocation: emptyAllocation(),
+      realmStart: startingRealm(s.meta.guildLevel),
+      tomeId: null,
+      tomeLevel: 0,
     };
     s.run.profession = profession;
+    s.run.realm = s.run.trainee.realmStart ?? 0;
     const base = heroAttributes(s.run.trainee, profession);
     s.player = { hp: base.hp, maxHp: base.hp, defense: base.defense, shield: 0 };
     s.phase = 'configure';
@@ -371,7 +381,8 @@ export class Game {
     chapter = this.state.run.chapter,
   ): string | null {
     const old = this.state;
-    if (old.phase !== 'configure' || !old.run.trainee) return '先消耗体力招募见习勇者';
+    if (!['configure', 'tome'].includes(old.phase) || !old.run.trainee)
+      return '先消耗体力招募见习勇者';
     if (profession !== old.run.trainee.profession) return '职业在招募时确定，定向招募可指定职业';
     if (pointsSpent(old.run.trainee) !== ATTRIBUTE_POINTS) return '请分配全部 12 点属性';
     if (
@@ -381,16 +392,29 @@ export class Game {
       chapter > 20
     )
       return '该地牢尚未解锁';
+    if (old.phase !== 'tome') return '加点完成后请选择典籍';
+    const book = old.run.trainee.tomeId ? tome(old.run.trainee.tomeId) : null;
+    if (!book) return '请选择起始典籍';
+    const owned = old.meta.tomes[book.id];
+    if (!owned.level && old.meta.tomeGifts.includes(profession)) return '尚未收集这本典籍';
     const s = createState(this.clock());
     s.meta = structuredClone(old.meta);
+    if (!owned.level) s.meta.tomes[book.id].level = 1;
+    if (!s.meta.tomeGifts.includes(profession)) s.meta.tomeGifts.push(profession);
     s.meta.runs++;
     s.speed = old.speed;
     s.revision = old.revision + 1;
     s.run.trainee = structuredClone(old.run.trainee);
     s.run.profession = profession;
     s.run.chapter = chapter;
-    s.run.events = generateEvents(this.random);
-    const base = heroAttributes(s.run.trainee, profession);
+    s.run.events = generateEvents(this.random, chapter);
+    s.run.realm = s.run.trainee.realmStart ?? 0;
+    s.run.boundTome = {
+      id: s.run.trainee.tomeId!,
+      level: s.meta.tomes[s.run.trainee.tomeId!].level,
+    };
+    s.run.trainee.tomeLevel = s.run.boundTome.level;
+    const base = finalAttributes(s);
     s.player.hp = s.player.maxHp = base.hp;
     s.player.defense = base.defense;
     s.phase = 'opening';
@@ -451,10 +475,7 @@ export class Game {
   finishOpening(): string | null {
     const s = this.state;
     if (s.phase !== 'opening' || s.run.starterRound !== 2) return '先领取全部两轮起始物品';
-    if (
-      validateLayout(s.inventory, s.draft, openBagCells(s.run.kills)) ||
-      !this.packAnalysis(true).hasWeapon
-    )
+    if (validateLayout(s.inventory, s.draft, runBagCells(s)) || !this.packAnalysis(true).hasWeapon)
       return '先摆放至少一件武器';
     this.clearLooseEquipment(0);
     s.placements = structuredClone(s.draft);
@@ -499,12 +520,12 @@ export class Game {
     const s = this.state,
       d = definition({ templateId });
     if (!d.available) throw new Error('5 格物品暂未投放');
-    if (!Number.isInteger(level) || level < 1 || level > 5) throw new Error('装备等级无效');
-    const stats = itemStats(templateId, level, s.run.profession);
+    if (!Number.isInteger(level) || level < 1 || level > 4) throw new Error('装备等级无效');
+    const stats = itemStats(templateId, level, d.profession);
     return {
       id: `item-${++s.itemSerial}`,
       templateId,
-      profession: s.run.profession,
+      profession: d.profession,
       name: d.name,
       artKind: d.art,
       slot: d.slot,
@@ -517,24 +538,16 @@ export class Game {
   }
   recalculate() {
     const s = this.state,
-      a = this.packAnalysis(),
-      p = heroAttributes(s.run.trainee, s.run.profession);
-    s.player.maxHp =
-      (p.hp + s.run.growth.hp + s.run.eventGrowth.hp + a.active.reduce((n, i) => n + i.hp, 0)) *
-      (1 + s.run.buffs.vitality * 0.12);
-    s.player.defense =
-      p.defense +
-      s.run.growth.defense +
-      s.run.eventGrowth.defense +
-      a.active.reduce((n, i) => n + i.defense, 0) +
-      s.run.buffs.defense * 3;
+      stats = finalAttributes(s, this.editable());
+    s.player.maxHp = stats.hp;
+    s.player.defense = stats.defense;
     s.player.hp = Math.min(s.player.hp, s.player.maxHp);
   }
   placeItem(id: string, x: number, y: number, rotation = 0): string | null {
     const s = this.state;
     if (!this.editable()) return '战斗中不能调整背包';
     const next = [...s.draft.filter((p) => p.id !== id), { id, x, y, rotation }],
-      error = validateLayout(s.inventory, next, openBagCells(s.run.kills));
+      error = validateLayout(s.inventory, next, runBagCells(s));
     if (error) return error;
     s.draft = next;
     s.revision++;
@@ -543,7 +556,7 @@ export class Game {
   continueCamp(): string | null {
     const s = this.state;
     if (s.phase !== 'camp') return '先处理当前事件或共鸣';
-    const error = validateLayout(s.inventory, s.draft, openBagCells(s.run.kills));
+    const error = validateLayout(s.inventory, s.draft, runBagCells(s));
     if (error) return error;
     if (!this.packAnalysis(true).hasWeapon) return '至少放入一件武器';
     this.clearLooseEquipment();
@@ -551,7 +564,8 @@ export class Game {
     this.recalculate();
     if (
       this.currentEvent()?.completed &&
-      (s.run.index === ENDING_NODE || (s.run.index === GRADUATION_NODE && !s.run.extreme))
+      (s.run.index === runRoute(s).ending ||
+        (s.run.index === runRoute(s).graduation && !s.run.extreme))
     ) {
       this.finish('win', s.run.extreme ? '极限挑战完成，勇者毕业' : '三次晋阶完成，勇者正常结业');
       return null;
@@ -563,6 +577,7 @@ export class Game {
     if (this.currentEvent()?.completed) s.run.index++;
     s.revision++;
     s.isRunning = true;
+    s.run.peakStrength = Math.max(s.run.peakStrength, this.packAnalysis().strength);
     this.beginEvent();
     return null;
   }
@@ -574,7 +589,12 @@ export class Game {
     s.run.dig = null;
     s.run.storyElapsed = 0;
     s.phase = 'journey';
-    this.chronicle(EVENT_NAMES[event.kind], eventStory(event.kind, event.variant));
+    this.chronicle(
+      EVENT_NAMES[event.kind],
+      eventStory(event.kind, event.variant, runRoute(s).hasExtreme),
+    );
+    if (['battle', 'boss', 'elite'].includes(event.kind) && !s.run.encounter)
+      s.run.encounter = generateEnemy(s, this.packAnalysis().strength, this.random);
   }
   continueJourney() {
     const s = this.state;
@@ -582,7 +602,10 @@ export class Game {
     s.run.storyElapsed = STORY_SECONDS;
     const event = this.currentEvent()!;
     if (event.kind === 'dig') this.prepareDig();
-    if (['elite', 'boss'].includes(event.kind) && s.run.trials[trialIndex(s.run.index)] === null) {
+    if (
+      ['elite', 'boss'].includes(event.kind) &&
+      s.run.trials[runRoute(s).trials.indexOf(s.run.index)] === null
+    ) {
       s.phase = 'event';
     } else if (['battle', 'elite', 'boss'].includes(event.kind)) {
       s.phase = 'combat';
@@ -600,17 +623,18 @@ export class Game {
   chooseTrial(tier: TrialTier): string | null {
     const s = this.state,
       e = this.currentEvent(),
-      stage = trialIndex(s.run.index);
+      stage = runRoute(s).trials.indexOf(s.run.index);
     if (
       s.phase !== 'event' ||
       !e ||
       e.completed ||
       !['elite', 'boss'].includes(e.kind) ||
       ![0, 1, 2].includes(tier) ||
+      stage < 0 ||
       s.run.trials[stage] !== null
     )
       return '当前无法选择试炼';
-    const error = validateLayout(s.inventory, s.draft, openBagCells(s.run.kills));
+    const error = validateLayout(s.inventory, s.draft, runBagCells(s));
     if (error) return error;
     if (!this.packAnalysis(true).hasWeapon) return '至少放入一件武器';
     s.placements = structuredClone(s.draft);
@@ -631,76 +655,122 @@ export class Game {
   spawnEnemy() {
     const s = this.state,
       event = this.currentEvent();
-    if (!event || !['battle', 'elite', 'boss'].includes(event.kind)) return;
-    const isBoss =
-        event.kind === 'boss' || (event.kind === 'elite' && s.run.index === TRIAL_NODES[2]),
-      isElite = event.kind === 'elite',
-      species = isBoss
-        ? s.run.chapter % 2
-          ? 18
-          : 19
-        : [0, 6, 7, 8, 9, 11, 10, 12, 14, 15, 16, 17][Math.floor(this.random() * 12)],
-      progress = 1.035 ** s.run.index,
-      scale = 1 + (s.run.chapter - 1) * 0.035,
-      armored = [10, 15].includes(species),
-      swift = [8, 16].includes(species),
-      hp = Math.round(
-        210 * progress * scale * (isBoss ? 4.8 : isElite ? 3.2 : armored ? 1.15 : swift ? 0.85 : 1),
-      );
-    s.enemy = {
-      name: `${isElite ? '精英 · ' : ''}${ENEMIES[species].name}`,
-      species,
-      hp,
-      maxHp: hp,
-      attack: (3.8 + s.run.index * 0.13) * scale * (isBoss ? 1.6 : isElite ? 1.3 : swift ? 0.8 : 1),
-      defense: s.run.chapter * (armored ? 10 : 2),
-      speed:
-        8 +
-        Math.floor(s.run.index / 5) +
-        Math.floor((s.run.chapter - 1) / 4) +
-        (swift ? 4 : isBoss ? 2 : 0),
-      isBoss,
-      isElite,
-      effects: [],
-    };
-    if (isElite || isBoss) {
-      const t = TRIALS[s.run.trials[trialIndex(s.run.index)] ?? 0];
-      s.enemy.hp = s.enemy.maxHp = Math.round(s.enemy.maxHp * t.hp);
-      s.enemy.attack *= t.attack;
+    if (!event || !['battle', 'boss', 'elite'].includes(event.kind)) return;
+    // The encounter is already frozen before the trial choice or battle presentation.
+    const base = s.run.encounter ?? generateEnemy(s, this.packAnalysis().strength, this.random);
+    s.enemy = structuredClone(base);
+    const stage = runRoute(s).trials.indexOf(s.run.index);
+    if (stage >= 0) {
+      const tier = s.run.trials[stage] ?? 0;
+      s.enemy.hp = s.enemy.maxHp = Math.round(base.maxHp * [1, 1.2, 1.45][tier]);
+      s.enemy.attack = base.attack * [1, 1.12, 1.28][tier];
     }
-    if (s.run.extreme && s.run.index >= EXTREME_START) {
-      s.enemy.hp = s.enemy.maxHp = Math.round(s.enemy.maxHp * 1.6);
-      s.enemy.attack *= 1.35;
-    }
+    s.run.enemyHistory.push(s.enemy.profession!);
+    s.run.enemyHistory = s.run.enemyHistory.slice(-2);
     s.combat = emptyCombat();
     s.player.shield = 0;
+    const stats = finalAttributes(s);
+    const runtime = battleRuntime(
+      fighter(stats, s.run.profession, s.player.hp),
+      fighter(
+        {
+          attack: s.enemy.attack,
+          hp: s.enemy.maxHp,
+          defense: s.enemy.defense,
+          speed: s.enemy.speed,
+        },
+        s.enemy.profession!,
+      ),
+      buildSources(s),
+      s.enemy.templateId!,
+      this.packAnalysis().active.some((i) => i.branch === 'assassin') &&
+        this.packAnalysis().active.some((i) => i.branch === 'archer'),
+    );
+    runtime.tiers = { ...this.packAnalysis().tiers };
+    s.combat.runtime = runtime;
+    this.engine().opening();
+    this.syncCombat();
     this.beginRound();
-    this.log(`事件 ${s.run.index + 1} · ${s.enemy.name}`, 'battle');
+    this.log(
+      `第 ${s.run.index + 1} 步 · ${s.enemy.name} · ${PROFESSIONS[s.enemy.profession!].name}${s.enemy.isBoss ? ' · Boss' : ''}`,
+      'battle',
+    );
+  }
+  private engine() {
+    return new BattleEngine(this.state.combat.runtime!, this.state.combat.round, (signal) => {
+      if (['damage', 'healing', 'shield'].includes(signal.kind))
+        this.contribute(
+          signal.source,
+          signal.kind as 'damage' | 'healing' | 'shield',
+          signal.amount,
+        );
+      else if (signal.kind === 'trigger') {
+        this.contribute(signal.source, 'shield', 0);
+        this.state.combat.contributions[signal.source].triggers++;
+        this.signalFeedback(signal.source, 'trigger', 1);
+      } else this.signalFeedback(signal.source, signal.kind, signal.amount);
+    });
+  }
+  private syncCombat() {
+    const s = this.state,
+      r = s.combat.runtime;
+    if (!r || !s.enemy) return;
+    s.player.hp = r.hero.hp;
+    s.player.maxHp = r.hero.maxHp;
+    s.player.shield = r.hero.shield;
+    s.enemy.hp = r.enemy.hp;
+    s.enemy.effects = r.enemy.statuses
+      .filter((x) => ['poison', 'burn', 'chill'].includes(x.kind))
+      .map((x) => ({
+        kind: x.kind as 'poison' | 'burn' | 'chill',
+        damage: x.value,
+        remaining: x.remaining,
+        timer: 0,
+        sourceId: x.source,
+      }));
+    s.combat.minions = r.minions.length;
+    s.combat.minionHp = r.minions.reduce((n, m) => n + m.hp, 0);
+    s.combat.bossTimer = r.enemyActions;
+    for (const i of s.placements) {
+      s.combat.timers[i.id] = r.timers[i.id + ':0'] ?? 0;
+      s.combat.hits[i.id] = r.flags[i.id + ':hits'] ?? 0;
+    }
   }
   private lootLevel() {
     const n = this.state.run.index,
       roll = this.random();
-    if (n > TRIAL_NODES[2] && roll < 0.35) return 3;
-    if (n > TRIAL_NODES[0] && roll < 0.18) return 3;
-    if (n > TRIAL_NODES[0] && roll < 0.65) return 2;
+    if (n > runRoute(this.state).trials[2] && roll < 0.35) return 3;
+    if (n > runRoute(this.state).trials[0] && roll < 0.18) return 3;
+    if (n > runRoute(this.state).trials[0] && roll < 0.65) return 2;
     if (n >= 6 && roll < 0.35) return 2;
     return 1;
   }
   private lootItem() {
     const s = this.state,
       active = this.packAnalysis(true).active,
-      pool = availableItems(s.run.profession),
-      materials = active.filter((i) => i.level < 5),
-      match = this.random() < (s.run.index > TRIAL_NODES[2] ? 0.8 : 0.6) && materials.length > 0;
+      pool = this.dropPool(),
+      materials = active.filter((i) => i.level < 4 && pool.some((d) => d.id === i.templateId)),
+      match =
+        this.random() < (s.run.index > runRoute(this.state).trials[2] ? 0.8 : 0.6) &&
+        materials.length > 0;
     if (match) {
       const target = materials[Math.floor(this.random() * materials.length)],
         level =
-          s.run.index > TRIAL_NODES[0] && this.random() < 0.65
+          s.run.index > runRoute(this.state).trials[0] && this.random() < 0.65
             ? Math.min(3, target.level)
             : this.lootLevel();
       return this.makeItem(target.templateId, level);
     }
     return this.makeItem(pool[Math.floor(this.random() * pool.length)].id, this.lootLevel());
+  }
+  private dropPool() {
+    const s = this.state,
+      b = s.run.boundTome ? tome(s.run.boundTome.id) : null;
+    if (b && b.profession !== s.run.profession && this.random() < 0.15) {
+      const related = availableItems(b.profession).filter((i) => i.branch === tomeBranch(b.id));
+      if (related.length) return related;
+    }
+    return availableItems(s.run.profession);
   }
   private grantLoot(title: string, level?: number) {
     const s = this.state,
@@ -737,16 +807,31 @@ export class Game {
     };
   }
   private resonanceReward(initial = false): Reward {
-    let choices = this.resonanceChoices(initial);
-    if (initial) {
-      const ready = choices.filter(
-        (k) => resonanceScore(this.state.inventory, this.state.draft, k).tier > 0,
-      );
-      if (ready.length >= 3) choices = ready;
-    }
-    for (let i = choices.length - 1; i > 0; i--) {
-      const j = Math.floor(this.random() * (i + 1));
-      [choices[i], choices[j]] = [choices[j], choices[i]];
+    const s = this.state,
+      pool = this.resonanceChoices(initial),
+      choices: ResonanceKey[] = [];
+    const take = (candidates: ResonanceKey[]) => {
+      const weight = (k: ResonanceKey) =>
+        resonanceScore(s.inventory, s.draft, k).tier > 0 ? 3 : 1;
+      let roll = this.random() * candidates.reduce((n, k) => n + weight(k), 0),
+        key = candidates.at(-1)!;
+      for (const k of candidates) {
+        roll -= weight(k);
+        if (roll <= 0) {
+          key = k;
+          break;
+        }
+      }
+      choices.push(key);
+    };
+    const preferred = pool.filter((k) =>
+      initial ? resonanceScore(s.inventory, s.draft, k).tier > 0 : RESONANCES[k].rank > 1,
+    );
+    if (preferred.length) take(preferred);
+    while (choices.length < 3) {
+      const next = pool.filter((k) => !choices.includes(k));
+      if (!next.length) break;
+      take(next);
     }
     return {
       kind: 'resonance',
@@ -760,18 +845,19 @@ export class Game {
       e = this.currentEvent();
     if (!e || e.completed) return;
     e.completed = true;
-    if (TRIAL_NODES.some((n) => n === s.run.index)) {
+    if (runRoute(s).trials.includes(s.run.index)) {
       const previous = { ...s.run.growth },
-        stage = trialIndex(s.run.index),
+        stage = runRoute(s).trials.indexOf(s.run.index),
         tier = s.run.trials[stage] ?? 0;
       s.run.trials[stage] = tier;
       s.run.stages++;
+      s.run.realm = Math.min(20, s.run.realm + 1);
       s.run.growth = stageGrowth(s.run.profession, s.run.trials, s.run.stages);
       this.recalculate();
-      this.log(`阶段 ${s.run.stages}/3 培养完成：${trialGain(s.run.profession, tier)}`, 'reward');
+      this.log(`试炼 ${s.run.stages}/3 完成：${trialGain(s.run.profession, tier)}`, 'reward');
       this.chronicle(
-        `${STAGES[stage]} · 试炼通过`,
-        `${TRIALS[tier].name}完成。${trialGain(s.run.profession, tier)}。`,
+        `${realmName(s.run.realm)} · 试炼通过`,
+        `${TRIALS[tier].name}完成。境界：${realmName(s.run.realm - 1)} → ${realmName(s.run.realm)}。${trialGain(s.run.profession, tier)}。`,
         'growth',
       );
       const healed = this.heal(s.player.maxHp * [0.25, 0.35, 0.45][tier]);
@@ -790,6 +876,8 @@ export class Game {
     s.run.autoExplore = false;
     s.phase = s.awakening ? 'awakening' : s.run.rewards.length ? 'reward' : 'camp';
     s.enemy = null;
+    s.run.encounter = null;
+    s.combat.runtime = null;
     s.player.shield = 0;
     s.revision++;
   }
@@ -841,14 +929,20 @@ export class Game {
     }
     if (e.kind === 'graduation') {
       if (!['graduate', 'extreme'].includes(action)) return '请选择结业或挑战极限';
+      if (action === 'extreme' && !runRoute(s).hasExtreme) return '本关暂未开放极限挑战';
+      if (action === 'graduate') {
+        const error = validateLayout(s.inventory, s.draft, runBagCells(s));
+        if (error) return error;
+        if (!this.packAnalysis(true).hasWeapon) return '最终背包至少装备一件武器';
+      }
       s.run.extreme = action === 'extreme';
       this.chronicle(
         s.run.extreme ? '挑战极限' : '正常结业',
-        s.run.extreme ? '勇者选择继续，迎战更强的魔物。' : '勇者选择带着现有修为返回公会。',
+        s.run.extreme ? '勇者选择继续，迎战更强的魔物。' : '勇者带着最终构筑返回公会。',
         'growth',
       );
       this.resolved();
-      return null;
+      return s.run.extreme ? null : this.continueCamp();
     }
     if (e.kind === 'mentor') {
       if (action !== 'learn') return '接受导师传授';
@@ -858,7 +952,7 @@ export class Game {
       this.recalculate();
       this.chronicle(
         '导师传授',
-        `${{ attack: '伤害', hp: '生命上限', defense: '防御', speed: '速度' }[k]} +${k === 'attack' ? value * 100 + '%' : value}。`,
+        `${{ attack: '攻击', hp: '生命上限', defense: '防御', speed: '速度' }[k]} +${k === 'attack' ? value * 100 + '%' : value}。`,
         'growth',
       );
       this.resolved();
@@ -867,7 +961,7 @@ export class Game {
     if (e.kind === 'ending') {
       if (action !== 'finish') return '整理最终行囊后确认';
       if (
-        validateLayout(s.inventory, s.draft, openBagCells(s.run.kills)) ||
+        validateLayout(s.inventory, s.draft, runBagCells(s)) ||
         !this.packAnalysis(true).hasWeapon
       )
         return '最终背包至少装备一件武器';
@@ -908,13 +1002,13 @@ export class Game {
             s.run.eventGrowth[k] += value;
             this.chronicle(
               '占卜馈赠',
-              `${{ attack: '伤害', hp: '生命上限', defense: '防御', speed: '速度' }[k]} +${k === 'attack' ? value * 100 + '%' : value}。`,
+              `${{ attack: '攻击', hp: '生命上限', defense: '防御', speed: '速度' }[k]} +${k === 'attack' ? value * 100 + '%' : value}。`,
               'growth',
             );
           } else {
             if (e.variant === 3) s.run.eventGrowth.defense += 2;
             else s.run.eventGrowth.attack += 0.08;
-            this.chronicle('符文馈赠', e.variant === 3 ? '防御 +2。' : '伤害 +8%。', 'growth');
+            this.chronicle('符文馈赠', e.variant === 3 ? '防御 +2。' : '攻击 +8%。', 'growth');
           }
           this.recalculate();
         }
@@ -1065,15 +1159,20 @@ export class Game {
   }
   recycleItem(id: string) {
     const s = this.state,
-      item = s.inventory.find((i) => i.id === id);
-    if (
-      !this.editable() ||
-      !item ||
-      (item.slot === 'weapon' && s.inventory.filter((i) => i.slot === 'weapon').length === 1)
-    )
-      return false;
+      item = this.findItem(id),
+      weapons = [...s.inventory, ...s.run.starterOffers].filter((i) => i.slot === 'weapon');
+    if (!this.editable() || !item || (item.slot === 'weapon' && weapons.length === 1)) return false;
     s.run.points++;
+    const starter = s.run.starterOffers.some((i) => i.id === id);
+    s.run.starterOffers = s.run.starterOffers.filter((i) => i.id !== id);
     this.removeItem(id);
+    if (starter && !s.run.starterOffers.length) this.advanceStarter();
+    this.chronicle(
+      '主动重铸',
+      `${item.name} Lv.${item.level} 转为 1 点。`,
+      'loot',
+      s.phase === 'opening' ? 0 : s.run.index + 1,
+    );
     return true;
   }
   redeemEquipment(): string | null {
@@ -1081,7 +1180,7 @@ export class Game {
     if (!this.editable()) return '战斗中无法兑换';
     if (s.run.points < 6) return '需要 6 点弃用点数';
     s.run.points -= 6;
-    const pool = availableItems(s.run.profession),
+    const pool = this.dropPool(),
       item = this.makeItem(pool[Math.floor(this.random() * pool.length)].id, this.lootLevel());
     s.inventory.push(item);
     s.run.highestItem = Math.max(s.run.highestItem, item.level);
@@ -1112,7 +1211,7 @@ export class Game {
           this.state.draft,
           { id, x, y, rotation },
           hint,
-          openBagCells(this.state.run.kills),
+          runBagCells(this.state),
         )
       : { kind: 'invalid' as const, error: '物品已不存在', layout: this.state.draft, ejected: [] };
   }
@@ -1138,7 +1237,7 @@ export class Game {
   }
   mergePartner(id: string) {
     const i = this.findItem(id);
-    return i && i.level < 5
+    return i && i.level < 4
       ? ([...this.state.inventory, ...this.state.run.starterOffers].find(
           (o) =>
             o.id !== id &&
@@ -1163,7 +1262,7 @@ export class Game {
       a.templateId === b.templateId &&
       a.profession === b.profession &&
       a.level === b.level &&
-      b.level < 5
+      b.level < 4
     );
   }
   mergeItems(sourceId: string, targetId: string): string | null {
@@ -1178,7 +1277,7 @@ export class Game {
       source.level !== target.level
     )
       return '只有同职业、同类别、同等级物品可以合并';
-    if (target.level >= 5) return '装备已达到 5 级';
+    if (target.level >= 4) return '装备已达到 4 级';
     if (!s.inventory.some((i) => i.id === sourceId)) this.takeStarter(sourceId);
     if (!s.inventory.some((i) => i.id === targetId)) this.takeStarter(targetId);
     this.setItemLevel(target, target.level + 1);
@@ -1207,114 +1306,31 @@ export class Game {
   private contribute(id: string, key: 'damage' | 'healing' | 'shield', amount: number) {
     const rows = this.state.combat.contributions,
       row: Contribution = (rows[id] ??= {
-        name: this.findItem(id)?.name ?? '流派联动',
+        name:
+          this.findItem(id)?.name ??
+          (id.startsWith('resonance:')
+            ? RESONANCES[id.slice(10) as ResonanceKey]?.name
+            : id.startsWith('tome:')
+              ? tome(id.slice(5))?.name
+              : null) ??
+          '战斗技能',
         damage: 0,
         healing: 0,
         shield: 0,
         triggers: 0,
       });
     row[key] += amount;
-    row.triggers++;
     if (key !== 'shield') this.signalFeedback(id, key, amount);
   }
-  private damageEnemy(amount: number, source: string, splash = false) {
-    const s = this.state,
-      e = s.enemy;
-    if (!e) return 0;
-    let dealt = 0;
-    if (s.combat.minions > 0) {
-      const hit = Math.min(amount, s.combat.minionHp);
-      s.combat.minionHp -= hit;
-      dealt = hit;
-      s.combat.minions = Math.ceil(s.combat.minionHp / (e.maxHp * 0.025));
-      if (splash) {
-        const hit = Math.min(amount * 0.65, e.hp);
-        e.hp -= hit;
-        dealt += hit;
-      }
-    } else {
-      dealt = Math.min(amount, e.hp);
-      e.hp -= dealt;
-    }
-    this.contribute(source, 'damage', dealt);
-    return dealt;
-  }
-  private hurtPlayer(amount: number) {
-    const s = this.state,
-      a = this.packAnalysis(),
-      c = s.combat;
-    amount *= 1 - [0, 0.08, 0.15, 0.22][a.tiers.shadow_master];
-    const shieldBefore = s.player.shield,
-      hpBefore = s.player.hp,
-      absorbed = Math.min(shieldBefore, amount);
-    s.player.shield -= absorbed;
-    s.player.hp = Math.max(0, s.player.hp - (amount - absorbed));
-    this.signalFeedback('hero', 'blocked', absorbed);
-    this.signalFeedback('hero', 'hurt', hpBefore - s.player.hp);
-    const shields = a.active.filter((i) => definition(i).role === 'shield'),
-      source = shields[0] ?? a.active.find((i) => definition(i).role === 'weapon');
-    for (const item of shields)
-      if (absorbed) this.contribute(item.id, 'shield', absorbed / shields.length);
-    if (
-      source &&
-      s.player.hp > 0 &&
-      a.tiers.iron_guard > 0 &&
-      c.counters.counterRound !== c.round
-    ) {
-      c.counters.counterRound = c.round;
-      this.damageEnemy(
-        amount *
-          [0, 0.2, 0.4, 0.7][a.tiers.iron_guard] *
-          (1 + [0, 0.1, 0.2, 0.35][a.tiers.fortress]),
-        source.id,
-      );
-    }
-    if (shieldBefore > 0 && s.player.shield === 0 && s.player.hp > 0) {
-      if (a.tiers.fortress && !c.counters.fortress) {
-        c.counters.fortress = 1;
-        s.player.shield = [0, 10, 20, 30][a.tiers.fortress];
-        this.signalFeedback(source!.id, 'shield', s.player.shield);
-      }
-      for (const item of shields) {
-        const tier = itemResonanceTiers(item, a.tiers).master,
-          key = 'rescue-' + item.id;
-        if (tier && (c.counters[key] ?? 0) < tier) {
-          c.counters[key] = (c.counters[key] ?? 0) + 1;
-          this.contribute(
-            item.id,
-            'healing',
-            this.heal(s.player.maxHp * [0, 0.02, 0.03, 0.04][tier]),
-          );
-        }
-      }
-    }
-  }
-
-  private effect(kind: 'poison' | 'burn' | 'chill', damage: number, id: string) {
-    const e = this.state.enemy;
-    if (!e) return;
-    const old = e.effects.find((x) => x.kind === kind);
-    if (old) {
-      if (damage >= old.damage) {
-        old.damage = damage;
-        old.sourceId = id;
-      }
-      old.remaining = 3;
-    } else e.effects.push({ kind, damage, remaining: 3, timer: 0, sourceId: id });
-  }
   playerSpeed() {
-    const s = this.state;
-    return (
-      heroAttributes(s.run.trainee, s.run.profession).speed +
-      s.run.buffs.tempo * 2 +
-      s.run.eventGrowth.speed
-    );
+    const r = this.state.combat.runtime;
+    return this.state.phase === 'combat' && r
+      ? +fighterSpeed(r.hero).toFixed(1)
+      : finalAttributes(this.state).speed;
   }
   enemySpeed() {
-    const e = this.state.enemy;
-    return e
-      ? +(e.speed * (1 - (e.effects.find((x) => x.kind === 'chill')?.damage ?? 0))).toFixed(1)
-      : 0;
+    const r = this.state.combat.runtime;
+    return r ? +fighterSpeed(r.enemy).toFixed(1) : (this.state.enemy?.speed ?? 0);
   }
   nextActor(): Actor {
     const c = this.state.combat;
@@ -1324,166 +1340,20 @@ export class Game {
     const s = this.state,
       c = s.combat;
     c.round++;
+    if (c.round === 14) this.log('敌人即将在第16回合狂暴', 'battle');
+    if (c.round === 16) this.log('敌人进入狂暴，伤害提高20%', 'battle');
     s.run.rounds++;
     c.order = this.playerSpeed() >= this.enemySpeed() ? ['hero', 'enemy'] : ['enemy', 'hero'];
+    if (c.runtime) c.runtime.heroFirst = c.order[0] === 'hero';
     c.actionIndex = 0;
   }
   private heroTurn() {
-    const s = this.state,
-      e = s.enemy;
-    if (!e) return;
-    const a = this.packAnalysis(),
-      c = s.combat,
-      b = s.run.buffs;
-    c.stamina = Math.min(20, c.stamina + 3 + a.neutralRegen);
-    c.mana = Math.min(12, c.mana + 2 + a.neutralRegen);
-    // Support equipment acts first; weapons then act in stable backpack order.
-    const items = [...a.active].sort(
-      (x, y) => Number(definition(x).role === 'weapon') - Number(definition(y).role === 'weapon'),
-    );
-    for (const item of items) {
-      const d = definition(item),
-        bonus = a.bonuses[item.id],
-        scale = LEVEL_POWER[item.level],
-        cooldown = d.cooldown;
-      if (!cooldown) continue;
-      c.timers[item.id] = Math.max(0, (c.timers[item.id] ?? 0) - 1);
-      if (c.timers[item.id] > 0) continue;
-      if (d.resource && c[d.resource] + 1e-8 < d.cost) continue;
-      if (d.role === 'mana' && !bonus.mana) continue;
-      if (d.role === 'heal' && (c.heals[item.id] ?? 0) >= 2) continue;
-      // A full health herb keeps its charge until there is damage to restore.
-      if (d.role === 'heal' && s.player.hp >= s.player.maxHp) continue;
-      this.signalFeedback(item.id, 'trigger', 1);
-      c.timers[item.id] = cooldown;
-      if (d.resource) c[d.resource] = Math.max(0, c[d.resource] - d.cost);
-      if (d.role === 'weapon') {
-        const t = a.tiers;
-        c.hits[item.id] = (c.hits[item.id] ?? 0) + 1;
-        const strike = weaponEffect(
-            item,
-            t,
-            c.hits[item.id],
-            {
-              burn: e.effects.some((x) => x.kind === 'burn'),
-              chill: e.effects.some((x) => x.kind === 'chill'),
-              poison: e.effects.some((x) => x.kind === 'poison'),
-            },
-            item.attack * bonus.power * (1 + b.power * 0.12),
-            e.defense,
-          ),
-          power = strike.power;
-        if (c.hits[item.id] % 3 === 0 && item.branch === 'pole' && t.spear_storm) {
-          const old = c.stamina;
-          c.stamina = Math.min(20, c.stamina + t.spear_storm);
-          this.signalFeedback(item.id, 'resource', c.stamina - old);
-        }
-        if (item.profession === 'mage' && t.archmage) {
-          c.counters.spells = (c.counters.spells ?? 0) + 1;
-          if (c.counters.spells % 3 === 0) {
-            c.mana = Math.min(12, c.mana + t.archmage);
-            s.player.shield = Math.min(
-              s.player.maxHp * 0.5,
-              s.player.shield + [0, 4, 8, 12][t.archmage],
-            );
-          }
-        }
-        const actual = this.damageEnemy(strike.damage, item.id, strike.splash);
-        if (item.branch === 'assassin' && t.venom)
-          this.effect('poison', power * [0, 0.1, 0.18, 0.28][t.venom] * bonus.potency, item.id);
-        if (item.branch === 'flame' && t.ignite)
-          this.effect('burn', power * [0, 0.1, 0.18, 0.28][t.ignite] * bonus.potency, item.id);
-        if (item.branch === 'ice' && t.frost)
-          this.effect('chill', [0, 0.1, 0.2, 0.3][t.frost], item.id);
-        const drain =
-          item.branch === 'pole'
-            ? [0, 0.02, 0.04, 0.06][t.second_wind]
-            : item.branch === 'archer'
-              ? [0, 0.03, 0.06, 0.1][t.leech]
-              : 0;
-        if (drain) this.contribute(item.id, 'healing', this.heal(actual * drain));
-        const shield = item.branch === 'blade' ? [0, 2, 4, 6][t.iron_guard] : 0;
-        if (shield) {
-          const old = s.player.shield;
-          s.player.shield = Math.min(s.player.maxHp * 0.5, old + shield * bonus.potency);
-          this.signalFeedback(item.id, 'shield', s.player.shield - old);
-        }
-        if (item.branch === 'ice' && t.mana_flow) {
-          const old = c.mana;
-          c.mana = Math.min(12, c.mana + t.mana_flow);
-          this.signalFeedback(item.id, 'resource', c.mana - old);
-        }
-      } else if (d.role === 'shield') {
-        const gained = (12 * scale + item.defense) * shieldMultiplier(item, a.tiers),
-          old = s.player.shield;
-        s.player.shield = Math.min(s.player.maxHp * 0.5, s.player.shield + gained);
-        this.signalFeedback(item.id, 'shield', s.player.shield - old);
-      } else if (d.role === 'heal') {
-        c.heals[item.id] = (c.heals[item.id] ?? 0) + 1;
-        this.contribute(item.id, 'healing', this.heal(8 * scale));
-      } else if (d.role === 'stamina') {
-        const old = c.stamina;
-        c.stamina = Math.min(20, c.stamina + 6 * scale);
-        this.signalFeedback(item.id, 'resource', c.stamina - old);
-      } else if (d.role === 'mana') {
-        const old = c.mana;
-        c.mana = Math.min(12, c.mana + 7 * scale);
-        this.signalFeedback(item.id, 'resource', c.mana - old);
-      }
-      if (d.role !== 'weapon') {
-        const tier = itemResonanceTiers(item, a.tiers).advanced,
-          key = 'resource-' + item.id;
-        if (tier && c.counters[key] !== c.round) {
-          c.counters[key] = c.round;
-          const resource = item.profession === 'mage' ? 'mana' : 'stamina',
-            before = c[resource];
-          c[resource] = Math.min(resource === 'mana' ? 12 : 20, before + tier);
-          this.signalFeedback(item.id, 'resource', c[resource] - before);
-        }
-      }
-      if (e.hp <= 0) {
-        this.defeatEnemy();
-        return;
-      }
-    }
+    this.engine().heroTurn();
+    this.syncCombat();
   }
   private enemyTurn() {
-    const s = this.state,
-      e = s.enemy,
-      c = s.combat;
-    if (!e) return;
-    for (const effect of e.effects) {
-      if (effect.kind !== 'chill') {
-        const actual = Math.min(e.hp, effect.damage);
-        e.hp -= actual;
-        this.contribute(effect.sourceId, 'damage', actual);
-      }
-      effect.remaining--;
-    }
-    e.effects = e.effects.filter((x) => x.remaining > 0);
-    if (e.hp <= 0) {
-      this.defeatEnemy();
-      return;
-    }
-    const enrage = 1 + Math.max(0, c.round - 30) / 15;
-    let amount =
-      ((e.attack * 60) / (60 + s.player.defense)) * enrage + (c.minions > 0 ? c.minions * 1.2 : 0);
-    if (e.isBoss) {
-      c.bossTimer++;
-      if (e.species === 18 && c.bossTimer >= 4) {
-        c.bossTimer = 0;
-        amount *= 3;
-        this.log('白骨王释放蓄力重击！', 'battle');
-      } else if (e.species === 19 && c.bossTimer >= 5) {
-        c.bossTimer = 0;
-        if (c.minions < 3) {
-          c.minions++;
-          c.minionHp += e.maxHp * 0.025;
-        }
-        this.log(`蛛后召唤幼蛛，当前 ${c.minions} 只`, 'battle');
-      }
-    }
-    this.hurtPlayer(amount);
+    this.engine().enemyTurn();
+    this.syncCombat();
   }
   private ended() {
     const s = this.state;
@@ -1563,15 +1433,111 @@ export class Game {
     );
     s.run.kills++;
     s.meta.totalKills++;
-    this.grantLoot(e.isBoss ? '最终战利品' : e.isElite ? '精英战利品' : '战利品');
+    this.grantLoot(e.isBoss || e.isElite ? '试炼战利品' : '战利品');
     this.resolved();
+  }
+  selectTome(id: string): string | null {
+    const s = this.state,
+      t = s.run.trainee,
+      book = tome(id);
+    if (s.phase !== 'tome' || !t || !book) return '当前无法配置典籍';
+    const owned = s.meta.tomes[id];
+    if (!owned.level) {
+      if (s.meta.tomeGifts.includes(t.profession)) return '尚未收集这本典籍';
+    }
+    t.tomeId = id;
+    t.tomeLevel = owned.level || 1;
+    s.revision++;
+    return null;
+  }
+  confirmAllocation(): string | null {
+    const s = this.state;
+    if (s.phase !== 'configure' || !s.run.trainee) return '当前无法确认加点';
+    if (pointsSpent(s.run.trainee) !== ATTRIBUTE_POINTS) return '请分配全部 12 点属性';
+    s.run.boundTome = null;
+    s.phase = 'tome';
+    s.revision++;
+    return null;
+  }
+  backToAllocation() {
+    if (this.state.phase !== 'tome') return false;
+    this.state.phase = 'configure';
+    this.state.revision++;
+    return true;
+  }
+  upgradeTome(id: string): string | null {
+    const s = this.state,
+      owned = s.meta.tomes[id];
+    if (s.phase !== 'home' || !owned || !owned.level || owned.level >= 3) return '当前无法升阶';
+    const cost = upgradeCost(owned.level);
+    if (owned.pages < cost.pages || s.meta.gold < cost.gold) return '残页或金币不足';
+    owned.pages -= cost.pages;
+    s.meta.gold -= cost.gold;
+    owned.level++;
+    s.revision++;
+    return null;
+  }
+  upgradeGuild(): string | null {
+    const s = this.state,
+      c = guildConditions(s);
+    if (s.phase !== 'home' || !c.length || c.some((c) => c.value < c.target))
+      return '尚未满足三项升级条件';
+    s.meta.guildLevel++;
+    s.revision++;
+    return null;
+  }
+  private pageCandidates(p: Profession) {
+    const eligible = TOMES.filter((t) => {
+      const o = this.state.meta.tomes[t.id];
+      return o.level < 3 && o.pages < (o.level === 2 ? 6 : 9);
+    });
+    const shuffle = (list: typeof eligible) => {
+      const a = [...list];
+      for (let n = a.length - 1; n > 0; n--) {
+        const j = Math.floor(this.random() * (n + 1));
+        [a[n], a[j]] = [a[j], a[n]];
+      }
+      return a;
+    };
+    const own = shuffle(eligible.filter((t) => t.profession === p)).slice(0, 2),
+      other = shuffle(eligible.filter((t) => t.profession !== p));
+    const candidates = [...own, ...other.slice(0, 3 - own.length)];
+    for (const t of shuffle(eligible))
+      if (candidates.length < 3 && !candidates.includes(t)) candidates.push(t);
+    return candidates.map((t) => t.id);
+  }
+  claimPage(heroId: string, id: string): string | null {
+    const s = this.state,
+      reward = s.meta.pendingPages.find((r) => r.heroId === heroId);
+    if (!['home', 'summary'].includes(s.phase) || !reward || !reward.choices.includes(id))
+      return '没有这份结算奖励';
+    const book = s.meta.tomes[id];
+    if (!book.level) book.level = 1;
+    else book.pages++;
+    s.meta.pendingPages = s.meta.pendingPages.filter((r) => r !== reward);
+    s.revision++;
+    return null;
+  }
+  refreshPages(heroId: string): string | null {
+    const reward = this.state.meta.pendingPages.find((r) => r.heroId === heroId),
+      hero = this.state.meta.heroes.find((h) => h.id === heroId);
+    if (!reward || !hero || !reward.extreme || reward.refreshed) return '不能再次刷新';
+    const choices = this.pageCandidates(hero.profession);
+    if (!choices.length) {
+      this.state.meta.pendingPages = this.state.meta.pendingPages.filter((r) => r !== reward);
+      this.state.revision++;
+      return null;
+    }
+    reward.choices = choices;
+    reward.refreshed = true;
+    this.state.revision++;
+    return null;
   }
   heroPreview(outcome: Outcome = 'win'): HeroRecord | null {
     const s = this.state,
       trainee = s.run.trainee;
     if (!trainee) return null;
     const a = this.packAnalysis(true),
-      p = heroAttributes(trainee, s.run.profession),
       completed = this.completed(),
       growth =
         60 +
@@ -1590,12 +1556,15 @@ export class Game {
       ),
       performance = (outcome === 'win' ? (s.run.extreme ? 240 : 120) : 0) + s.run.kills * 4,
       power = growth + build + performance;
-    let rating: Rating =
-      power >= 3000 ? 'S' : power >= 1900 ? 'A' : power >= 1100 ? 'B' : power >= 450 ? 'C' : 'D';
-    if (outcome !== 'win' && ['A', 'S'].includes(rating)) rating = 'B';
+    const rating = heroRating(power, outcome);
     return {
       ...structuredClone(trainee),
+      ratingVersion: 15,
       chapter: s.run.chapter,
+      realm: s.run.realm,
+      guildAtGraduation: s.meta.guildLevel,
+      routeLength: s.run.events.length,
+      normalLength: runRoute(s).normal,
       outcome,
       completed,
       stages: s.run.stages,
@@ -1604,18 +1573,9 @@ export class Game {
       resonances: [...s.run.resonances],
       resonanceTiers: Object.fromEntries(s.run.resonances.map((k) => [k, a.tiers[k]])),
       stats: {
-        attack: Math.round(a.dps * a.efficiency),
-        hp: Math.round(
-          (p.hp + s.run.growth.hp + s.run.eventGrowth.hp + a.active.reduce((n, i) => n + i.hp, 0)) *
-            (1 + s.run.buffs.vitality * 0.12),
-        ),
-        defense: +(
-          p.defense +
-          s.run.growth.defense +
-          s.run.eventGrowth.defense +
-          a.active.reduce((n, i) => n + i.defense, 0) +
-          s.run.buffs.defense * 3
-        ).toFixed(1),
+        attack: Math.round(finalAttributes(s, true).attack),
+        hp: Math.round(finalAttributes(s, true).hp),
+        defense: +finalAttributes(s, true).defense.toFixed(1),
         speed: this.playerSpeed(),
         sustain: +a.sustain.toFixed(1),
       },
@@ -1623,7 +1583,7 @@ export class Game {
       loadout: {
         equipment: structuredClone(a.active),
         placements: structuredClone(s.draft),
-        capacity: bagCapacity(s.run.kills),
+        capacity: runBagCapacity(s),
       },
       trials: [...s.run.trials],
       graduatedAt: Math.max(trainee.createdAt, this.clock()),
@@ -1645,6 +1605,8 @@ export class Game {
     if (!hero) return;
     const gold = outcome === 'win' ? (100 + s.run.chapter * 15) * (s.run.extreme ? 2 : 1) : 0;
     s.meta.heroes.push(hero);
+    // Tome drops are deferred until their acquisition system is designed.
+    // Previously earned pages and pending rewards remain in the saved library.
     s.meta.gold += gold;
     s.run.summary = {
       outcome,
@@ -1669,6 +1631,7 @@ export class Game {
     s.placements = [];
     s.draft = [];
     s.enemy = null;
+    s.run.encounter = null;
     s.run.autoExplore = false;
     s.run.dig = null;
     s.run.points = 0;
@@ -1689,4 +1652,4 @@ export class Game {
 }
 
 export const safelyGraduated = (s: GameState) =>
-  s.run.index === ENDING_NODE || (s.run.index === GRADUATION_NODE && !s.run.extreme);
+  s.run.index === runRoute(s).ending || (s.run.index === runRoute(s).graduation && !s.run.extreme);

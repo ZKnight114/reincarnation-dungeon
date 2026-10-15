@@ -1,0 +1,313 @@
+{
+  "status": "design-not-implemented",
+  "date": "2026-10-15",
+  "revision": 2,
+  "professionRole": "counter-tag-only",
+  "notes": "用户确认结构；成长评估器、标准构筑及数值尚待实现和战斗校准。游戏不加载本文件。",
+  "damageCounterMatrix": {
+    "战士": {
+      "战士": 1,
+      "法师": 0.9,
+      "盗贼": 1.15
+    },
+    "法师": {
+      "战士": 1.15,
+      "法师": 1,
+      "盗贼": 0.9
+    },
+    "盗贼": {
+      "战士": 0.9,
+      "法师": 1.15,
+      "盗贼": 1
+    }
+  },
+  "trueDamageCounterMultiplier": 1,
+  "enrage": {
+    "afterCompletedRounds": 15,
+    "steps": {
+      "16": 1.2,
+      "18": 1.4,
+      "20": 1.6,
+      "22": 1.8
+    },
+    "cap": 1.8
+  },
+  "encounters": {
+    "kinds": ["小怪", "Boss"],
+    "stageGuardians": [
+      {
+        "stage": 1,
+        "kind": "Boss",
+        "hpMultiplier": 2.8,
+        "attackMultiplier": 1.1
+      },
+      {
+        "stage": 2,
+        "kind": "Boss",
+        "hpMultiplier": 3.4,
+        "attackMultiplier": 1.18
+      },
+      {
+        "stage": 3,
+        "kind": "Boss",
+        "hpMultiplier": 4,
+        "attackMultiplier": 1.25
+      }
+    ],
+    "extraTrial": {
+      "kind": "Boss",
+      "relativeTo": "current-stage-boss",
+      "hpMultiplier": 1.25,
+      "attackMultiplier": 1.15
+    },
+    "bossTemplateIds": ["golem", "ogre", "dragon", "bone_king", "queen"]
+  },
+  "adaptiveGrowth": {
+    "status": "proposal-not-calibrated",
+    "sampleTiming": "next-encounter-generation",
+    "freezeAfterGeneration": true,
+    "ignoreCurrentHp": true,
+    "includeUnpackedItems": false,
+    "inputs": [
+      "final-hero-attributes",
+      "packed-item-levels",
+      "adjacency",
+      "active-resonances",
+      "bound-tome"
+    ],
+    "evaluationRounds": 6,
+    "strengthFormula": "sqrt(averageEffectiveOutput * effectiveSurvivalBudget)",
+    "referenceBuilds": "pending-offline-calibration-per-chapter-progress",
+    "peakRetention": 0.85,
+    "trackPeakAt": "confirmed-continue-after-initial-setup",
+    "effectiveStrengthFormula": "max(currentStrength, 0.85 * runPeakStrength)",
+    "ratioFormula": "effectiveStrength / referenceStrength",
+    "ratioKnee": 2,
+    "minimumGrowth": 0.75,
+    "growthFormula": "max(0.75, ratio <= 2 ? sqrt(ratio) : sqrt(2) * (ratio/2)^0.25)",
+    "hpExponent": 1,
+    "attackExponent": 0.7,
+    "scaleDefense": false,
+    "scaleSpeed": false,
+    "persist": ["generated-enemy-stats", "snapshot-version", "run-peak-strength"]
+  },
+  "enemies": [
+    {
+      "id": "slime",
+      "name": "翡翠史莱姆",
+      "kind": "小怪",
+      "profession": "战士",
+      "sprite": "enemy-slime-full",
+      "multipliers": {
+        "hp": 1.05,
+        "attack": 0.8,
+        "defense": 1,
+        "speed": 0.85
+      },
+      "skills": ["黏液撞击：每个自身行动造成100%A物理伤害。"],
+      "passive": "黏液凝结：每个自身第3次行动，先获得4%H护盾，再撞击；护盾每场最多生成3次。",
+      "phase": "无阶段变化。",
+      "response": "小额护盾教玩家观察盾量；法师克制其战士标签，毒可绕过护甲但仍先消耗护盾。"
+    },
+    {
+      "id": "skeleton",
+      "name": "腐化骷髅兵",
+      "kind": "小怪",
+      "profession": "战士",
+      "sprite": "sentinel-full",
+      "multipliers": {
+        "hp": 1,
+        "attack": 0.95,
+        "defense": 1.25,
+        "speed": 0.95
+      },
+      "skills": [
+        "锈刃：每个自身行动造成100%A物理伤害。",
+        "破甲斩：第3／6／9…次自身行动替代锈刃，造成110%A物理伤害，随后使勇者防御降低10%，持续2个勇者行动。"
+      ],
+      "passive": "无额外被动。",
+      "phase": "无阶段变化。",
+      "response": "防御稍高，练习穿防；破甲不改写玩家物品，只改变人物实际防御状态。"
+    },
+    {
+      "id": "bat",
+      "name": "穴居影蝠",
+      "kind": "小怪",
+      "profession": "盗贼",
+      "sprite": "enemy-bat-full",
+      "multipliers": {
+        "hp": 0.8,
+        "attack": 0.85,
+        "defense": 0.7,
+        "speed": 1.35
+      },
+      "skills": ["影牙：每个自身行动造成100%A物理伤害。"],
+      "passive": "吸血：影牙实际扣除勇者生命后，恢复该生命伤害20%的自身生命，每场最多3次；打在护盾上不恢复。",
+      "phase": "无阶段变化。",
+      "response": "速度快、生命少；护盾阻止吸血，战士职业克制。"
+    },
+    {
+      "id": "wolf",
+      "name": "墓穴狼灵",
+      "kind": "小怪",
+      "profession": "盗贼",
+      "sprite": "enemy-wolf-full",
+      "multipliers": {
+        "hp": 0.9,
+        "attack": 1,
+        "defense": 0.85,
+        "speed": 1.2
+      },
+      "skills": [
+        "撕咬：通常自身行动造成100%A物理伤害。",
+        "双袭：第3／6／9…次自身行动替代撕咬，连续攻击2次，每次65%A物理伤害。"
+      ],
+      "passive": "无额外被动。",
+      "phase": "无阶段变化。",
+      "response": "高频压力、无闪避随机；护盾和战士克制能缓解，减速能抢先手。"
+    },
+    {
+      "id": "spider",
+      "name": "剧毒织网者",
+      "kind": "小怪",
+      "profession": "盗贼",
+      "sprite": "enemy-spider-full",
+      "multipliers": {
+        "hp": 0.9,
+        "attack": 0.85,
+        "defense": 0.85,
+        "speed": 1.1
+      },
+      "skills": [
+        "毒牙：每个自身行动造成80%A物理伤害，随后施加毒：每勇者回合开始8%A真实伤害，持续2回合。同来源刷新，不累加。"
+      ],
+      "passive": "无额外被动。",
+      "phase": "无阶段变化。",
+      "response": "毒是自身技能；低直接伤害换持续压力，有限治疗与快速击杀都有价值。"
+    },
+    {
+      "id": "wraith",
+      "name": "苔骨游魂",
+      "kind": "小怪",
+      "profession": "法师",
+      "sprite": "enemy-wraith-full",
+      "multipliers": {
+        "hp": 0.85,
+        "attack": 0.95,
+        "defense": 0.7,
+        "speed": 1.05
+      },
+      "skills": [
+        "幽焰：每个自身行动造成90%A法术伤害。",
+        "魂火：第3／6／9…次自身行动替代幽焰，造成70%A法术伤害，随后施加灼烧：每勇者回合开始10%A法术伤害，持续2回合。"
+      ],
+      "passive": "无额外被动。",
+      "phase": "无阶段变化。",
+      "response": "法术与灼烧教玩家区分伤害类型；盗贼职业克制，法袍／皮甲续航可混搭应对。"
+    },
+    {
+      "id": "golem",
+      "name": "赤焰魔像",
+      "kind": "Boss",
+      "profession": "战士",
+      "sprite": "enemy-golem-full",
+      "multipliers": {
+        "hp": 1.1,
+        "attack": 0.95,
+        "defense": 1.8,
+        "speed": 0.8
+      },
+      "skills": [
+        "岩拳：通常自身行动造成100%A物理伤害。",
+        "赤焰震击：第3／6／9…次自身行动替代岩拳，造成130%A物理伤害；随后施加灼烧：每勇者回合开始8%A法术伤害，持续2回合。"
+      ],
+      "passive": "熔岩甲壳：每场开始获得8%H护盾；第4／8／12…次自身行动前获得5%H护盾，每场续盾最多2次。",
+      "phase": "无额外低血阶段。",
+      "response": "高防与有限续盾；穿防、法术和持续伤害更有意义，不做物理免疫或毒免疫。"
+    },
+    {
+      "id": "ogre",
+      "name": "失魂巨魔",
+      "kind": "Boss",
+      "profession": "战士",
+      "sprite": "enemy-ogre-full",
+      "multipliers": {
+        "hp": 1.15,
+        "attack": 1.1,
+        "defense": 0.9,
+        "speed": 0.8
+      },
+      "skills": [
+        "铁棒横扫：通常自身行动造成100%A物理伤害。",
+        "蓄力：第3／6／9…次自身行动替代横扫，仅造成50%A物理伤害，并显示下一自身行动将重击。",
+        "粉碎重击：蓄力后的第4／7／10…次自身行动替代横扫，造成200%A物理伤害，本次忽略15%防御；不再叠加普攻。"
+      ],
+      "passive": "顽强：每场首次生命降至40%H及以下且仍存活时，恢复6%H生命一次。",
+      "phase": "无其他阶段；顽强不重复恢复。",
+      "response": "提前一轮预告峰值伤害，盾和先手爆发可应对；防止突然无提示三倍伤害。"
+    },
+    {
+      "id": "dragon",
+      "name": "残月幼龙",
+      "kind": "Boss",
+      "profession": "法师",
+      "sprite": "enemy-dragon-full",
+      "multipliers": {
+        "hp": 1,
+        "attack": 1.05,
+        "defense": 1.1,
+        "speed": 1
+      },
+      "skills": [
+        "龙爪：通常自身行动造成90%A物理伤害。",
+        "吐息准备：第2／5／8…次自身行动替代龙爪，造成60%A物理伤害，并显示下一自身行动的吐息预告。",
+        "月焰吐息：第3／6／9…次自身行动替代龙爪，造成150%A法术伤害，并施加灼烧：每勇者回合开始10%A法术伤害，持续2回合。"
+      ],
+      "passive": "龙鳞：每场开始获得5%H护盾。",
+      "phase": "无额外低血阶段。",
+      "response": "混合伤害与吐息窗口；盗贼职业克制，减速让更多场次能在吐息前先行动。"
+    },
+    {
+      "id": "bone_king",
+      "name": "白骨王·莫尔",
+      "kind": "Boss",
+      "profession": "战士",
+      "sprite": "sentinel-full",
+      "multipliers": {
+        "hp": 1,
+        "attack": 1,
+        "defense": 1.35,
+        "speed": 0.95
+      },
+      "skills": [
+        "王刃：通常自身行动造成100%A物理伤害。",
+        "王庭蓄势：第3／7／11…次自身行动替代王刃，造成60%A物理伤害，并获得4%H护盾，预告下一自身行动的裁决。",
+        "白骨裁决：第4／8／12…次自身行动替代王刃，造成190%A物理伤害，本次忽略20%防御。"
+      ],
+      "passive": "没有额外固定普攻叠加；王庭蓄势属于技能，不额外生成无限盾。",
+      "phase": "每场首次生命降至50%H及以下且仍存活时，进入王庭第二阶段：技能伤害＋10%，获得5%H护盾一次；不重置技能行动计数或当前预告。",
+      "response": "观察蓄势与裁决；法师克制、穿防消盾、剑的低血追击都可形成不同策略。"
+    },
+    {
+      "id": "queen",
+      "name": "蛛后·瑟莉丝",
+      "kind": "Boss",
+      "profession": "盗贼",
+      "sprite": "enemy-queen-full",
+      "multipliers": {
+        "hp": 1,
+        "attack": 0.95,
+        "defense": 1,
+        "speed": 1.15
+      },
+      "skills": [
+        "毒刺：通常自身行动造成90%A物理伤害；随后施加毒，每勇者回合开始8%A真实伤害，持续2回合。",
+        "召唤预告：第3／7／11…次自身行动不造成本体伤害，显示下一自身行动将召唤。",
+        "孵化：第4／8／12…次自身行动替代毒刺，造成50%A物理伤害，并召唤1只幼蛛，每场最多召唤3只、同时最多2只。"
+      ],
+      "passive": "幼蛛是召唤单位，不是新职业与装备：每只拥有5%H本体的生命、与本体相同防御和盗贼标签，继承本体攻击。详见召唤统一规则。",
+      "phase": "每场首次生命降至50%H及以下且仍存活时，进入狩猎第二阶段：下一次毒刺直接伤害＋30%，仅一次；不额外召唤、不重置当前计数。",
+      "response": "战士职业克制；高频多段清幼蛛，毒／灼烧继续作用本体，有限治疗抵御持续损耗。"
+    }
+  ]
+}

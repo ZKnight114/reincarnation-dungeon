@@ -3,7 +3,11 @@ import type { Attribute, Attributes, Profession, TalentKey, Trainee } from './ty
 export const ATTRIBUTE_POINTS = 12;
 export const ATTRIBUTE_KEYS: Attribute[] = ['attack', 'hp', 'defense', 'speed'];
 export const ATTRIBUTES: Record<Attribute, { name: string; step: number; description: string }> = {
-  attack: { name: '攻击', step: 2, description: '每点 +2 攻击，按比例提高所有武器伤害' },
+  attack: {
+    name: '攻击',
+    step: 2,
+    description: '每点 +2 基础攻击；物品、共鸣和典籍技能读取人物最终攻击',
+  },
   hp: { name: '生命', step: 8, description: '每点 +8 基础生命上限' },
   defense: { name: '防御', step: 1, description: '每点 +1 基础防御，减少受到的伤害' },
   speed: {

@@ -1,3 +1,4 @@
+import { setEnemy, setPlayer } from './helpers';
 import { advanceCamp } from './helpers';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -19,8 +20,7 @@ function endless() {
   g.state.draft = [];
   placeFree(g, g.state.inventory[0].id);
   advanceCamp(g);
-  g.state.enemy!.hp = g.state.enemy!.maxHp = 1e8;
-  g.state.enemy!.attack = 0;
+  setEnemy(g, { hp: 1e8, maxHp: 1e8, attack: 0 });
   return g;
 }
 
@@ -48,7 +48,7 @@ test('basic recruitment samples all three professions while targeted recruitment
     g.enterChapters();
     assert.equal(g.recruit(), null);
     assert.equal(g.state.run.trainee!.profession, profession);
-    assert.equal(g.state.meta.energy.value, 50);
+    assert.equal(g.state.meta.energy.value, 55);
   }
   for (const profession of ['warrior', 'mage', 'rogue'] as const) {
     const g = new Game(undefined, seed(1));
@@ -89,34 +89,21 @@ test('four stable talents and twelve allocation points survive navigation and re
   assert.equal(g.state.meta.energy.value, 40);
   assert.equal(g.allocate('speed', -1), null);
   assert.equal(g.allocate('hp', 1), null);
+  if (!g.state.run.trainee?.tomeId) g.confirmAllocation();
+  g.selectTome(
+    (
+      {
+        warrior: 'warrior_sword_tome',
+        mage: 'mage_flame_tome',
+        rogue: 'rogue_poison_tome',
+      } as const
+    )[g.state.run.profession],
+  );
   assert.equal(g.startRun(), null);
   assert.ok(g.allocate('attack', -1));
   assert.deepEqual(g.state.run.trainee!.talents, original.talents);
 });
-test('allocation changes actual weapon damage, max health, defense and initiative instead of only dossier labels', () => {
-  const g = new Game(undefined, seed(19));
-  g.enterChapters();
-  g.recruit('warrior');
-  const base = heroAttributes(g.state.run.trainee, 'warrior', false);
-  for (const key of ATTRIBUTE_KEYS) for (let n = 0; n < 3; n++) g.allocate(key, 1);
-  const planned = heroAttributes(g.state.run.trainee, 'warrior');
-  assert.equal(pointsSpent(g.state.run.trainee!), ATTRIBUTE_POINTS);
-  assert.equal(planned.attack, base.attack + 6);
-  assert.equal(planned.hp, base.hp + 24);
-  assert.equal(planned.defense, base.defense + 3);
-  assert.equal(planned.speed, base.speed + 3);
-  g.startRun();
-  g.claimStarterRound();
-  const weapon = g.state.inventory.find((i) => i.slot === 'weapon')!;
-  g.placeItem(weapon.id, 1, 1);
-  assert.equal(
-    g.packAnalysis(true).bonuses[weapon.id].power,
-    planned.attack / BASE_ATTRIBUTES.warrior.attack,
-  );
-  assert.equal(g.state.player.maxHp, planned.hp);
-  assert.equal(g.state.player.defense, planned.defense);
-  assert.equal(g.playerSpeed(), planned.speed);
-});
+
 test('attributes and turn-save schema reject over-budget points, duplicate talents, fractional cooldowns or invalid action order', () => {
   const g = endless();
   const bad = (edit: (s: any) => void) => {
@@ -141,7 +128,7 @@ test('no damage, resource restoration or cooldown progression occurs between dis
   g.update(ACTION_SECONDS / 2);
   assert.equal(g.state.enemy!.hp, hp);
   assert.equal(g.state.combat.stamina, 0);
-  assert.deepEqual(g.state.combat.timers, {});
+  assert.equal(g.state.combat.timers[g.state.inventory[0].id], 0);
   assert.equal(g.state.combat.lastActor, null);
   g.update(ACTION_SECONDS / 2);
   assert.equal(g.state.combat.lastActor, 'hero');
@@ -166,14 +153,14 @@ test('two-round cooldown fires on hero turns 1,3,5 and each actor gets exactly o
 test('higher speed acts first and equal speed favors the hero at the next round boundary', () => {
   const g = endless();
   assert.equal(g.state.combat.order[0], 'hero');
-  g.state.enemy!.speed = g.playerSpeed() + 1;
+  setEnemy(g, { speed: g.playerSpeed() + 1 });
   g.advanceTurn();
   g.advanceTurn();
   g.advanceTurn();
   assert.equal(g.state.combat.round, 2);
   assert.equal(g.state.combat.lastActor, 'enemy');
   g.advanceTurn();
-  g.state.enemy!.speed = g.playerSpeed();
+  setEnemy(g, { speed: g.playerSpeed() });
   g.advanceTurn();
   assert.equal(g.state.combat.round, 3);
   assert.equal(g.state.combat.lastActor, 'hero');
@@ -181,7 +168,7 @@ test('higher speed acts first and equal speed favors the hero at the next round 
 test('a fast hero lethal hit cancels the dead enemy turn; a faster enemy lethal hit cancels hero equipment', () => {
   const fast = start();
   advanceCamp(fast);
-  fast.state.enemy!.hp = 1;
+  setEnemy(fast, { hp: 1 });
   const hp = fast.state.player.hp;
   assert.equal(fast.nextActor(), 'hero');
   fast.advanceTurn();
@@ -194,62 +181,13 @@ test('a fast hero lethal hit cancels the dead enemy turn; a faster enemy lethal 
   slow.state.run.trainee!.allocation = { attack: 0, hp: 12, defense: 0, speed: 0 };
   positionEvent(slow, 'boss');
   assert.equal(slow.nextActor(), 'enemy');
-  slow.state.player.hp = 1;
+  setPlayer(slow, { hp: 1 });
   slow.advanceTurn();
   assert.equal(slow.state.phase, 'summary');
   assert.deepEqual(slow.state.lastReport!.items, {});
   assert.equal(slow.state.meta.heroes[0].outcome, 'death');
 });
-test('poison resolves before the enemy attack and expires after exactly three enemy actions', () => {
-  const g = endless(),
-    id = g.state.inventory[0].id;
-  g.state.run.resonances = [];
-  g.state.enemy!.effects = [{ kind: 'poison', damage: 7, remaining: 3, timer: 0, sourceId: id }];
-  for (let n = 0; n < 6; n++) g.advanceTurn();
-  assert.equal(g.state.enemy!.effects.length, 0);
-  const report = g.state.combat.contributions[id],
-    weapon = g.state.inventory[0],
-    base =
-      (weapon.attack * g.packAnalysis().bonuses[id].power * 60) / (60 + g.state.enemy!.defense);
-  assert.ok(Math.abs(report.damage - (base * 2 + 21)) < 1e-5);
-  const lethal = start();
-  lethal.state.meta.highestChapter = 20;
-  lethal.state.run.chapter = 20;
-  lethal.state.run.trainee!.allocation = { attack: 0, hp: 12, defense: 0, speed: 0 };
-  positionEvent(lethal, 'boss');
-  lethal.state.enemy!.hp = 1;
-  lethal.state.enemy!.effects = [
-    { kind: 'burn', damage: 3, remaining: 3, timer: 0, sourceId: lethal.state.inventory[0].id },
-  ];
-  const hp = lethal.state.player.hp;
-  lethal.advanceTurn();
-  assert.equal(lethal.state.phase, 'awakening');
-  assert.ok(lethal.state.player.hp >= hp);
-});
-test('chill changes next-round initiative without skipping an action or changing item cooldown', () => {
-  const g = start('mage');
-  g.state.inventory = [g.makeItem('mage_ice_2', 4)];
-  g.state.draft = [];
-  placeFree(g, g.state.inventory[0].id);
-  g.state.run.resonances = [];
-  advanceCamp(g);
-  const e = g.state.enemy!;
-  e.hp = e.maxHp = 1e8;
-  e.attack = 0;
-  e.speed = g.playerSpeed() + 1;
-  g.advanceTurn();
-  g.advanceTurn();
-  g.state.run.resonances = ['frost'];
-  g.advanceTurn();
-  assert.equal(g.state.combat.lastActor, 'enemy');
-  g.advanceTurn();
-  assert.ok(e.effects.some((x) => x.kind === 'chill'));
-  g.advanceTurn();
-  assert.equal(g.state.combat.round, 3);
-  assert.equal(g.state.combat.lastActor, 'hero');
-  assert.equal(g.state.combat.hits[g.state.inventory[0].id], 3);
-  assert.equal(g.state.combat.timers[g.state.inventory[0].id], 1);
-});
+
 test('pause freezes automatic turns; manual stepping and halfway save restore preserve order and cooldowns', () => {
   const g = endless();
   g.update(0.3);

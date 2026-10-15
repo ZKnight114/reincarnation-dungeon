@@ -66,7 +66,7 @@ test('all 37 nodes have a story gate including trial, digging and both graduatio
       const e = g.currentEvent()!;
       assert.equal(
         g.chooseEvent(
-          e.kind === 'elite'
+          ['elite', 'boss'].includes(e.kind)
             ? 'trial-0'
             : e.kind === 'rest'
               ? 'heal'
@@ -92,7 +92,7 @@ test('all 37 nodes have a story gate including trial, digging and both graduatio
   assert.equal(gates, 37);
   assert.equal(g.completed(), 37);
 });
-test('upper merge preserves receiver, shape and zero contribution until packed; rejects mismatch and Lv5 without mutations', () => {
+test('upper merge preserves receiver, shape and zero contribution until packed; rejects mismatch and Lv4 without mutations', () => {
   const g = start(),
     a = add(g, 'warrior_pole_3'),
     b = add(g, a.templateId),
@@ -111,22 +111,32 @@ test('upper merge preserves receiver, shape and zero contribution until packed; 
   for (const [template, level] of [
     ['warrior_guard_3', 2],
     ['warrior_pole_3', 1],
-    ['warrior_pole_3', 5],
+    ['warrior_pole_3', 4],
   ] as const) {
     const other = add(g, template, level),
       before = JSON.stringify(g.state);
     assert.ok(g.mergeItems(other.id, b.id));
     assert.equal(JSON.stringify(g.state), before);
   }
-  const max = add(g, 'warrior_pole_3', 5),
-    max2 = add(g, max.templateId, 5),
+  const max = add(g, 'warrior_pole_3', 4),
+    max2 = add(g, max.templateId, 4),
     before = JSON.stringify(g.state);
-  assert.match(g.mergeItems(max.id, max2.id)!, /5 级/);
+  assert.match(g.mergeItems(max.id, max2.id)!, /4 级/);
   assert.equal(JSON.stringify(g.state), before);
 });
 test('unclaimed starter offers merge in the upper area and advance batches once without losing offers', () => {
   const g = new Game();
   recruitToConfigure(g);
+  if (g.state.phase === 'configure' && !g.state.run.trainee?.tomeId) g.confirmAllocation();
+  g.selectTome(
+    (
+      {
+        warrior: 'warrior_sword_tome',
+        mage: 'mage_flame_tome',
+        rogue: 'rogue_poison_tome',
+      } as const
+    )[g.state.run.profession],
+  );
   g.startRun();
   const target = g.state.run.starterOffers[0],
     donor = add(g, target.templateId);

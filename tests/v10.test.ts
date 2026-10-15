@@ -1,3 +1,4 @@
+import { setEnemy, setPlayer } from './helpers';
 import { advanceCamp } from './helpers';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -44,10 +45,10 @@ test('profession and item thresholds differ, include all equipped profession gea
     s = g.state;
   s.run.kills = 14;
   assert.equal(resonanceScore(s.inventory, s.draft, 'cleave').score, 13);
-  assert.deepEqual(resonanceScore(s.inventory, s.draft, 'cleave').thresholds, [12, 80, 200]);
+  assert.deepEqual(resonanceScore(s.inventory, s.draft, 'cleave').thresholds, [12, 48, 96]);
   assert.deepEqual(
     resonanceScore(s.inventory, s.draft, 'warrior_sword_base').thresholds,
-    [2, 8, 24],
+    [4, 12, 24],
   );
   const sword = add(g, 'warrior_blade_2', 3);
   assert.equal(contributionPoints(sword), 8);
@@ -56,7 +57,7 @@ test('profession and item thresholds differ, include all equipped profession gea
   assert.equal(resonanceScore(s.inventory, s.draft, 'warrior_sword_base').score, before + 8);
 });
 test('merge conserves occupied-item contribution at every grade while freeing cells', () => {
-  for (let level = 1; level < 5; level++) {
+  for (let level = 1; level < 4; level++) {
     const g = start();
     g.state.inventory = [];
     g.state.draft = [];
@@ -146,14 +147,13 @@ test('32-node normal graduation counts as success, unlocks chapter, pays gold on
     gold = g.state.meta.gold;
   positionEvent(g, 'graduation');
   assert.equal(g.state.run.resonances.length, 4);
-  assert.equal(g.chooseEvent('graduate'), null);
-  assert.equal(g.state.phase, 'camp');
   const gear = g.packAnalysis(true).active.map((i) => i.id);
-  assert.equal(advanceCamp(g), null);
+  assert.equal(g.chooseEvent('graduate'), null);
+  assert.equal(g.state.phase, 'summary');
   assert.equal(g.completed(), 32);
   assert.equal(g.state.meta.heroes[0].outcome, 'win');
-  assert.equal(g.state.meta.gold, gold + 115);
-  assert.equal(g.state.meta.highestChapter, 2);
+  assert.equal(g.state.meta.gold, gold + 160);
+  assert.equal(g.state.meta.highestChapter, 5);
   assert.deepEqual(
     g.state.meta.heroes[0].loadout!.equipment.map((i) => i.id),
     gear,
@@ -179,6 +179,7 @@ test('extreme choice continues with four resonances and tougher fights instead o
 test('risk events spend only current life and grant a basic attribute without gold or healing', () => {
   const g = start();
   positionEvent(g, 'choice', 1);
+  g.currentEvent()!.variant = 0;
   g.state.player.hp = 100;
   const gold = g.state.meta.gold;
   g.chooseEvent('risk');
@@ -193,6 +194,7 @@ test('skip presentation produces identical discrete fight results and stops for 
   advanceCamp(a);
   advanceCamp(b);
   b.state.enemy = structuredClone(a.state.enemy);
+  b.state.combat.runtime = structuredClone(a.state.combat.runtime);
   b.state.skipCombat = true;
   while (a.state.phase === 'combat') a.update(0.7);
   while (b.state.phase === 'combat') b.update(0.7);

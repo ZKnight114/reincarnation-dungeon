@@ -1,0 +1,1432 @@
+{
+  "items": [
+    {
+      "id": "warrior_gem",
+      "name": "勇气徽章",
+      "profession": "战士",
+      "category": null,
+      "size": 1,
+      "shape": "单格",
+      "attributes": [
+        {
+          "attack": 1,
+          "hp": 8,
+          "defense": 0
+        },
+        {
+          "attack": 1.5,
+          "hp": 12.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 2,
+          "hp": 16,
+          "defense": 0
+        },
+        {
+          "attack": 3,
+          "hp": 24,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "被动：相邻剑／枪物品的直接伤害＋8%。",
+        "被动：相邻剑／枪物品的直接伤害＋12%。",
+        "被动：相邻剑／枪物品的直接伤害＋16%。",
+        "被动：相邻剑／枪物品的直接伤害＋20%；每场战斗开始给予勇者4%H护盾。"
+      ],
+      "adjacency": {
+        "direction": "给别人",
+        "text": "只增强相邻剑／枪的直接伤害，不增强持续伤害、反击或典籍技能。每个目标最多接受2件徽章。"
+      },
+      "contributionTags": ["战士"],
+      "contribution": [1, 2, 4, 8],
+      "intent": "小体积布局枢纽；没有周期攻击，提供邻接增幅。",
+      "cells": [[0, 0]]
+    },
+    {
+      "id": "warrior_blade_2",
+      "name": "单手剑",
+      "profession": "战士",
+      "category": "剑",
+      "size": 2,
+      "shape": "竖2格",
+      "attributes": [
+        {
+          "attack": 3,
+          "hp": 10,
+          "defense": 0
+        },
+        {
+          "attack": 4.5,
+          "hp": 15.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 6,
+          "hp": 20,
+          "defense": 0
+        },
+        {
+          "attack": 9,
+          "hp": 30,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每2回合造成55%A物理伤害。",
+        "每2回合造成70%A物理伤害。",
+        "每2回合造成85%A物理伤害。",
+        "每2回合造成100%A物理伤害；目标当前生命≤30%H敌时，额外造成20%A物理伤害。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动。"
+      },
+      "contributionTags": ["战士", "剑"],
+      "contribution": [2, 4, 8, 16],
+      "intent": "稳定输出小件；四阶增加低血收尾能力。",
+      "cells": [
+        [0, 0],
+        [0, 1]
+      ]
+    },
+    {
+      "id": "warrior_blade_3",
+      "name": "骑士剑",
+      "profession": "战士",
+      "category": "剑",
+      "size": 3,
+      "shape": "竖3格",
+      "attributes": [
+        {
+          "attack": 5,
+          "hp": 18,
+          "defense": 0
+        },
+        {
+          "attack": 7.5,
+          "hp": 27.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 10,
+          "hp": 36,
+          "defense": 0
+        },
+        {
+          "attack": 15,
+          "hp": 54,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每3回合造成90%A物理伤害，并获得2%H护盾。",
+        "每3回合造成110%A物理伤害，并获得3%H护盾。",
+        "每2回合造成110%A物理伤害，并获得3%H护盾。",
+        "每2回合造成130%A物理伤害，并获得4%H护盾。"
+      ],
+      "adjacency": {
+        "direction": "别人给自己",
+        "text": "每相邻1件盾，本物品直接伤害＋8%，最多3件；四阶每件＋12%。"
+      },
+      "contributionTags": ["战士", "剑"],
+      "contribution": [3, 6, 12, 24],
+      "intent": "剑盾桥梁；输出与自保组合，需要留盾邻接位。",
+      "cells": [
+        [0, 0],
+        [0, 1],
+        [0, 2]
+      ]
+    },
+    {
+      "id": "warrior_blade_4",
+      "name": "重剑",
+      "profession": "战士",
+      "category": "剑",
+      "size": 4,
+      "shape": "竖L4格",
+      "attributes": [
+        {
+          "attack": 8,
+          "hp": 24,
+          "defense": 0
+        },
+        {
+          "attack": 12.0,
+          "hp": 36.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 16,
+          "hp": 48,
+          "defense": 0
+        },
+        {
+          "attack": 24,
+          "hp": 72,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每3回合造成150%A物理伤害，本次忽略目标15%防御。",
+        "每3回合造成180%A物理伤害，本次忽略目标20%防御。",
+        "每3回合造成210%A物理伤害，本次忽略目标25%防御。",
+        "每3回合造成240%A物理伤害，本次忽略目标35%防御；自身生命低于50%H时，额外造成30%A物理伤害。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动。"
+      },
+      "contributionTags": ["战士", "剑"],
+      "contribution": [4, 8, 16, 32],
+      "intent": "独立爆发与穿防；不用围绕邻接摆放。",
+      "cells": [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [1, 2]
+      ]
+    },
+    {
+      "id": "warrior_pole_2",
+      "name": "短枪",
+      "profession": "战士",
+      "category": "枪",
+      "size": 2,
+      "shape": "横2格",
+      "attributes": [
+        {
+          "attack": 3,
+          "hp": 6,
+          "defense": 0
+        },
+        {
+          "attack": 4.5,
+          "hp": 9.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 6,
+          "hp": 12,
+          "defense": 0
+        },
+        {
+          "attack": 9,
+          "hp": 18,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每回合造成25%A物理伤害。",
+        "每回合造成32%A物理伤害。",
+        "每回合造成39%A物理伤害。",
+        "每回合造成46%A物理伤害；本物品每第3次发动额外造成15%A物理伤害。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动。"
+      },
+      "contributionTags": ["战士", "枪"],
+      "contribution": [2, 4, 8, 16],
+      "intent": "高频小件；降低单次伤害，避免小件数量成为唯一解。",
+      "cells": [
+        [0, 0],
+        [1, 0]
+      ]
+    },
+    {
+      "id": "warrior_pole_3",
+      "name": "钩镰枪",
+      "profession": "战士",
+      "category": "枪",
+      "size": 3,
+      "shape": "左下L3格",
+      "attributes": [
+        {
+          "attack": 5,
+          "hp": 12,
+          "defense": 0
+        },
+        {
+          "attack": 7.5,
+          "hp": 18.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 10,
+          "hp": 24,
+          "defense": 0
+        },
+        {
+          "attack": 15,
+          "hp": 36,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每2回合造成65%A物理伤害；使目标防御降低8%，持续2回合。",
+        "每2回合造成80%A物理伤害；使目标防御降低10%，持续2回合。",
+        "每2回合造成95%A物理伤害；使目标防御降低12%，持续2回合。",
+        "每2回合造成110%A物理伤害；使目标防御降低16%，持续2回合。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动。"
+      },
+      "contributionTags": ["战士", "枪"],
+      "contribution": [3, 6, 12, 24],
+      "intent": "整体破防功能；防御削减在本次伤害之后施加。",
+      "cells": [
+        [1, 0],
+        [0, 1],
+        [1, 1]
+      ]
+    },
+    {
+      "id": "warrior_pole_4",
+      "name": "战枪",
+      "profession": "战士",
+      "category": "枪",
+      "size": 4,
+      "shape": "横4格",
+      "attributes": [
+        {
+          "attack": 7,
+          "hp": 16,
+          "defense": 0
+        },
+        {
+          "attack": 10.5,
+          "hp": 24.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 14,
+          "hp": 32,
+          "defense": 0
+        },
+        {
+          "attack": 21,
+          "hp": 48,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每3回合连续攻击2次，每次65%A物理伤害。",
+        "每3回合连续攻击2次，每次80%A物理伤害。",
+        "每2回合连续攻击2次，每次80%A物理伤害。",
+        "每2回合连续攻击3次，每次65%A物理伤害。"
+      ],
+      "adjacency": {
+        "direction": "别人给自己",
+        "text": "每相邻1件其他枪，本物品直接伤害＋6%，最多3件；四阶每件＋10%。"
+      },
+      "contributionTags": ["战士", "枪"],
+      "contribution": [4, 8, 16, 32],
+      "intent": "多段攻击核心；计数按发动而非每段命中，避免触发爆炸。",
+      "cells": [
+        [0, 0],
+        [1, 0],
+        [2, 0],
+        [3, 0]
+      ]
+    },
+    {
+      "id": "warrior_guard_2",
+      "name": "小盾",
+      "profession": "战士",
+      "category": "盾",
+      "size": 2,
+      "shape": "竖2格",
+      "attributes": [
+        {
+          "attack": 0,
+          "hp": 20,
+          "defense": 1
+        },
+        {
+          "attack": 0.0,
+          "hp": 30.0,
+          "defense": 1.5
+        },
+        {
+          "attack": 0,
+          "hp": 40,
+          "defense": 2
+        },
+        {
+          "attack": 0,
+          "hp": 60,
+          "defense": 3
+        }
+      ],
+      "stageEffects": [
+        "每2回合获得3%H＋100%D护盾。",
+        "每2回合获得4%H＋120%D护盾。",
+        "每2回合获得5%H＋140%D护盾。",
+        "每2回合获得6%H＋160%D护盾。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动。"
+      },
+      "contributionTags": ["战士", "盾"],
+      "contribution": [2, 4, 8, 16],
+      "intent": "基础防护；防御与生命都能改善护盾。",
+      "cells": [
+        [0, 0],
+        [0, 1]
+      ]
+    },
+    {
+      "id": "warrior_guard_3",
+      "name": "鸢盾",
+      "profession": "战士",
+      "category": "盾",
+      "size": 3,
+      "shape": "右上L3格",
+      "attributes": [
+        {
+          "attack": 1,
+          "hp": 28,
+          "defense": 1
+        },
+        {
+          "attack": 1.5,
+          "hp": 42.0,
+          "defense": 1.5
+        },
+        {
+          "attack": 2,
+          "hp": 56,
+          "defense": 2
+        },
+        {
+          "attack": 3,
+          "hp": 84,
+          "defense": 3
+        }
+      ],
+      "stageEffects": [
+        "每3回合获得4%H护盾，并准备1次反击：下一次受到敌人直接攻击后造成30%A物理伤害。",
+        "每3回合获得5%H护盾；反击造成40%A物理伤害。",
+        "每2回合获得5%H护盾；反击造成40%A物理伤害。",
+        "每2回合获得6%H护盾；反击造成50%A物理伤害。"
+      ],
+      "adjacency": {
+        "direction": "别人给自己",
+        "text": "每相邻1件剑，本物品反击伤害＋8%，最多3件；四阶每件＋12%。"
+      },
+      "contributionTags": ["战士", "盾"],
+      "contribution": [3, 6, 12, 24],
+      "intent": "反击功能；只回应直接攻击，不被中毒、灼烧或反伤递归触发。",
+      "cells": [
+        [0, 0],
+        [1, 0],
+        [0, 1]
+      ]
+    },
+    {
+      "id": "warrior_guard_4",
+      "name": "大盾",
+      "profession": "战士",
+      "category": "盾",
+      "size": 4,
+      "shape": "方4格",
+      "attributes": [
+        {
+          "attack": 0,
+          "hp": 40,
+          "defense": 2
+        },
+        {
+          "attack": 0.0,
+          "hp": 60.0,
+          "defense": 3.0
+        },
+        {
+          "attack": 0,
+          "hp": 80,
+          "defense": 4
+        },
+        {
+          "attack": 0,
+          "hp": 120,
+          "defense": 6
+        }
+      ],
+      "stageEffects": [
+        "每3回合获得8%H＋100%D护盾。",
+        "每3回合获得10%H＋120%D护盾。",
+        "每3回合获得12%H＋140%D护盾。",
+        "每3回合获得14%H＋160%D护盾；每场首次因敌方伤害跌至30%H及以下且仍存活时，额外获得6%H护盾。"
+      ],
+      "adjacency": {
+        "direction": "别人给自己",
+        "text": "每相邻1件其他盾，本装备自身提供的生命＋10%，最多3件；四阶每件＋15%。"
+      },
+      "contributionTags": ["战士", "盾"],
+      "contribution": [4, 8, 16, 32],
+      "intent": "防御核心；邻接只放大本件生命，不放大全人物生命。",
+      "cells": [
+        [0, 0],
+        [1, 0],
+        [0, 1],
+        [1, 1]
+      ]
+    },
+    {
+      "id": "mage_gem",
+      "name": "奥术水晶",
+      "profession": "法师",
+      "category": null,
+      "size": 1,
+      "shape": "单格",
+      "attributes": [
+        {
+          "attack": 1,
+          "hp": 6,
+          "defense": 0
+        },
+        {
+          "attack": 1.5,
+          "hp": 9.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 2,
+          "hp": 12,
+          "defense": 0
+        },
+        {
+          "attack": 3,
+          "hp": 18,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "被动：相邻法杖／魔导书的直接法术伤害＋8%。",
+        "被动：相邻法杖／魔导书的直接法术伤害＋12%。",
+        "被动：相邻法杖／魔导书的直接法术伤害＋16%。",
+        "被动：相邻法杖／魔导书的直接法术伤害＋20%；同时使相邻法袍产生的护盾＋10%。"
+      ],
+      "adjacency": {
+        "direction": "给别人",
+        "text": "只增幅上述数值，不增幅灼烧、治疗或典籍技能。每个目标最多接受2件水晶。"
+      },
+      "contributionTags": ["法师"],
+      "contribution": [1, 2, 4, 8],
+      "intent": "法术邻接枢纽；四阶能连接攻击与防护物品。",
+      "cells": [[0, 0]]
+    },
+    {
+      "id": "mage_flame_2",
+      "name": "短杖",
+      "profession": "法师",
+      "category": "法杖",
+      "size": 2,
+      "shape": "竖2格",
+      "attributes": [
+        {
+          "attack": 4,
+          "hp": 4,
+          "defense": 0
+        },
+        {
+          "attack": 6.0,
+          "hp": 6.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 8,
+          "hp": 8,
+          "defense": 0
+        },
+        {
+          "attack": 12,
+          "hp": 12,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每2回合造成40%A法术伤害，并施加灼烧：每敌方回合造成5%A法术伤害，持续2回合。",
+        "每2回合造成50%A法术伤害；灼烧为6%A，持续2回合。",
+        "每2回合造成60%A法术伤害；灼烧为7%A，持续2回合。",
+        "每2回合造成70%A法术伤害；灼烧为8%A，持续3回合。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动。"
+      },
+      "contributionTags": ["法师", "法杖"],
+      "contribution": [2, 4, 8, 16],
+      "intent": "无需共鸣即可点火；稳定建立灼烧状态。",
+      "cells": [
+        [0, 0],
+        [0, 1]
+      ]
+    },
+    {
+      "id": "mage_flame_3",
+      "name": "曲杖",
+      "profession": "法师",
+      "category": "法杖",
+      "size": 3,
+      "shape": "右上L3格",
+      "attributes": [
+        {
+          "attack": 6,
+          "hp": 10,
+          "defense": 0
+        },
+        {
+          "attack": 9.0,
+          "hp": 15.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 12,
+          "hp": 20,
+          "defense": 0
+        },
+        {
+          "attack": 18,
+          "hp": 30,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每3回合造成90%A法术伤害；若命中前目标已有灼烧，额外造成25%A法术伤害。",
+        "每3回合造成110%A法术伤害；灼烧目标额外35%A。",
+        "每2回合造成110%A法术伤害；灼烧目标额外35%A。",
+        "每2回合造成125%A法术伤害；灼烧目标额外45%A。"
+      ],
+      "adjacency": {
+        "direction": "别人给自己",
+        "text": "每相邻1件其他法杖，本物品直接伤害＋6%，最多3件；四阶每件＋10%。"
+      },
+      "contributionTags": ["法师", "法杖"],
+      "contribution": [3, 6, 12, 24],
+      "intent": "灼烧爆发受益者；不消耗目标灼烧，也不自动点火。",
+      "cells": [
+        [0, 0],
+        [1, 0],
+        [0, 1]
+      ]
+    },
+    {
+      "id": "mage_flame_4",
+      "name": "长杖",
+      "profession": "法师",
+      "category": "法杖",
+      "size": 4,
+      "shape": "竖4格",
+      "attributes": [
+        {
+          "attack": 9,
+          "hp": 14,
+          "defense": 0
+        },
+        {
+          "attack": 13.5,
+          "hp": 21.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 18,
+          "hp": 28,
+          "defense": 0
+        },
+        {
+          "attack": 27,
+          "hp": 42,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每3回合造成135%A法术伤害；施加灼烧：每敌方回合8%A，持续3回合。",
+        "每3回合造成160%A法术伤害；灼烧为10%A，持续3回合。",
+        "每3回合造成185%A法术伤害；灼烧为12%A，持续3回合。",
+        "每3回合造成210%A法术伤害；灼烧为14%A，持续3回合。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动。"
+      },
+      "contributionTags": ["法师", "法杖"],
+      "contribution": [4, 8, 16, 32],
+      "intent": "独立持续输出核心；灼烧总伤害有上限，避免多杖指数增长。",
+      "cells": [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [0, 3]
+      ]
+    },
+    {
+      "id": "mage_ice_2",
+      "name": "咒文书",
+      "profession": "法师",
+      "category": "魔导书",
+      "size": 2,
+      "shape": "横2格",
+      "attributes": [
+        {
+          "attack": 3,
+          "hp": 8,
+          "defense": 0
+        },
+        {
+          "attack": 4.5,
+          "hp": 12.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 6,
+          "hp": 16,
+          "defense": 0
+        },
+        {
+          "attack": 9,
+          "hp": 24,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每2回合造成45%A法术伤害；使目标速度降低10%，持续2回合。",
+        "每2回合造成55%A法术伤害；速度降低12%，持续2回合。",
+        "每2回合造成65%A法术伤害；速度降低15%，持续2回合。",
+        "每2回合造成75%A法术伤害；速度降低18%，持续3回合。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动。"
+      },
+      "contributionTags": ["法师", "魔导书"],
+      "contribution": [2, 4, 8, 16],
+      "intent": "冰霜入门与先手辅助；减速不剥夺敌方回合。",
+      "cells": [
+        [0, 0],
+        [1, 0]
+      ]
+    },
+    {
+      "id": "mage_ice_3",
+      "name": "三折魔典",
+      "profession": "法师",
+      "category": "魔导书",
+      "size": 3,
+      "shape": "横3格",
+      "attributes": [
+        {
+          "attack": 5,
+          "hp": 16,
+          "defense": 0
+        },
+        {
+          "attack": 7.5,
+          "hp": 24.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 10,
+          "hp": 32,
+          "defense": 0
+        },
+        {
+          "attack": 15,
+          "hp": 48,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每3回合造成90%A法术伤害，并获得3%H护盾。",
+        "每3回合造成110%A法术伤害，并获得4%H护盾。",
+        "每2回合造成110%A法术伤害，并获得4%H护盾。",
+        "每2回合造成125%A法术伤害，并获得5%H护盾。"
+      ],
+      "adjacency": {
+        "direction": "别人给自己",
+        "text": "每相邻1件法袍，本物品产生的护盾＋10%，最多3件；四阶每件＋15%。"
+      },
+      "contributionTags": ["法师", "魔导书"],
+      "contribution": [3, 6, 12, 24],
+      "intent": "冰书与法袍混搭；让攻击型法师也有可布置的生存手段。",
+      "cells": [
+        [0, 0],
+        [1, 0],
+        [2, 0]
+      ]
+    },
+    {
+      "id": "mage_ice_4",
+      "name": "链扣魔典",
+      "profession": "法师",
+      "category": "魔导书",
+      "size": 4,
+      "shape": "右下L4格",
+      "attributes": [
+        {
+          "attack": 8,
+          "hp": 20,
+          "defense": 0
+        },
+        {
+          "attack": 12.0,
+          "hp": 30.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 16,
+          "hp": 40,
+          "defense": 0
+        },
+        {
+          "attack": 24,
+          "hp": 60,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每3回合造成145%A法术伤害；命中前目标已有冰霜减速时，本次忽略20%防御。",
+        "每3回合造成175%A法术伤害；冰霜目标忽略25%防御。",
+        "每3回合造成205%A法术伤害；冰霜目标忽略30%防御。",
+        "每3回合造成235%A法术伤害；冰霜目标忽略40%防御。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动。"
+      },
+      "contributionTags": ["法师", "魔导书"],
+      "contribution": [4, 8, 16, 32],
+      "intent": "冰霜穿防核心；需要小书施加状态，但无状态也能正常输出。",
+      "cells": [
+        [0, 0],
+        [1, 0],
+        [2, 0],
+        [2, 1]
+      ]
+    },
+    {
+      "id": "mage_ward_2",
+      "name": "短法袍",
+      "profession": "法师",
+      "category": "法袍",
+      "size": 2,
+      "shape": "竖2格",
+      "attributes": [
+        {
+          "attack": 1,
+          "hp": 18,
+          "defense": 1
+        },
+        {
+          "attack": 1.5,
+          "hp": 27.0,
+          "defense": 1.5
+        },
+        {
+          "attack": 2,
+          "hp": 36,
+          "defense": 2
+        },
+        {
+          "attack": 3,
+          "hp": 54,
+          "defense": 3
+        }
+      ],
+      "stageEffects": [
+        "每2回合获得3%H＋15%A护盾。",
+        "每2回合获得4%H＋18%A护盾。",
+        "每2回合获得5%H＋21%A护盾。",
+        "每2回合获得6%H＋24%A护盾。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动。"
+      },
+      "contributionTags": ["法师", "法袍"],
+      "contribution": [2, 4, 8, 16],
+      "intent": "攻击也贡献防护，但护盾仍以生命为主。",
+      "cells": [
+        [0, 0],
+        [0, 1]
+      ]
+    },
+    {
+      "id": "mage_ward_3",
+      "name": "旅行法袍",
+      "profession": "法师",
+      "category": "法袍",
+      "size": 3,
+      "shape": "右下L3格",
+      "attributes": [
+        {
+          "attack": 2,
+          "hp": 26,
+          "defense": 1
+        },
+        {
+          "attack": 3.0,
+          "hp": 39.0,
+          "defense": 1.5
+        },
+        {
+          "attack": 4,
+          "hp": 52,
+          "defense": 2
+        },
+        {
+          "attack": 6,
+          "hp": 78,
+          "defense": 3
+        }
+      ],
+      "stageEffects": [
+        "每3回合恢复2%H＋8%A生命，每场最多3次；满血不消耗次数。",
+        "每3回合恢复3%H＋10%A生命，每场最多3次；满血不消耗次数。",
+        "每2回合恢复3%H＋10%A生命，每场最多3次；满血不消耗次数。",
+        "每2回合恢复4%H＋12%A生命，每场最多3次；满血不消耗次数。"
+      ],
+      "adjacency": {
+        "direction": "别人给自己",
+        "text": "每相邻1件魔导书，本物品治疗量＋10%，最多3件；四阶每件＋15%。"
+      },
+      "contributionTags": ["法师", "法袍"],
+      "contribution": [3, 6, 12, 24],
+      "intent": "有限续航；替代恢复法力，与冰书互相支持不同数值。",
+      "cells": [
+        [0, 0],
+        [0, 1],
+        [1, 1]
+      ]
+    },
+    {
+      "id": "mage_ward_4",
+      "name": "仪式法袍",
+      "profession": "法师",
+      "category": "法袍",
+      "size": 4,
+      "shape": "方4格",
+      "attributes": [
+        {
+          "attack": 3,
+          "hp": 36,
+          "defense": 2
+        },
+        {
+          "attack": 4.5,
+          "hp": 54.0,
+          "defense": 3.0
+        },
+        {
+          "attack": 6,
+          "hp": 72,
+          "defense": 4
+        },
+        {
+          "attack": 9,
+          "hp": 108,
+          "defense": 6
+        }
+      ],
+      "stageEffects": [
+        "每3回合获得7%H＋20%A护盾。",
+        "每3回合获得9%H＋25%A护盾。",
+        "每3回合获得11%H＋30%A护盾。",
+        "每3回合获得13%H＋35%A护盾；每场首次因敌方伤害跌至30%H及以下且仍存活时，额外获得6%H护盾。"
+      ],
+      "adjacency": {
+        "direction": "别人给自己",
+        "text": "每相邻1件法杖或魔导书，本装备自身提供的生命＋8%，最多3件；四阶每件＋12%。"
+      },
+      "contributionTags": ["法师", "法袍"],
+      "contribution": [4, 8, 16, 32],
+      "intent": "法师防护大件；受益于攻装布局，但不改写攻装技能。",
+      "cells": [
+        [0, 0],
+        [1, 0],
+        [0, 1],
+        [1, 1]
+      ]
+    },
+    {
+      "id": "rogue_gem",
+      "name": "暗影宝石",
+      "profession": "盗贼",
+      "category": null,
+      "size": 1,
+      "shape": "单格",
+      "attributes": [
+        {
+          "attack": 1,
+          "hp": 6,
+          "defense": 0
+        },
+        {
+          "attack": 1.5,
+          "hp": 9.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 2,
+          "hp": 12,
+          "defense": 0
+        },
+        {
+          "attack": 3,
+          "hp": 18,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "被动：相邻匕首／弓弩的直接伤害＋8%。",
+        "被动：相邻匕首／弓弩的直接伤害＋12%。",
+        "被动：相邻匕首／弓弩的直接伤害＋16%。",
+        "被动：相邻匕首／弓弩的直接伤害＋20%；同时使相邻皮甲的治疗量＋10%。"
+      ],
+      "adjacency": {
+        "direction": "给别人",
+        "text": "不增强毒伤、反击或典籍技能。每个目标最多接受2件宝石。"
+      },
+      "contributionTags": ["盗贼"],
+      "contribution": [1, 2, 4, 8],
+      "intent": "盗贼布局枢纽；四阶可辅助皮甲续航。",
+      "cells": [[0, 0]]
+    },
+    {
+      "id": "rogue_assassin_2",
+      "name": "短匕",
+      "profession": "盗贼",
+      "category": "匕首",
+      "size": 2,
+      "shape": "竖2格",
+      "attributes": [
+        {
+          "attack": 3,
+          "hp": 4,
+          "defense": 0
+        },
+        {
+          "attack": 4.5,
+          "hp": 6.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 6,
+          "hp": 8,
+          "defense": 0
+        },
+        {
+          "attack": 9,
+          "hp": 12,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每回合造成20%A物理伤害；施加毒：每敌方回合3%A真实伤害，持续2回合。",
+        "每回合造成25%A物理伤害；毒为4%A，持续2回合。",
+        "每回合造成30%A物理伤害；毒为5%A，持续2回合。",
+        "每回合造成35%A物理伤害；毒为6%A，持续3回合。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动。"
+      },
+      "contributionTags": ["盗贼", "匕首"],
+      "contribution": [2, 4, 8, 16],
+      "intent": "低直伤与高频上毒；不依赖共鸣启用毒流。",
+      "cells": [
+        [0, 0],
+        [0, 1]
+      ]
+    },
+    {
+      "id": "rogue_assassin_3",
+      "name": "曲刃双匕",
+      "profession": "盗贼",
+      "category": "匕首",
+      "size": 3,
+      "shape": "右下L3格",
+      "attributes": [
+        {
+          "attack": 5,
+          "hp": 10,
+          "defense": 0
+        },
+        {
+          "attack": 7.5,
+          "hp": 15.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 10,
+          "hp": 20,
+          "defense": 0
+        },
+        {
+          "attack": 15,
+          "hp": 30,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每2回合连续攻击2次，每次30%A物理伤害；若发动前目标已有毒，额外造成10%A真实伤害。",
+        "每2回合连续攻击2次，每次38%A物理伤害；毒目标额外15%A真实伤害。",
+        "每2回合连续攻击2次，每次46%A物理伤害；毒目标额外20%A真实伤害。",
+        "每2回合连续攻击2次，每次54%A物理伤害；毒目标额外25%A真实伤害。"
+      ],
+      "adjacency": {
+        "direction": "别人给自己",
+        "text": "每相邻1件其他匕首，本物品直接物理伤害＋6%，最多3件；四阶每件＋10%。不放大额外真实伤害。"
+      },
+      "contributionTags": ["盗贼", "匕首"],
+      "contribution": [3, 6, 12, 24],
+      "intent": "双匕多段与毒状态配合；额外伤害每次发动只结算一次。",
+      "cells": [
+        [0, 0],
+        [1, 0],
+        [1, 1]
+      ]
+    },
+    {
+      "id": "rogue_assassin_4",
+      "name": "刺杀双匕",
+      "profession": "盗贼",
+      "category": "匕首",
+      "size": 4,
+      "shape": "左下L4格",
+      "attributes": [
+        {
+          "attack": 8,
+          "hp": 12,
+          "defense": 0
+        },
+        {
+          "attack": 12.0,
+          "hp": 18.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 16,
+          "hp": 24,
+          "defense": 0
+        },
+        {
+          "attack": 24,
+          "hp": 36,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每3回合造成135%A物理伤害；命中前目标已有毒时，本次忽略20%防御。",
+        "每3回合造成165%A物理伤害；毒目标忽略25%防御。",
+        "每3回合造成195%A物理伤害；毒目标忽略30%防御。",
+        "每3回合造成225%A物理伤害；毒目标忽略35%防御；目标生命≤30%H敌时额外造成30%A物理伤害。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动。"
+      },
+      "contributionTags": ["盗贼", "匕首"],
+      "contribution": [4, 8, 16, 32],
+      "intent": "毒流收尾大件；四阶增加斩杀倍率，不直接秒杀。",
+      "cells": [
+        [0, 0],
+        [0, 1],
+        [1, 1],
+        [2, 1]
+      ]
+    },
+    {
+      "id": "rogue_archer_2",
+      "name": "手弩",
+      "profession": "盗贼",
+      "category": "弓弩",
+      "size": 2,
+      "shape": "横2格",
+      "attributes": [
+        {
+          "attack": 3,
+          "hp": 6,
+          "defense": 0
+        },
+        {
+          "attack": 4.5,
+          "hp": 9.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 6,
+          "hp": 12,
+          "defense": 0
+        },
+        {
+          "attack": 9,
+          "hp": 18,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每2回合造成50%A物理伤害；施加标记：后续弓弩直接伤害＋6%，持续2回合。",
+        "每2回合造成60%A物理伤害；标记增伤8%，持续2回合。",
+        "每2回合造成70%A物理伤害；标记增伤10%，持续2回合。",
+        "每2回合造成80%A物理伤害；标记增伤12%，持续3回合。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动；标记属于命中后的敌方状态，不属于邻接。"
+      },
+      "contributionTags": ["盗贼", "弓弩"],
+      "contribution": [2, 4, 8, 16],
+      "intent": "建立远程目标；标记在本次攻击之后施加，多个标记只取最强。",
+      "cells": [
+        [0, 0],
+        [1, 0]
+      ]
+    },
+    {
+      "id": "rogue_archer_3",
+      "name": "短弓",
+      "profession": "盗贼",
+      "category": "弓弩",
+      "size": 3,
+      "shape": "竖3格",
+      "attributes": [
+        {
+          "attack": 5,
+          "hp": 12,
+          "defense": 0
+        },
+        {
+          "attack": 7.5,
+          "hp": 18.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 10,
+          "hp": 24,
+          "defense": 0
+        },
+        {
+          "attack": 15,
+          "hp": 36,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每2回合连续攻击2次，每次35%A物理伤害。",
+        "每2回合连续攻击2次，每次43%A物理伤害。",
+        "每2回合连续攻击2次，每次51%A物理伤害。",
+        "每2回合连续攻击3次，每次42%A物理伤害。"
+      ],
+      "adjacency": {
+        "direction": "别人给自己",
+        "text": "每相邻1件皮甲，本物品直接伤害＋6%，最多3件；四阶每件＋10%。"
+      },
+      "contributionTags": ["盗贼", "弓弩"],
+      "contribution": [3, 6, 12, 24],
+      "intent": "稳定连射；以皮甲邻接换取增伤，避免全包只放弓。",
+      "cells": [
+        [0, 0],
+        [0, 1],
+        [0, 2]
+      ]
+    },
+    {
+      "id": "rogue_archer_4",
+      "name": "折臂长弩",
+      "profession": "盗贼",
+      "category": "弓弩",
+      "size": 4,
+      "shape": "左上L4格",
+      "attributes": [
+        {
+          "attack": 8,
+          "hp": 16,
+          "defense": 0
+        },
+        {
+          "attack": 12.0,
+          "hp": 24.0,
+          "defense": 0.0
+        },
+        {
+          "attack": 16,
+          "hp": 32,
+          "defense": 0
+        },
+        {
+          "attack": 24,
+          "hp": 48,
+          "defense": 0
+        }
+      ],
+      "stageEffects": [
+        "每3回合造成150%A物理伤害；命中前目标已有标记时，本次忽略15%防御。",
+        "每3回合造成180%A物理伤害；标记目标忽略20%防御。",
+        "每3回合造成210%A物理伤害；标记目标忽略25%防御。",
+        "每3回合造成240%A物理伤害；标记目标忽略35%防御。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动。"
+      },
+      "contributionTags": ["盗贼", "弓弩"],
+      "contribution": [4, 8, 16, 32],
+      "intent": "标记爆发大件；用横L布局制造邻接与放置取舍。",
+      "cells": [
+        [0, 0],
+        [1, 0],
+        [2, 0],
+        [0, 1]
+      ]
+    },
+    {
+      "id": "rogue_leather_2",
+      "name": "轻皮甲",
+      "profession": "盗贼",
+      "category": "皮甲",
+      "size": 2,
+      "shape": "竖2格",
+      "attributes": [
+        {
+          "attack": 0,
+          "hp": 18,
+          "defense": 1
+        },
+        {
+          "attack": 0.0,
+          "hp": 27.0,
+          "defense": 1.5
+        },
+        {
+          "attack": 0,
+          "hp": 36,
+          "defense": 2
+        },
+        {
+          "attack": 0,
+          "hp": 54,
+          "defense": 3
+        }
+      ],
+      "stageEffects": [
+        "每2回合恢复2%H生命，每场最多3次；满血不消耗次数。",
+        "每2回合恢复3%H生命，每场最多3次；满血不消耗次数。",
+        "每2回合恢复4%H生命，每场最多3次；满血不消耗次数。",
+        "每2回合恢复5%H生命，每场最多3次；满血不消耗次数。"
+      ],
+      "adjacency": {
+        "direction": "无",
+        "text": "无相邻联动。"
+      },
+      "contributionTags": ["盗贼", "皮甲"],
+      "contribution": [2, 4, 8, 16],
+      "intent": "盗贼基础续航；与战士、法师的2格护盾区分。",
+      "cells": [
+        [0, 0],
+        [0, 1]
+      ]
+    },
+    {
+      "id": "rogue_leather_3",
+      "name": "猎手皮甲",
+      "profession": "盗贼",
+      "category": "皮甲",
+      "size": 3,
+      "shape": "左下L3格",
+      "attributes": [
+        {
+          "attack": 1,
+          "hp": 26,
+          "defense": 1
+        },
+        {
+          "attack": 1.5,
+          "hp": 39.0,
+          "defense": 1.5
+        },
+        {
+          "attack": 2,
+          "hp": 52,
+          "defense": 2
+        },
+        {
+          "attack": 3,
+          "hp": 78,
+          "defense": 3
+        }
+      ],
+      "stageEffects": [
+        "每3回合获得4%H护盾，恢复1%H生命；治疗每场最多3次，护盾不受次数限制。",
+        "每3回合获得5%H护盾，恢复2%H生命；治疗每场最多3次，护盾不受次数限制。",
+        "每2回合获得5%H护盾，恢复2%H生命；治疗每场最多3次，护盾不受次数限制。",
+        "每2回合获得6%H护盾，恢复3%H生命；治疗每场最多3次，护盾不受次数限制。"
+      ],
+      "adjacency": {
+        "direction": "别人给自己",
+        "text": "每相邻1件匕首，本物品治疗量＋10%，最多3件；四阶每件＋15%。"
+      },
+      "contributionTags": ["盗贼", "皮甲"],
+      "contribution": [3, 6, 12, 24],
+      "intent": "毒流续航；治疗耗尽后继续提供护盾，不成为空白装备。",
+      "cells": [
+        [1, 0],
+        [0, 1],
+        [1, 1]
+      ]
+    },
+    {
+      "id": "rogue_leather_4",
+      "name": "夜行皮甲",
+      "profession": "盗贼",
+      "category": "皮甲",
+      "size": 4,
+      "shape": "方4格",
+      "attributes": [
+        {
+          "attack": 2,
+          "hp": 36,
+          "defense": 2
+        },
+        {
+          "attack": 3.0,
+          "hp": 54.0,
+          "defense": 3.0
+        },
+        {
+          "attack": 4,
+          "hp": 72,
+          "defense": 4
+        },
+        {
+          "attack": 6,
+          "hp": 108,
+          "defense": 6
+        }
+      ],
+      "stageEffects": [
+        "每3回合获得7%H护盾。",
+        "每3回合获得9%H护盾。",
+        "每3回合获得11%H护盾。",
+        "每3回合获得13%H护盾；每场首次因敌方伤害跌至30%H及以下且仍存活时，恢复5%H生命。"
+      ],
+      "adjacency": {
+        "direction": "别人给自己",
+        "text": "每相邻1件匕首或弓弩，本装备自身提供的生命＋8%，最多3件；四阶每件＋12%。"
+      },
+      "contributionTags": ["盗贼", "皮甲"],
+      "contribution": [4, 8, 16, 32],
+      "intent": "盗贼生存核心；生命属性邻接不形成互相放大循环。",
+      "cells": [
+        [0, 0],
+        [1, 0],
+        [0, 1],
+        [1, 1]
+      ]
+    }
+  ]
+}

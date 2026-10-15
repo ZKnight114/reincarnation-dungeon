@@ -1,10 +1,12 @@
 import { ENEMIES, QUALITIES } from './data';
-import type { Equipment, Quality } from './types';
+import type { Equipment, Quality, Profession } from './types';
 export function icon(name: string, size = 20) {
   const paths: Record<string, string> = {
     dungeon:
       '<path d="M5 21V10a7 7 0 0 1 14 0v11M3 21h18M9 21v-9a3 3 0 0 1 6 0v9M3 7h3m12 0h3M2 14h3m14 0h3"/>',
     sword: '<path d="m14 4 6-1-1 6L8 20l-4-4L14 4ZM7 13l5 5M3 21l4-4"/>',
+    wand: '<path d="m4 21 10-11m-8 7 3 3M17 2l1.4 4.6L23 8l-4.6 1.4L17 14l-1.4-4.6L11 8l4.6-1.4L17 2Z"/>',
+    dagger: '<path d="M12 2 17 9l-5 7-5-7 5-7Zm0 0v14M6 16h12M10 16v5h4v-5M9 22h6"/>',
     heart:
       '<path d="M20.7 5.6a5.5 5.5 0 0 0-7.8 0l-.9.9-.9-.9a5.5 5.5 0 0 0-7.8 7.8L12 22l8.7-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',
     shield: '<path d="m12 3 8 3v6c0 4-4 7-8 9-4-2-8-5-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/>',
@@ -41,6 +43,11 @@ export function icon(name: string, size = 20) {
     crown: '<path d="m3 6 5 4 4-7 4 7 5-4-2 13H5L3 6Zm3 10h12"/>',
   };
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] ?? paths.gem}</svg>`;
+}
+export function professionIcon(profession: Profession) {
+  const names = { warrior: '战士', mage: '法师', rogue: '盗贼' };
+  const shapes = { warrior: 'sword', mage: 'wand', rogue: 'dagger' };
+  return `<span class="profession-icon profession-${profession}" role="img" aria-label="${names[profession]}" title="${names[profession]}">${icon(shapes[profession], 16)}</span>`;
 }
 export const brand = `<svg viewBox="0 0 44 44" fill="none" aria-hidden="true"><path d="m22 3 19 19-19 19L3 22 22 3Z" stroke="currentColor"/><path d="m22 9 13 13-13 13L9 22 13-13Z" stroke="currentColor" opacity=".4"/><path d="M16 29V19a6 6 0 0 1 12 0v10M13 29h18M20 29v-7a2 2 0 0 1 4 0v7" stroke="currentColor" stroke-width="1.3"/><path d="M22 3v4m19 15h-4M22 41v-4M3 22h4" stroke="currentColor"/></svg>`;
 

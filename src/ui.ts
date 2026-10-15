@@ -1,24 +1,28 @@
-import { actorMotion, foeArt, pixel } from './pixel';
-import { icon } from './art';
+import { archiveDetails, archiveOutcome, type ArchiveTab } from './archive-ui';
+import { icon, professionIcon } from './art';
 import {
+  BUFFS,
   cells,
+  contributionPoints,
   definition,
   dimensions,
-  contributionPoints,
-  BUFFS,
+  finalAttributes,
   PROFESSION_KEYS,
   PROFESSIONS,
   RESONANCES,
   resonanceScore,
 } from './backpack';
+import { COUNTERS, enrageMultiplier } from './combat';
+import { QUALITIES } from './data';
+import { ENEMY_TEMPLATES } from './enemies';
 import {
-  Game,
-  safelyGraduated,
   createState,
   ENERGY_CAP,
-  RECRUIT_COST,
-  TARGET_RECRUIT_COST,
   EVENT_NAMES,
+  Game,
+  RECRUIT_COST,
+  safelyGraduated,
+  TARGET_RECRUIT_COST,
 } from './game';
 import {
   ATTRIBUTE_KEYS,
@@ -28,24 +32,23 @@ import {
   pointsSpent,
   TALENTS,
 } from './hero';
+import { itemStageText, readableEffect } from './item-rules';
+import { eventStory, runRoute, STAGES, trialGain, TRIALS } from './journey';
 import { esc, PackUI } from './pack-ui';
-import { heroArt, itemPainting, shapePath } from './scene';
-import { QUALITIES } from './data';
-import {
-  STAGES,
-  TRIALS,
-  trialGain,
-  TRIAL_NODES,
-  routeStage,
-  trialIndex,
-  RUN_LENGTH,
-  GRADUATION_NODE,
-  eventStory,
-} from './journey';
-import { cleanLegacyData, parseSave, saveGame, SAVE_KEY } from './save';
+import { actorMotion, foeArt, pixel } from './pixel';
 import { journeyGroups } from './presentation';
-import { archiveDetails, archiveOutcome, type ArchiveTab } from './archive-ui';
+import {
+  currentHero,
+  guildConditions,
+  guildMultiplier,
+  realmName,
+  tome,
+  TOMES,
+  upgradeCost,
+} from './progression';
 import { resonanceRankClass, resonanceRankName } from './resonance-appearance';
+import { cleanLegacyData, parseSave, SAVE_KEY, saveGame } from './save';
+import { heroArt, itemPainting, shapePath } from './scene';
 import type {
   Attribute,
   GameState,
@@ -61,6 +64,8 @@ export class UI {
   private rosterPage = 0;
   private archiveHero: HeroRecord | null = null;
   private archiveTab: ArchiveTab = 'profile';
+  private pageOwner: string | null = null;
+  private tomeFilter: Profession | 'all' = 'all';
   private wheel: {
     sector: number;
     result: string;
@@ -89,7 +94,7 @@ export class UI {
   ) {
     this.profession = game.state.run.profession;
     this.root = document.getElementById('app')!;
-    this.root.innerHTML = `<main class="app-shell"><section id="home-screen" class="guild-home"><div class="guild-scene guild-art" aria-hidden="true"></div><div class="guild-title"><h1>冒险公会</h1><small>灰石之门</small></div><button class="home-settings" data-action="settings">设置</button><div id="guild-wallet"></div><p class="home-chapter" id="home-chapter"></p><button class="primary-button guild-expedition" data-action="chapters">地牢探险</button></section><section id="roster-screen" hidden><header><h1>冒险者</h1></header><div class="roster-toolbar"><small id="guild-count"></small><button data-action="roster-sort" id="roster-sort">战力 ↓</button></div><div id="guild-roster"></div><div class="roster-pagination"><button data-action="roster-prev" aria-label="上一页">‹</button><small id="roster-page"></small><button data-action="roster-next" aria-label="下一页">›</button></div><div class="roster-filters">${(['all', ...PROFESSION_KEYS] as const).map((k) => `<button data-roster-filter="${k}">${k === 'all' ? '全部' : PROFESSIONS[k].name}</button>`).join('')}</div></section><nav id="guild-nav" class="guild-nav" aria-label="公会导航"><button data-action="roster">${heroArt('warrior')}<strong>冒险者</strong></button><button data-action="guild"><span class="guild-nav-icon" aria-hidden="true"></span><strong>冒险公会</strong></button></nav><section id="selection-screen" class="selection-screen"></section><section id="adventure-screen" class="adventure-screen"><header class="adventure-header"><div><small id="chapter-label"></small><strong id="event-label"></strong></div><div class="header-actions"><span id="hero-power"></span><button data-action="settings" aria-label="存档设置">⚙</button></div></header><div id="stage-route" class="stage-route"></div><section id="battle-panel" class="battle-panel"></section><div id="shared-board" class="shared-board"><div id="combat-hud" class="combat-hud"></div><div id="resonance-strip" class="resonance-strip"></div><div id="resonance-info" class="resonance-info" hidden></div><section id="view-pack"></section><section id="journey-panel" class="journey-panel" hidden><div class="journey-heading"><strong>探险历程</strong><span id="journey-status"></span></div><div id="journey-history" class="journey-history" role="log" aria-label="探险经过与结果"></div></section></div><div id="adventure-footer" class="adventure-footer"></div></section><section id="summary-screen" class="summary-screen"></section></main><dialog id="decision-sheet" class="event-dialog" aria-labelledby="decision-title"><div id="decision"></div></dialog><dialog id="modal"><div id="modal-body"></div><button data-action="close" class="secondary-button modal-close">关闭</button></dialog><div id="toast" role="status"></div>`;
+    this.root.innerHTML = `<main class="app-shell"><section id="home-screen" class="guild-home"><div class="guild-scene guild-art" aria-hidden="true"></div><div class="guild-title"><h1>冒险公会</h1><small>灰石之门</small></div><button class="home-settings" data-action="settings">设置</button><div id="guild-wallet"></div><p class="home-chapter" id="home-chapter"></p><div class="guild-progress-controls"><button data-action="guild-level" id="guild-level-button">公会 Lv.1</button><button data-action="library">典籍</button></div><button class="primary-button guild-expedition" data-action="chapters">地牢探险</button></section><section id="roster-screen" hidden><header><h1>冒险者</h1></header><div class="roster-toolbar"><small id="guild-count"></small><button data-action="roster-sort" id="roster-sort">战力 ↓</button></div><div id="guild-roster"></div><div class="roster-pagination"><button data-action="roster-prev" aria-label="上一页">‹</button><small id="roster-page"></small><button data-action="roster-next" aria-label="下一页">›</button></div><div class="roster-filters">${(['all', ...PROFESSION_KEYS] as const).map((k) => `<button data-roster-filter="${k}">${k === 'all' ? '全部' : PROFESSIONS[k].name}</button>`).join('')}</div></section><nav id="guild-nav" class="guild-nav" aria-label="公会导航"><button data-action="roster">${heroArt('warrior')}<strong>冒险者</strong></button><button data-action="guild"><span class="guild-nav-icon" aria-hidden="true"></span><strong>冒险公会</strong></button></nav><section id="selection-screen" class="selection-screen"></section><section id="adventure-screen" class="adventure-screen"><header class="adventure-header"><div><small id="chapter-label"></small><strong id="event-label"></strong></div><div class="header-actions"><span id="hero-power"></span><button data-action="settings" aria-label="存档设置">⚙</button></div></header><div id="stage-route" class="stage-route"></div><section id="battle-panel" class="battle-panel"></section><div id="shared-board" class="shared-board"><div id="combat-hud" class="combat-hud"></div><div id="resonance-strip" class="resonance-strip"></div><div id="resonance-info" class="resonance-info" hidden></div><section id="view-pack"></section><section id="journey-panel" class="journey-panel" hidden><div class="journey-heading"><strong>探险历程</strong><span id="journey-status"></span></div><div id="journey-history" class="journey-history" role="log" aria-label="探险经过与结果"></div></section></div><div id="adventure-footer" class="adventure-footer"></div></section><section id="summary-screen" class="summary-screen"></section></main><dialog id="decision-sheet" class="event-dialog" aria-labelledby="decision-title"><div id="decision"></div></dialog><dialog id="modal"><div id="modal-body"></div><button data-action="close" class="secondary-button modal-close">关闭</button></dialog><div id="toast" role="status"></div>`;
     document
       .getElementById('decision-sheet')!
       .addEventListener('cancel', (e) => e.preventDefault());
@@ -134,13 +139,28 @@ export class UI {
       if (!button || (button as HTMLButtonElement).disabled) return;
       const d = button.dataset;
       if (this.wheel && (d.action !== 'wheel-confirm' || !this.wheel.ready)) return;
-      if (d.boundItem) {
+      if (d.inspectTome) {
+        const b = tome(d.inspectTome)!;
+        this.modal(
+          `<h2>${b.name}</h2>${b.skillStages.map((skill, n) => `<section><h3>第 ${n + 1} 阶</h3><p>攻击 +${b.attributes[n].attackPercent}% · 生命 +${b.attributes[n].hpPercent}% · 防御 +${b.attributes[n].defensePercent}%</p><p>${esc(readableEffect(skill))}</p></section>`).join('')}`,
+        );
+      } else if (d.tome) {
+        this.result(this.game.selectTome(d.tome), '');
+      } else if (d.tomeFilter) {
+        this.tomeFilter = d.tomeFilter as Profession | 'all';
+        this.keys.selection = '';
+      } else if (d.upgradeTome) {
+        this.result(this.game.upgradeTome(d.upgradeTome), '');
+        this.library();
+      } else if (d.claimPage) {
+        this.result(this.game.claimPage(d.owner!, d.claimPage), '');
+        this.close();
+      } else if (d.boundItem) {
         const h = this.game.state.meta.heroes.find((h) => h.id === d.owner),
           item = h?.loadout?.equipment.find((i) => i.id === d.boundItem),
           el = button.closest('.hero-equipment-section')?.querySelector('[data-bound-detail]');
         if (item && el) {
-          const d = definition(item);
-          el.innerHTML = `<strong>${esc(item.name)} · Lv.${item.level}</strong><p>${item.attack ? `伤害 ${item.attack.toFixed(1)} · ` : ''}生命 +${item.hp} · 防御 +${item.defense} · 共鸣 ${contributionPoints(item)} 点</p><p>${esc(d.description)}</p>`;
+          el.innerHTML = `<strong>${esc(item.name)} · ${item.level}阶</strong><p>${item.attack ? `攻击 +${item.attack.toFixed(1)} · ` : ''}生命 +${item.hp} · 防御 +${item.defense} · 共鸣 ${contributionPoints(item)} 点</p><p>${esc(readableEffect(itemStageText(item)))}</p>`;
           button
             .closest('.hero-equipment-section')
             ?.querySelectorAll('[data-bound-item]')
@@ -305,6 +325,39 @@ export class UI {
     if (error) this.toast(error);
   }
   private action(action: string) {
+    if (action === 'guild-level') {
+      this.guildPanel();
+      return;
+    }
+    if (action === 'upgrade-guild') {
+      this.result(this.game.upgradeGuild(), '');
+      this.guildPanel();
+      return;
+    }
+    if (action === 'library') {
+      this.library();
+      return;
+    }
+    if (action === 'pending-pages') {
+      const s = this.game.state;
+      this.pageReward(s.phase === 'summary' ? s.run.summary?.heroId : undefined);
+      return;
+    }
+    if (action === 'refresh-pages') {
+      const r = this.game.state.meta.pendingPages.find((r) => r.heroId === this.pageOwner);
+      if (r) this.result(this.game.refreshPages(r.heroId), '');
+      this.pageReward(this.pageOwner ?? undefined);
+      return;
+    }
+    if (action === 'inspect-enemy') {
+      const e = this.game.state.enemy,
+        t = ENEMY_TEMPLATES.find((t) => t.id === e?.templateId);
+      if (e && t)
+        this.modal(
+          `<h2>${t.name} · ${PROFESSIONS[t.profession].name}${e.isBoss ? ' · Boss' : ''}</h2><p>生命 ${e.maxHp} · 攻击 ${e.attack.toFixed(1)} · 防御 ${e.defense.toFixed(1)} · 速度 ${e.speed}</p>${t.skills.map((k) => `<p>${esc(k)}</p>`).join('')}<p>${esc(t.passive)}</p><p>${esc(t.phase)}</p>`,
+        );
+      return;
+    }
     const g = this.game,
       s = g.state;
     if (action === 'chapters') {
@@ -344,6 +397,8 @@ export class UI {
         '勇者已招募，配置入会档案',
       );
     if (action === 'start') this.result(g.startRun(), '两轮起始物品全部赠送');
+    if (action === 'confirm-allocation') this.result(g.confirmAllocation(), '选择典籍');
+    if (action === 'back-allocation') g.backToAllocation();
     if (action === 'reset-allocation') g.resetAllocation();
     if (action === 'balance-allocation') g.balanceAllocation();
     if (action === 'finish-awakening') g.finishAwakening();
@@ -372,7 +427,10 @@ export class UI {
       s.skipCombat = !s.skipCombat;
       s.revision++;
     }
-    if (action === 'continue-story') g.continueJourney();
+    if (action === 'continue-story') {
+      this.showPack = false;
+      g.continueJourney();
+    }
     if (action === 'continue') this.result(g.continueCamp(), '培养继续');
     if (action === 'skip-reward') g.skipReward();
     if (action === 'redeem') this.result(g.redeemEquipment(), '随机装备已放在战场');
@@ -386,7 +444,7 @@ export class UI {
       g.returnToSelection();
       this.homeView = 'guild';
     }
-    if (action === 'toggle-pack') this.showPack = !this.showPack;
+    if (action === 'open-pack') this.showPack = true;
     if (action === 'cycle-speed') s.speed = s.speed === 1 ? 2 : s.speed === 2 ? 4 : 1;
     if (action === 'retreat')
       this.modal(
@@ -405,7 +463,7 @@ export class UI {
         ),
         a = document.createElement('a');
       a.href = url;
-      a.download = '轮回冒险公会-v14.json';
+      a.download = '轮回冒险公会-v15.json';
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
@@ -433,18 +491,14 @@ export class UI {
       const previous = this.phase;
       this.phase = s.phase;
       this.showPack =
-        ['opening', 'combat'].includes(s.phase) ||
-        (s.phase === 'camp' &&
-          (previous === 'combat' ||
-            (!previous &&
-              (!this.game.currentEvent()?.completed ||
-                ['battle', 'elite', 'boss'].includes(this.game.currentEvent()!.kind)))));
+        ['opening', 'combat'].includes(s.phase) || (s.phase === 'camp' && previous === 'combat');
     }
-    if (s.phase === 'journey') this.showPack = false;
     const equipmentVisible =
       s.phase !== 'combat' && (s.run.starterOffers.length > 0 || this.game.looseItems().length > 0);
     if (equipmentVisible && s.phase !== 'awakening') this.showPack = true;
     if (s.phase === 'awakening') this.showPack = false;
+    if (s.phase === 'camp' && this.game.currentEvent()?.completed && safelyGraduated(s))
+      this.showPack = true;
     const active = [
       'opening',
       'initial',
@@ -467,12 +521,17 @@ export class UI {
       b.classList.toggle('selected', selected);
       b.setAttribute('aria-current', selected ? 'page' : 'false');
     });
-    document.getElementById('selection-screen')!.hidden = !['chapter', 'configure'].includes(
-      s.phase,
-    );
+    document.getElementById('selection-screen')!.hidden = ![
+      'chapter',
+      'configure',
+      'tome',
+    ].includes(s.phase);
     document
       .getElementById('selection-screen')!
       .classList.toggle('dungeon-select', s.phase === 'chapter');
+    document
+      .getElementById('selection-screen')!
+      .classList.toggle('tome-select', s.phase === 'tome');
     document.getElementById('adventure-screen')!.hidden = !active;
     document.getElementById('summary-screen')!.hidden = s.phase !== 'summary';
     document.getElementById('adventure-screen')!.classList.toggle('compact', true);
@@ -483,7 +542,7 @@ export class UI {
         s.phase === 'initial' || (s.phase === 'reward' && s.run.rewards[0]?.kind === 'resonance'),
       );
     if (s.phase === 'home') this.home();
-    if (['chapter', 'configure'].includes(s.phase)) this.selection();
+    if (['chapter', 'configure', 'tome'].includes(s.phase)) this.selection();
     if (s.phase === 'summary') this.summary();
     if (document.querySelector('[data-combat-controls]')) {
       if (s.phase !== 'combat') {
@@ -501,7 +560,7 @@ export class UI {
           ? `起始补给 ${Math.min(2, s.run.starterRound + 1)}/2`
           : s.phase === 'initial'
             ? '选择初始共鸣'
-            : `${s.run.index + 1}/${RUN_LENGTH} · ${EVENT_NAMES[this.game.currentEvent()!.kind]}${s.run.extreme ? ' · 极限挑战' : ''}`;
+            : `${s.run.index + 1}/${s.run.events.length} · ${EVENT_NAMES[this.game.currentEvent()!.kind]}${s.run.extreme ? ' · 极限挑战' : ''}`;
       const h = this.game.heroPreview(
         safelyGraduated(s) && this.game.currentEvent()?.completed ? 'win' : 'retreat',
       );
@@ -522,8 +581,7 @@ export class UI {
         if (f.kind === 'hurt') {
           this.animateFighter('hero', 'hurt');
         }
-        if (['hurt', 'blocked'].includes(f.kind) && this.game.currentEvent()?.kind === 'elite')
-          this.trialImpact();
+        if (['hurt', 'blocked'].includes(f.kind) && s.enemy?.isBoss) this.trialImpact();
         if (f.kind === 'damage') {
           this.projectile(f.id);
           this.animateFighter('enemy', 'hurt');
@@ -536,13 +594,14 @@ export class UI {
         setTimeout(() => el.remove(), 900);
       }
     }
-    if (s.phase === 'camp' && this.game.currentEvent()?.completed && safelyGraduated(s))
-      this.showPack = true;
     document.getElementById('view-pack')!.hidden = !active || !this.showPack;
     document.getElementById('journey-panel')!.hidden = !active || this.showPack;
     this.decision();
     this.journey();
     document.getElementById('combat-hud')!.hidden = !active;
+  }
+  get holdingJourney() {
+    return this.game.state.phase === 'journey' && this.showPack;
   }
   private energyText() {
     const e = this.game.state.meta.energy,
@@ -556,6 +615,10 @@ export class UI {
     document.getElementById('guild-wallet')!.innerHTML =
       `<div><strong>体力 ${e.value} / ${ENERGY_CAP}</strong><small>${wait ? `恢复 ${Math.floor(wait / 60)}:${String(wait % 60).padStart(2, '0')}` : '体力已满'}</small></div><strong>金币 ${s.meta.gold}</strong>`;
     document.getElementById('home-chapter')!.textContent = `第 ${s.meta.highestChapter} 关`;
+    const pending = s.meta.pendingPages.length;
+    if (this.changed('guild-controls', `${s.meta.guildLevel}|${pending}`))
+      document.querySelector('.guild-progress-controls')!.innerHTML =
+        `<button data-action="guild-level" id="guild-level-button">公会 Lv.${s.meta.guildLevel}</button><button data-action="library">典籍</button>${pending ? `<button data-action="pending-pages">待领残页 ${pending}</button>` : ''}`;
     if (
       !this.changed(
         'roster',
@@ -564,6 +627,7 @@ export class UI {
     )
       return;
     const heroes = s.meta.heroes
+        .map((h) => currentHero(h, s.meta.guildLevel))
         .filter((h) => this.rosterFilter === 'all' || h.profession === this.rosterFilter)
         .sort((a, b) => (this.rosterAscending ? a.power - b.power : b.power - a.power)),
       pages = Math.max(1, Math.ceil(heroes.length / 6));
@@ -592,18 +656,27 @@ export class UI {
   }
   private openArchive() {
     if (!this.archiveHero) return;
-    this.modal(archiveDetails(this.archiveHero, this.archiveTab));
+    this.modal(
+      archiveDetails(
+        currentHero(this.archiveHero, this.game.state.meta.guildLevel),
+        this.archiveTab,
+      ),
+    );
     document.getElementById('modal')!.classList.add('archive-modal');
   }
   private selection() {
     const s = this.game.state,
       el = document.getElementById('selection-screen')!;
+    if (s.phase === 'tome') {
+      this.tomeSelection();
+      return;
+    }
     if (s.phase === 'chapter') {
       const cost = this.recruitMode === 'random' ? RECRUIT_COST : TARGET_RECRUIT_COST;
       const key = `chapter|${s.run.chapter}|${s.meta.highestChapter}|${s.run.trainee?.id}|${this.recruitMode}|${this.profession}`;
       if (this.changed('selection', key)) {
         const names = ['迷雾古道', '白骨遗迹', '蛛影深林', '失落堡垒', '灰烬高地'];
-        el.innerHTML = `<header><button data-action="home">← 公会</button><span>选择地牢</span></header><div class="dungeon-carousel" data-chapter-carousel tabindex="0" role="group" aria-label="关卡选择，可左右滑动"><div class="dungeon-view"><div class="dungeon-pixel-scene" aria-hidden="true"></div><div class="dungeon-caption" aria-live="polite"><h1>第 ${s.run.chapter} 关</h1><h2>${names[(s.run.chapter - 1) % 5]}</h2><p>守门者盘踞的古老遗迹</p><small>${s.run.chapter === s.meta.highestChapter ? '最新解锁地牢' : '可再次挑战'}</small></div></div><button class="chapter-arrow previous" data-action="prev-chapter" aria-label="上一关" ${s.run.chapter === 1 ? 'disabled' : ''}>‹</button><button class="chapter-arrow next" data-action="next-chapter" aria-label="下一关" ${s.run.chapter === s.meta.highestChapter ? 'disabled' : ''}>›</button></div><p class="swipe-hint">已解锁 ${s.meta.highestChapter}/20</p><section class="recruit-panel"><div class="recruit-energy" id="recruit-energy-text"></div>${s.run.trainee ? `<p>${esc(s.run.trainee.name)} · 见习${PROFESSIONS[s.run.trainee.profession].name}</p><button class="primary-button" data-action="resume-recruit">继续配置 →</button>` : `<div class="recruit-tabs" role="group" aria-label="招募方式"><button data-recruit-mode="random" aria-pressed="${this.recruitMode === 'random'}" class="${this.recruitMode === 'random' ? 'selected' : ''}">基础招募<small>随机职业 · 10 体力</small></button><button data-recruit-mode="targeted" aria-pressed="${this.recruitMode === 'targeted'}" class="${this.recruitMode === 'targeted' ? 'selected' : ''}">定向招募<small>指定职业 · 20 体力</small></button></div>${this.recruitMode === 'targeted' ? `<div class="profession-targets">${PROFESSION_KEYS.map((k) => `<button data-profession="${k}" aria-pressed="${k === this.profession}" class="${k === this.profession ? 'selected' : ''}">${heroArt(k)}<strong>${PROFESSIONS[k].name}</strong></button>`).join('')}</div>` : ''}<button class="primary-button" data-action="recruit" id="recruit-button">${this.recruitMode === 'random' ? '招募随机勇者' : `招募${PROFESSIONS[this.profession].name}`} · ${cost} 体力 →</button><small>每 5 分钟恢复 1 点体力</small>`}</section>`;
+        el.innerHTML = `<header><button data-action="home">← 公会</button><span>选择地牢</span></header><div class="dungeon-carousel" data-chapter-carousel tabindex="0" role="group" aria-label="关卡选择，可左右滑动"><div class="dungeon-view"><div class="dungeon-pixel-scene" aria-hidden="true"></div><div class="dungeon-caption" aria-live="polite"><h1>第 ${s.run.chapter} 关</h1><h2>${names[(s.run.chapter - 1) % 5]}</h2><p>守门者盘踞的古老遗迹</p><small>${s.run.chapter === s.meta.highestChapter ? '最新解锁地牢' : '可再次挑战'}</small></div></div><button class="chapter-arrow previous" data-action="prev-chapter" aria-label="上一关" ${s.run.chapter === 1 ? 'disabled' : ''}>‹</button><button class="chapter-arrow next" data-action="next-chapter" aria-label="下一关" ${s.run.chapter === s.meta.highestChapter ? 'disabled' : ''}>›</button></div><p class="swipe-hint">已解锁 ${s.meta.highestChapter}/20</p><section class="recruit-panel"><div class="recruit-energy" id="recruit-energy-text"></div>${s.run.trainee ? `<p>${esc(s.run.trainee.name)} · 见习${PROFESSIONS[s.run.trainee.profession].name}</p><button class="primary-button" data-action="resume-recruit">继续配置 →</button>` : `<div class="recruit-tabs" role="group" aria-label="招募方式"><button data-recruit-mode="random" aria-pressed="${this.recruitMode === 'random'}" class="${this.recruitMode === 'random' ? 'selected' : ''}">基础招募<small>随机职业 · 5 体力</small></button><button data-recruit-mode="targeted" aria-pressed="${this.recruitMode === 'targeted'}" class="${this.recruitMode === 'targeted' ? 'selected' : ''}">定向招募<small>指定职业 · 20 体力</small></button></div>${this.recruitMode === 'targeted' ? `<div class="profession-targets">${PROFESSION_KEYS.map((k) => `<button data-profession="${k}" aria-pressed="${k === this.profession}" class="${k === this.profession ? 'selected' : ''}">${heroArt(k)}<strong>${PROFESSIONS[k].name}</strong></button>`).join('')}</div>` : ''}<button class="primary-button" data-action="recruit" id="recruit-button">${this.recruitMode === 'random' ? '招募随机勇者' : `招募${PROFESSIONS[this.profession].name}`} · ${cost} 体力 →</button><small>每 5 分钟恢复 1 点体力</small>`}</section>`;
       }
       document.getElementById('recruit-energy-text')!.textContent = this.energyText();
       const button = document.getElementById('recruit-button') as HTMLButtonElement | null;
@@ -613,10 +686,36 @@ export class UI {
     const t = s.run.trainee!;
     if (!this.changed('selection', `configure|${s.revision}`)) return;
     const base = heroAttributes(t, t.profession, false),
-      allocated = heroAttributes(t, t.profession),
+      allocated = finalAttributes(s),
       remaining = ATTRIBUTE_POINTS - pointsSpent(t),
       p = PROFESSIONS[t.profession];
-    el.innerHTML = `<header><button data-action="chapters">← 地牢</button><span>勇者档案</span></header><section class="admission-file"><div class="file-heading"><h1>入会档案</h1><span class="file-stamp">见习</span></div><div class="admission-identity">${heroArt(t.profession)}<div><small>档案 #${t.id.slice(5).padStart(4, '0')} · ${t.recruitment === 'random' ? '基础招募' : '定向招募'}</small><h2>${esc(t.name)} <span>${p.name}</span></h2><p>${p.trait}</p><small>第 ${s.run.chapter} 关培养</small></div></div><div class="talent-heading"><strong>起始天赋</strong><small></small></div><div class="talent-grid">${t.talents.map((k) => `<div class="talent-badge talent-${TALENTS[k].attribute}"><strong>${TALENTS[k].name}</strong><small>${TALENTS[k].description}</small></div>`).join('')}</div><div class="allocation-heading"><strong>可分配属性点 <b id="remaining-points">${remaining}</b> / ${ATTRIBUTE_POINTS}</strong><div><button data-action="reset-allocation">重置</button><button data-action="balance-allocation">均衡分配</button></div></div><div class="attribute-rows">${ATTRIBUTE_KEYS.map((k) => `<div class="attribute-row" data-stat-row="${k}"><div class="attribute-name"><strong>${ATTRIBUTES[k].name}</strong><small>每点 +${ATTRIBUTES[k].step}</small></div><div class="attribute-value"><span>${base[k]}</span><i>→</i><b>${allocated[k]}</b></div><div class="attribute-controls"><button data-attribute="${k}" data-delta="-1" aria-label="减少${ATTRIBUTES[k].name}加点" ${t.allocation[k] === 0 ? 'disabled' : ''}>−</button><span>${t.allocation[k]}</span><button data-attribute="${k}" data-delta="1" aria-label="增加${ATTRIBUTES[k].name}加点" ${remaining === 0 ? 'disabled' : ''}>＋</button></div></div>`).join('')}</div><button class="primary-button admission-submit" data-action="start" ${remaining ? 'disabled' : ''}>${remaining ? `还有 ${remaining} 点待分配` : '进入地牢'}</button></section>`;
+    el.innerHTML = `<header><button data-action="chapters">← 地牢</button><span>勇者档案</span></header><section class="admission-file"><div class="file-heading"><h1>入会档案</h1><span class="file-stamp">见习</span></div><div class="admission-identity">${heroArt(t.profession)}<div><small>档案 #${t.id.slice(5).padStart(4, '0')} · ${t.recruitment === 'random' ? '基础招募' : '定向招募'}</small><h2>${esc(t.name)} <span>${p.name}</span></h2><p>${p.trait}</p><small>${realmName(t.realmStart ?? 0)} · 第 ${s.run.chapter} 关培养</small></div></div><div class="talent-heading"><strong>起始天赋</strong><small></small></div><div class="talent-grid">${t.talents.map((k) => `<div class="talent-badge talent-${TALENTS[k].attribute}"><strong>${TALENTS[k].name}</strong><small>${TALENTS[k].description}</small></div>`).join('')}</div><div class="allocation-heading"><strong>可分配属性点 <b id="remaining-points">${remaining}</b> / ${ATTRIBUTE_POINTS}</strong><div><button data-action="reset-allocation">重置</button><button data-action="balance-allocation">均衡分配</button></div></div><div class="attribute-rows">${ATTRIBUTE_KEYS.map((k) => `<div class="attribute-row" data-stat-row="${k}"><div class="attribute-name"><strong>${ATTRIBUTES[k].name}</strong><small>每点 +${ATTRIBUTES[k].step}</small></div><div class="attribute-value"><span>${base[k]}</span><i>→</i><b>${+allocated[k].toFixed(1)}</b></div><div class="attribute-controls"><button data-attribute="${k}" data-delta="-1" aria-label="减少${ATTRIBUTES[k].name}加点" ${t.allocation[k] === 0 ? 'disabled' : ''}>−</button><span>${t.allocation[k]}</span><button data-attribute="${k}" data-delta="1" aria-label="增加${ATTRIBUTES[k].name}加点" ${remaining === 0 ? 'disabled' : ''}>＋</button></div></div>`).join('')}</div><p class="allocation-guild">公会属性 +${Math.round((guildMultiplier(s.meta.guildLevel) - 1) * 100)}%</p><button class="primary-button admission-submit" data-action="confirm-allocation" ${remaining ? 'disabled' : ''}>${remaining ? `还有 ${remaining} 点待分配` : '确认加点 · 选择典籍'}</button></section>`;
+  }
+
+  private tomeSelection() {
+    const s = this.game.state,
+      t = s.run.trainee!;
+    if (!this.changed('selection', `tome|${s.revision}|${this.tomeFilter}`)) return;
+    const selected = t.tomeId ? tome(t.tomeId) : null;
+    const free = !s.meta.tomeGifts.includes(t.profession);
+    const stats = finalAttributes(s),
+      attrs = selected?.attributes[(t.tomeLevel ?? 1) - 1];
+    document.getElementById('selection-screen')!.innerHTML =
+      `<header><button data-action="back-allocation">← 加点</button><span>选择典籍</span></header>
+      <section class="tome-dossier"><div class="tome-hero">${heroArt(t.profession)}<div><h2>${esc(t.name)} · ${PROFESSIONS[t.profession].name}</h2><small>${realmName(t.realmStart ?? 0)}</small><p>攻 ${stats.attack.toFixed(1)} · 生 ${Math.round(stats.hp)} · 防 ${stats.defense.toFixed(1)} · 速 ${stats.speed}</p></div></div>
+      <div class="tome-preview"><div class="tome-equipped"><strong>本局典籍</strong><b>${selected ? selected.name : '未装备'}</b><small>${selected ? PROFESSIONS[selected.profession].name + ' · ' + selected.series + ' · Lv.' + t.tomeLevel : '选择下方一本典籍'}</small></div><div class="tome-effects"><strong>典籍效果</strong>${selected && attrs ? `<p>攻击 +${attrs.attackPercent}% · 生命 +${attrs.hpPercent}% · 防御 +${attrs.defensePercent}%</p><p>${esc(readableEffect(selected.skillStages[(t.tomeLevel ?? 1) - 1]))}</p>` : '<p>选择后查看属性与自动技能</p>'}</div></div>
+      <p class="tome-source">${selected && selected.profession !== t.profession ? `辅修 · 战利品与重铸有15%概率出现${PROFESSIONS[selected.profession].name}的${selected.series}装备` : free ? '首次培养该职业，可任选一本典籍免费解锁' : '选择已收集的典籍'}</p>
+      <div class="tome-catalogue">${TOMES.filter(
+        (b) => this.tomeFilter === 'all' || b.profession === this.tomeFilter,
+      )
+        .map((b) => {
+          const o = s.meta.tomes[b.id];
+          return `<button data-tome="${b.id}" class="tome-card ${t.tomeId === b.id ? 'selected' : ''}" ${!o.level && !free ? 'disabled' : ''}><span class="tome-book" aria-hidden="true">▤</span><strong>${b.name}</strong><small>${PROFESSIONS[b.profession].name} · ${b.series}</small><small>${o.level ? 'Lv.' + o.level : free ? '可免费解锁' : '未收集'}</small></button>`;
+        })
+        .join('')}</div>
+      <div class="tome-filters">${(['all', ...PROFESSION_KEYS] as const).map((p) => `<button data-tome-filter="${p}" class="${this.tomeFilter === p ? 'selected' : ''}">${p === 'all' ? '全部' : PROFESSIONS[p].name}</button>`).join('')}</div>
+      ${selected ? `<button class="tome-page-details" data-inspect-tome="${selected.id}">查看三阶效果</button>` : ''}
+      <button class="primary-button tome-start" data-action="start" ${!selected ? 'disabled' : ''}>确认典籍 · 进入地牢</button></section>`;
   }
 
   private battle() {
@@ -625,7 +724,7 @@ export class UI {
       el = document.getElementById('battle-panel')!,
       key = `${s.phase === 'combat' ? 'combat' : 'explore'}|${s.run.profession}|${e?.species}`;
     if (this.changed('battle', key))
-      el.innerHTML = `<div class="scene-ground" aria-hidden="true"></div><div class="battle-scene"><div class="trial-altar" aria-hidden="true"></div><div class="fighter hero-fighter">${heroArt(s.run.profession)}${actorMotion(s.run.profession)}<span>${esc(s.run.trainee?.name ?? '勇者')}</span></div><span class="versus">${e ? '⚔' : '✦'}</span><div class="fighter enemy-fighter">${e ? foeArt() : '<span class="trail-marker">♜</span>'}<span>${e ? esc(e.name) : s.phase === 'opening' ? '整备行囊' : safelyGraduated(s) && this.game.currentEvent()?.completed ? '培养完成' : '前方的旅程'}</span></div></div><div class="fighter-health"><div><span id="player-hp"></span><div class="bar"><i id="player-bar"></i></div></div><div><span id="enemy-hp"></span><div class="bar enemy-bar"><i id="enemy-bar"></i></div></div></div><div id="hero-effects" class="hero-effects"></div><div id="enemy-effects" class="enemy-effects"></div><div id="turn-order" class="turn-order"></div><div id="field-items" class="field-items"></div>`;
+      el.innerHTML = `<div class="scene-ground" aria-hidden="true"></div><div class="battle-scene"><div class="trial-altar" aria-hidden="true"></div><div class="fighter hero-fighter">${heroArt(s.run.profession)}${actorMotion(s.run.profession)}<span>${esc(s.run.trainee?.name ?? '勇者')}</span></div><span class="versus">${e ? '⚔' : '✦'}</span><div class="fighter enemy-fighter">${e ? foeArt(e) : '<span class="trail-marker">♜</span>'}<span>${e ? esc(e.name) : s.phase === 'opening' ? '整备行囊' : safelyGraduated(s) && this.game.currentEvent()?.completed ? '培养完成' : '前方的旅程'}</span></div></div><div class="fighter-health"><div><span id="player-hp"></span><div class="bar"><i id="player-bar"></i></div></div><div><span id="enemy-hp"></span><div class="bar enemy-bar"><i id="enemy-bar"></i></div></div></div><div id="hero-effects" class="hero-effects"></div><div id="enemy-effects" class="enemy-effects"></div><div id="turn-order" class="turn-order"></div><div id="field-items" class="field-items"></div>`;
     el.querySelector('.hero-fighter')?.classList.toggle(
       'acting',
       s.phase === 'combat' && s.combat.lastActor === 'hero',
@@ -649,32 +748,43 @@ export class UI {
       'waiting',
       ['event', 'initial', 'reward'].includes(s.phase) || !!this.wheel,
     );
-    el.classList.toggle('trial-combat', s.phase === 'combat' && !!e?.isElite);
+    el.classList.toggle('trial-combat', s.phase === 'combat' && !!e?.isBoss);
     el.classList.toggle('awakened', s.phase === 'awakening');
     el.style.setProperty('--explore-duration', `${6 / s.speed}s`);
     el.classList.toggle('shielded', s.player.shield > 0);
     el.dataset.profession = s.run.profession;
-    document.getElementById('player-hp')!.textContent =
-      `♥ ${Math.ceil(s.player.hp)}/${Math.ceil(s.player.maxHp)}${s.player.shield ? ` · ◇${Math.ceil(s.player.shield)}` : ''}`;
+    document.getElementById('player-hp')!.innerHTML =
+      `${professionIcon(s.run.profession)}<span class="health-value">♥ ${Math.ceil(s.player.hp)}/${Math.ceil(s.player.maxHp)}${s.player.shield ? ` · ◇${Math.ceil(s.player.shield)}` : ''}</span>`;
     document.getElementById('player-bar')!.style.width = `${(s.player.hp / s.player.maxHp) * 100}%`;
-    document.getElementById('enemy-hp')!.textContent = e
-      ? `${e.isBoss ? 'BOSS · ' : e.isElite ? '精英 · ' : ''}${Math.ceil(e.hp)}/${e.maxHp}`
+    document.getElementById('enemy-hp')!.innerHTML = e
+      ? `${professionIcon(e.profession ?? 'warrior')}<span class="health-value">${e.isBoss ? 'BOSS · ' : ''}${Math.ceil(e.hp)}/${e.maxHp}</span>`
       : '';
     document.getElementById('enemy-bar')!.style.width = e ? `${(e.hp / e.maxHp) * 100}%` : '0%';
+    const runtime = s.combat.runtime;
+    const statusText = (k: string) =>
+      (
+        ({
+          poison: '☠ 毒',
+          burn: '♨ 灼烧',
+          chill: '❄ 减速',
+          break: '破防',
+          mark: '标记',
+        }) as Record<string, string>
+      )[k];
     document.getElementById('hero-effects')!.innerHTML =
       s.phase === 'combat'
-        ? `${s.player.shield ? `<span>◇ ${Math.ceil(s.player.shield)}</span>` : ''}<span>${s.run.profession === 'mage' ? '法力 ' + Math.round(s.combat.mana) : '耐力 ' + Math.round(s.combat.stamina)}</span>`
+        ? `${s.player.shield ? `<span>◇ ${Math.ceil(s.player.shield)}</span>` : ''}${runtime?.hero.statuses.map((x) => `<span>${statusText(x.kind)} ${x.remaining}</span>`).join('') ?? ''}`
         : '';
     document.getElementById('enemy-effects')!.innerHTML = e
-      ? e.effects
-          .map(
-            (x) =>
-              `<span>${x.kind === 'poison' ? '☠ 中毒' : x.kind === 'burn' ? '♨ 灼烧' : '❄ 减速'} ${x.kind === 'chill' ? Math.round(x.damage * 100) + '%' : x.damage.toFixed(0) + '/行动'}</span>`,
-          )
-          .join('') +
-        (e.isBoss
-          ? `<small>${e.species === 18 ? '重击 ' + Math.max(0, 4 - s.combat.bossTimer) + ' 行动后' : '幼蛛 ' + s.combat.minions}</small>`
-          : '')
+      ? `<button data-action="inspect-enemy" class="enemy-inspect">${professionIcon(e.profession ?? 'warrior')} ${COUNTERS[s.run.profession][e.profession ?? 'warrior'] > 1 ? '克制' : COUNTERS[s.run.profession][e.profession ?? 'warrior'] < 1 ? '被克制' : '同职业'}</button>${runtime?.enemy.shield ? `<span>◇ ${Math.ceil(runtime.enemy.shield)}</span>` : ''}${runtime?.enemy.statuses.map((x) => `<span>${statusText(x.kind)} ${x.remaining}</span>`).join('') ?? ''}${runtime?.warning ? `<small>${runtime.warning}</small>` : ''}${
+          runtime?.minions
+            .filter((m) => m.hp > 0)
+            .map(
+              (m) =>
+                `<span class="minion-status" title="幼蛛 ${Math.ceil(m.hp)}/${Math.ceil(m.maxHp)}"><img src="${pixel('enemy-spider-full')}" alt="幼蛛"><i><b style="width:${(100 * m.hp) / m.maxHp}%"></b></i></span>`,
+            )
+            .join('') ?? ''
+        }${s.combat.round >= 16 ? `<b class="enrage-tag">狂暴 +${Math.round((enrageMultiplier(s.combat.round) - 1) * 100)}%</b>` : ''}`
       : '';
     const order = document.getElementById('turn-order');
     if (order) {
@@ -684,10 +794,9 @@ export class UI {
           ? `第 ${s.combat.round} 回合 · ${this.game.nextActor() === 'hero' ? '勇者' : '敌人'}行动`
           : '';
     }
-    const p = heroAttributes(s.run.trainee, s.run.profession),
-      a = this.game.packAnalysis(this.game.editable());
+    const p = finalAttributes(s, this.game.editable());
     document.getElementById('combat-hud')!.innerHTML =
-      `<img class="hud-portrait" src="${pixel(s.run.profession + '-full')}" alt=""><strong>${esc(s.run.trainee?.name ?? '勇者')}<small>♥ ${Math.ceil(s.player.hp)}/${Math.ceil(s.player.maxHp)}</small></strong><span>攻 ${Math.round(p.attack * (1 + s.run.growth.attack + s.run.eventGrowth.attack) * (1 + s.run.buffs.power * 0.12))}</span><span>防 ${s.player.defense.toFixed(0)}</span><span>速 ${this.game.playerSpeed()}</span><small>${s.phase === 'combat' ? `${s.run.profession === 'mage' ? '法力 ' + s.combat.mana.toFixed(0) + '/12' : '耐力 ' + s.combat.stamina.toFixed(0) + '/20'}` : '预计战力 ' + (this.game.heroPreview('retreat')?.power ?? 0)}</small>`;
+      `<img class="hud-portrait" src="${pixel(s.run.profession + '-full')}" alt=""><strong>${esc(s.run.trainee?.name ?? '勇者')} ${professionIcon(s.run.profession)}<small>${realmName(s.run.realm)} · ♥ ${Math.ceil(s.player.hp)}/${Math.ceil(s.player.maxHp)}</small></strong><span>攻 ${Math.round(p.attack)}</span><span>防 ${p.defense.toFixed(0)}</span><span>速 ${this.game.playerSpeed()}</span><small>${s.run.boundTome ? tome(s.run.boundTome.id)!.name + (s.phase === 'combat' ? ' · ' + ((s.combat.runtime?.timers['tome:' + s.run.boundTome.id + ':0'] ?? 0) ? s.combat.runtime?.timers['tome:' + s.run.boundTome.id + ':0'] + '回合' : '就绪') : '') : ''}</small>`;
   }
   private route() {
     const s = this.game.state;
@@ -696,7 +805,7 @@ export class UI {
     document.getElementById('stage-route')!.innerHTML = s.run.events
       .map(
         (e, n) =>
-          `<span class="route-step ${e.completed ? 'complete' : ''} ${!starting && s.run.index === n ? 'current' : ''} ${['elite', 'graduation', 'ending'].includes(e.kind) ? 'milestone' : ''} node-${e.kind} ${n > GRADUATION_NODE ? 'optional' : ''}" data-node="${n + 1}" aria-label="第 ${n + 1} 步 · ${EVENT_NAMES[e.kind]} · ${e.completed ? '已完成' : !starting && s.run.index === n ? '进行中' : '未到达'}" ${!starting && s.run.index === n ? 'aria-current="step"' : ''} title="${n + 1} · ${EVENT_NAMES[e.kind]}">${({ battle: '·', elite: '✦', rest: '+', dig: '⌑', graduation: '◆', ending: '◆', choice: '?', chance: '?', supply: '□', treasure: '□' } as Record<string, string>)[e.kind] ?? '·'}</span>`,
+          `<span class="route-step ${e.completed ? 'complete' : ''} ${!starting && s.run.index === n ? 'current' : ''} ${['boss', 'elite', 'graduation', 'ending'].includes(e.kind) ? 'milestone' : ''} node-${e.kind} ${n > runRoute(s).graduation ? 'optional' : ''}" data-node="${n + 1}" aria-label="第 ${n + 1} 步 · ${EVENT_NAMES[e.kind]} · ${e.completed ? '已完成' : !starting && s.run.index === n ? '进行中' : '未到达'}" ${!starting && s.run.index === n ? 'aria-current="step"' : ''} title="${n + 1} · ${EVENT_NAMES[e.kind]}">${({ battle: '·', boss: '✦', elite: '✦', rest: '+', dig: '⌑', graduation: '◆', ending: '◆', choice: '?', chance: '?', supply: '□', treasure: '□' } as Record<string, string>)[e.kind] ?? '·'}</span>`,
       )
       .join('');
   }
@@ -712,7 +821,7 @@ export class UI {
     document.getElementById('resonance-strip')!.innerHTML = Array.from({ length: 4 }, (_, n) => {
       const k = s.run.resonances[n];
       if (!k)
-        return `<div class="resonance-slot empty">${icon('spark', 20)}<b>${n ? '待觉醒' : '初始共鸣'}</b><small>${n ? `试炼 ${TRIAL_NODES[n - 1] + 1}` : '启程'}</small></div>`;
+        return `<div class="resonance-slot empty">${icon('spark', 20)}<b>${n ? '待觉醒' : '初始共鸣'}</b><small>${n ? `试炼 ${runRoute(s).trials[n - 1] + 1}` : '启程'}</small></div>`;
       const r = resonanceScore(s.inventory, this.game.editable() ? s.draft : s.placements, k);
       return `<button class="resonance-slot ${resonanceRankClass(RESONANCES[k].rank)} ${r.tier ? 'lit' : ''}" data-inspect-resonance="${k}">${icon(RESONANCES[k].icon, 12)}<b>${RESONANCES[k].name}</b><small>${resonanceRankName(RESONANCES[k].rank)} · ${r.score}/${r.next ?? r.thresholds[2]}</small><span class="resonance-meter"><i style="width:${Math.min(100, (r.score / (r.next ?? r.thresholds[2])) * 100)}%"></i></span><span class="tier-marks">${[1, 2, 3].map((n) => `<i class="${r.tier >= n ? 'on' : ''}"></i>`).join('')}</span></button>`;
     }).join('');
@@ -726,9 +835,22 @@ export class UI {
       )
     )
       return;
-    const equipmentVisible =
-      s.phase !== 'combat' && (s.run.starterOffers.length > 0 || this.game.looseItems().length > 0);
-    const toggle = `<button class="view-toggle" data-action="toggle-pack" aria-label="${this.showPack ? '查看历程' : '整理行囊'}">${this.showPack ? '☷ 历程' : '▦ 行囊'}</button>`;
+    const tone =
+      s.phase === 'combat'
+        ? 'battle'
+        : s.phase === 'awakening' ||
+            s.phase === 'initial' ||
+            s.phase === 'reward' ||
+            (s.phase === 'opening' && s.run.starterRound === 2)
+          ? 'resonance'
+          : s.phase === 'camp' && safelyGraduated(s) && this.game.currentEvent()?.completed
+            ? 'graduate'
+            : s.phase === 'opening' || (s.phase === 'camp' && this.game.looseItems().length > 0)
+              ? 'loot'
+              : s.phase === 'journey'
+                ? 'journey'
+                : 'explore';
+    document.getElementById('adventure-footer')!.dataset.tone = tone;
     let html = '';
     if (s.phase === 'opening')
       html =
@@ -743,23 +865,11 @@ export class UI {
       html = '<button class="primary-button" data-action="finish-awakening">选择共鸣 →</button>';
     else if (s.phase === 'combat')
       html = `<button data-action="skip-combat" aria-pressed="${s.skipCombat}">${s.skipCombat ? '快速战斗' : '跳过战斗'}</button><button class="combat-tools" data-action="combat-tools" aria-label="战斗控制">⋯</button>`;
+    const utility = this.showPack
+      ? `<button id="point-redeem" class="reforge-button" data-action="redeem" aria-label="重铸随机装备，消耗6点，当前${s.run.points}点" ${!this.game.editable() || s.run.points < 6 ? 'disabled' : ''}><span>重铸</span><small id="point-count">${s.run.points}/6</small></button>`
+      : '<button class="backpack-button" data-action="open-pack" aria-label="查看背包">背包</button>';
     document.getElementById('adventure-footer')!.innerHTML =
-      `<button id="point-redeem" class="reforge-button" data-action="redeem" aria-label="重铸随机装备，消耗6点，当前${s.run.points}点" ${!this.game.editable() || s.run.points < 6 ? 'disabled' : ''}><span>重铸</span><small id="point-count">${s.run.points}/6</small></button><div class="footer-main">${html}</div><button class="speed-button" data-action="cycle-speed" aria-label="切换播放速度">${s.speed}×</button>`;
-    document
-      .getElementById('adventure-screen')!
-      .querySelectorAll('.board-view-toggle')
-      .forEach((el) => el.remove());
-    if (
-      !equipmentVisible &&
-      s.phase !== 'opening' &&
-      s.phase !== 'combat' &&
-      s.phase !== 'journey' &&
-      s.phase !== 'awakening'
-    ) {
-      document
-        .getElementById('shared-board')!
-        .insertAdjacentHTML('beforeend', `<div class="board-view-toggle">${toggle}</div>`);
-    }
+      `${utility}<div class="footer-main">${html}</div><button class="speed-button" data-action="cycle-speed" aria-label="切换播放速度">${s.speed}×</button>`;
   }
   private journey() {
     const s = this.game.state;
@@ -770,7 +880,7 @@ export class UI {
     )
       return;
     document.getElementById('journey-status')!.textContent =
-      `${Math.min(3, routeStage(s.run.index) + 1)} 阶段 · ${this.game.completed()}/${RUN_LENGTH}`;
+      `${Math.min(3, runRoute(s).trials.filter((n) => n < s.run.index).length + 1)} 阶段 · ${this.game.completed()}/${s.run.events.length}`;
     const el = document.getElementById('journey-history')!;
     el.classList.toggle('playing-story', s.phase === 'journey');
     const firstVisible = !this.journeyVisible && !this.showPack;
@@ -834,7 +944,7 @@ export class UI {
     const a = s.awakening!;
     if (el.dataset.stage === String(a.stage)) return;
     el.dataset.stage = String(a.stage);
-    el.innerHTML = `<span class="awakening-seal">✦</span><small>${TRIALS[a.tier].name} · 通过</small><h2>${STAGES[a.stage - 1]}觉醒</h2><div class="awakening-gains"><b>伤害 +${+(a.attack * 100).toFixed(1)}%</b><b>生命上限 +${a.hp}</b><b>防御 +${+a.defense.toFixed(2)}</b><b>恢复生命 ${a.healed}</b></div>`;
+    el.innerHTML = `<small>${TRIALS[a.tier].name} · 通过</small><h2>境界晋升</h2><div class="realm-promotion" role="status" aria-label="境界晋升"><span>${realmName(s.run.realm - 1)}</span><i aria-hidden="true">→</i><strong>${realmName(s.run.realm)}</strong></div><div class="awakening-gains"><b>攻击 +${+(a.attack * 100).toFixed(1)}%</b><b>生命上限 +${a.hp}</b><b>防御 +${+a.defense.toFixed(2)}</b><b>恢复生命 ${a.healed}</b></div>`;
   }
   private spinWheel() {
     const s = this.game.state;
@@ -978,19 +1088,19 @@ export class UI {
       const e = this.game.currentEvent()!;
       title = EVENT_NAMES[e.kind];
       if (e.kind === 'elite' || e.kind === 'boss')
-        body = `<div class="trial-crest">✦</div><p class="trial-subtitle">${STAGES[trialIndex(s.run.index)]} · ${e.kind === 'boss' ? '最后的守门者' : '晋阶之门'}</p><div class="choice-grid trial-choices">${TRIALS.map((t, n) => `<button class="trial-choice trial-${n}" data-event="trial-${n}"><strong>${t.name}</strong><p>${t.description}</p><small>敌人生命 ×${t.hp} · 伤害 ×${t.attack}</small><b>${trialGain(s.run.profession, n as TrialTier)} · 恢复生命 ${[25, 35, 45][n]}%</b></button>`).join('')}</div>`;
+        body = `<div class="trial-crest">✦</div><p class="trial-subtitle">${STAGES[runRoute(s).trials.indexOf(s.run.index)]} · 晋阶之门</p><div class="choice-grid trial-choices">${TRIALS.map((t, n) => `<button class="trial-choice trial-${n}" data-event="trial-${n}"><strong>${t.name}</strong><p>${t.description}</p><small>敌人生命 ×${t.hp} · 伤害 ×${t.attack}</small><b>${trialGain(s.run.profession, n as TrialTier)} · 恢复生命 ${[25, 35, 45][n]}%</b></button>`).join('')}</div>`;
       if (e.kind === 'treasure' || e.kind === 'supply')
         body = `<button class="primary-button" data-event="${e.kind === 'treasure' ? 'open' : 'take'}">${e.kind === 'treasure' ? '打开宝箱' : '接受补给'}</button>`;
       if (e.kind === 'rest')
-        body = `<div class="choice-grid"><button class="reward-card" data-event="heal"><strong>饮下月泉</strong><p>恢复 ${Math.min(Math.ceil(s.player.maxHp - s.player.hp), Math.round(s.player.maxHp * 0.35 * (1 + 0 * 0.2)))} 生命</p></button><button class="reward-card" data-event="vigor" ${s.run.buffs.vitality >= 3 ? 'disabled' : ''}><strong>凝聚泉华</strong><p>基础生命上限 +12%</p></button></div>`;
+        body = `<div class="choice-grid"><button class="reward-card" data-event="heal"><strong>饮下月泉</strong><p>恢复 ${Math.round(Math.min(s.player.maxHp - s.player.hp, s.player.maxHp * 0.35))} 生命</p></button><button class="reward-card" data-event="vigor" ${s.run.buffs.vitality >= 3 ? 'disabled' : ''}><strong>凝聚泉华</strong><p>${BUFFS.vitality.description}</p></button></div>`;
       if (e.kind === 'dig') body = this.digBoard();
       if (e.kind === 'choice')
         body =
           e.variant === 2
             ? `<div class="choice-grid"><button class="reward-card" data-event="heal"><strong>饮用泉水</strong><p>恢复生命上限的30%</p></button><button class="reward-card" data-event="vigor"><strong>锻炼体魄</strong><p>生命上限 +18</p></button></div>`
-            : `<div class="choice-grid"><button class="reward-card" data-event="risk" ${s.player.hp <= Math.ceil(s.player.hp * 0.15) ? 'disabled' : ''}><strong>${e.variant === 1 ? '取出遗物' : '解开封印'}</strong><p>消耗15%当前生命，${e.variant === 1 ? '获得三件装备' : e.variant === 3 ? '防御 +2' : e.variant === 4 ? '随机基础属性成长' : '伤害 +8%'}</p></button><button class="reward-card" data-event="skip"><strong>安全离开</strong><p>继续前行</p></button></div>`;
+            : `<div class="choice-grid"><button class="reward-card" data-event="risk" ${s.player.hp <= Math.ceil(s.player.hp * 0.15) ? 'disabled' : ''}><strong>${e.variant === 1 ? '取出遗物' : '解开封印'}</strong><p>消耗15%当前生命，${e.variant === 1 ? '获得三件装备' : e.variant === 3 ? '防御 +2' : e.variant === 4 ? '随机基础属性成长' : '攻击 +8%'}</p></button><button class="reward-card" data-event="skip"><strong>安全离开</strong><p>继续前行</p></button></div>`;
       if (e.kind === 'graduation')
-        body = `<div class="choice-grid"><button class="reward-card" data-event="graduate"><strong>完成培养</strong><p>保存当前勇者，成功结业</p></button><button class="reward-card" data-event="extreme"><strong>挑战极限</strong><p>继续迎战更强魔物，成功后额外战力与双倍金币</p></button></div>`;
+        body = `<div class="choice-grid"><button class="reward-card" data-event="graduate"><strong>完成培养</strong><p>保存当前勇者，成功结业</p></button>${runRoute(s).hasExtreme ? '<button class="reward-card" data-event="extreme"><strong>挑战极限</strong><p>继续迎战更强魔物，成功后额外战力与双倍金币</p></button>' : ''}</div>`;
       if (e.kind === 'mentor')
         body = '<button class="primary-button" data-event="learn">接受传授</button>';
       if (e.kind === 'ending')
@@ -1001,7 +1111,7 @@ export class UI {
             ? `${this.wheelGraphic()}<p>50% 高阶装备 · 30% 点数 · 15% 治疗 · 5% 反噬</p><div class="event-actions"><button class="primary-button" data-event="spin">转动轮盘</button><button data-event="skip">离开</button></div>`
             : `<div class="event-actions"><button class="danger-button" data-event="sacrifice" ${s.player.hp <= Math.ceil(s.player.maxHp * 0.15) ? 'disabled' : ''}>献祭 ${Math.ceil(s.player.maxHp * 0.15)} 生命</button><button data-event="skip">离开</button></div>`;
     }
-    el.innerHTML = `<h2 id="decision-title">${esc(title)}</h2>${s.phase === 'event' ? `<p class="event-narrative">${esc(eventStory(this.game.currentEvent()!.kind, this.game.currentEvent()!.variant))}</p>` : ''}${body}`;
+    el.innerHTML = `<h2 id="decision-title">${esc(title)}</h2>${s.phase === 'event' ? `<p class="event-narrative">${esc(eventStory(this.game.currentEvent()!.kind, this.game.currentEvent()!.variant, runRoute(s).hasExtreme))}</p>` : ''}${body}`;
   }
 
   private digBoard() {
@@ -1031,7 +1141,7 @@ export class UI {
       return `<div class="${resonanceRankClass(d.rank)}" data-summary-resonance="${k}"><b>${esc(d.name)}</b><small>${resonanceRankName(d.rank)}</small><small>${h.resonanceTiers[k] ?? 0}/3 段</small></div>`;
     }).join('');
     document.getElementById('summary-screen')!.innerHTML =
-      `<section class="graduation-spotlight"><h1>${r.outcome === 'win' ? '培养完成' : '冒险结束'}</h1><div class="summary-scene">${heroArt(h.profession)}</div><h2>${esc(h.name)}</h2><strong class="hero-rating rating-${h.rating}">${h.rating}</strong><b class="final-power">最终战力 ${h.power}</b><div class="graduate-resonances" aria-label="最终共鸣">${resonances}</div><div class="summary-record"><strong>第 ${h.chapter} 关</strong><p>${h.completed}/${RUN_LENGTH} 步 · ${h.stages}/3 晋阶 · ${archiveOutcome(h)}</p><b>${r.outcome === 'win' ? `金币 +${r.gold}` : '当前勇者已加入公会'}</b></div><button data-action="hero-details">查看最终装备与档案</button><button class="primary-button" data-action="selection">返回公会</button></section>`;
+      `<section class="graduation-spotlight"><h1>${r.outcome === 'win' ? '培养完成' : '冒险结束'}</h1><div class="summary-scene">${heroArt(h.profession)}<div class="summary-identity"><h2>${esc(h.name)}</h2>${professionIcon(h.profession)}<div class="summary-realm" aria-label="最终境界"><small>最终境界</small><strong>${realmName(h.realm)}</strong><span>${h.stages} 次试炼晋升</span></div></div></div><div class="summary-score"><strong class="hero-rating rating-${h.rating}" aria-label="战力评级 ${h.rating}">${h.rating}</strong><b class="final-power">最终战力 ${h.power}</b></div><div class="graduate-resonances" aria-label="最终共鸣">${resonances}</div><div class="summary-stats"><span>攻击 <b>${h.stats.attack}</b></span><span>生命 <b>${h.stats.hp}</b></span><span>防御 <b>${h.stats.defense}</b></span><span>速度 <b>${h.stats.speed}</b></span></div><div class="summary-record"><strong>第 ${h.chapter} 关 · ${archiveOutcome(h)}</strong><p>${h.completed}/${s.run.extreme ? h.routeLength : h.normalLength} 步 · ${h.stages}/3 次试炼通过</p><b>${r.outcome === 'win' ? `获得奖励 · 金币 +${r.gold}` : '当前勇者已加入公会'}</b></div><button data-action="hero-details">查看最终装备与档案</button><button class="primary-button" data-action="selection">返回公会</button></section>`;
   }
   private projectile(id: string) {
     const source = document.querySelector(`[data-pack-item="${id}"]`),
@@ -1053,6 +1163,44 @@ export class UI {
     document.documentElement.style.setProperty('--game-scale', String(scale));
     document.documentElement.style.setProperty('--game-width', `${390 * scale}px`);
     document.documentElement.style.setProperty('--game-height', `${844 * scale}px`);
+  }
+  private guildPanel() {
+    const s = this.game.state,
+      conditions = guildConditions(s);
+    this.modal(
+      `<h2>冒险公会 Lv.${s.meta.guildLevel}</h2><p>全体勇者攻击、生命、防御 +${Math.round((guildMultiplier(s.meta.guildLevel) - 1) * 100)}%</p><p>招募起始境界：${realmName(Math.floor((s.meta.guildLevel - 1) / 3) * 3)}</p>${conditions.map((c) => `<p class="${c.value >= c.target ? 'reached' : 'muted'}">${c.value >= c.target ? '✓' : '○'} ${c.label} · ${Math.min(c.value, c.target)}/${c.target}</p>`).join('')}<button data-action="upgrade-guild" class="primary-button" ${!conditions.length || conditions.some((c) => c.value < c.target) ? 'disabled' : ''}>${conditions.length ? '满足全部条件后升级' : '已达最高等级'}</button>`,
+    );
+  }
+  private library() {
+    const s = this.game.state;
+    this.modal(
+      `<h2>公会典籍</h2><p>金币 ${s.meta.gold}</p><div class="library-list">${TOMES.map((t) => {
+        const o = s.meta.tomes[t.id],
+          cost = upgradeCost(o.level);
+        return `<section><h3>${t.name} · ${PROFESSIONS[t.profession].name}</h3><button data-inspect-tome="${t.id}">三阶详情</button><small>${o.level ? o.level + '阶' : '未收集'} · 残页 ${o.pages}</small><p>${esc(readableEffect(t.skillStages[Math.max(0, o.level - 1)]))}</p>${o.level && o.level < 3 ? `<button data-upgrade-tome="${t.id}" ${o.pages < cost.pages || s.meta.gold < cost.gold ? 'disabled' : ''}>升阶 · ${cost.pages} 残页 + ${cost.gold} 金币</button>` : ''}</section>`;
+      }).join('')}</div>`,
+    );
+  }
+  private pageReward(owner?: string) {
+    const rewards = this.game.state.meta.pendingPages;
+    const r = owner ? rewards.find((r) => r.heroId === owner) : rewards[0];
+    if (!r) {
+      this.close();
+      this.toast('没有待领取的残页');
+      return;
+    }
+    this.pageOwner = r.heroId;
+    this.modal(
+      `<h2>典籍残页 · ${r.choices.length} 选一</h2><div class="choice-grid">${r.choices
+        .map((id) => {
+          const t = tome(id)!,
+            owned = this.game.state.meta.tomes[id];
+          return `<button data-claim-page="${id}" data-owner="${r.heroId}"><strong>${t.name}</strong><small>${owned.level ? '残页 +1' : '解锁典籍'}</small><p>${esc(readableEffect(t.skillStages[0]))}</p></button>`;
+        })
+        .join(
+          '',
+        )}</div>${r.extreme && !r.refreshed ? '<button data-action="refresh-pages">极限毕业 · 免费刷新一次</button>' : ''}`,
+    );
   }
   private settings() {
     this.modal(

@@ -1,3 +1,4 @@
+import { setEnemy, setPlayer } from './helpers';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Window } from 'happy-dom';
@@ -32,9 +33,6 @@ test('all history survives a long run and reload; a node has only one marker', (
     const ui = new UI(g, () => {});
     assert.equal(win.document.querySelectorAll('.journey-time').length, 2);
     assert.equal(win.document.querySelectorAll('.journey-entry').length, 302);
-    win.document
-      .querySelector('[data-action="toggle-pack"]')!
-      .dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
     const history = win.document.querySelector('#journey-history')!;
     Object.defineProperty(history, 'scrollHeight', { value: 1000 });
     Object.defineProperty(history, 'clientHeight', { value: 300 });
@@ -161,14 +159,13 @@ test('history appends without replaying old cards and preserves the reading posi
         win.document
           .querySelector(q)!
           .dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
-    click('[data-action="toggle-pack"]');
     const history = win.document.querySelector('#journey-history')!,
       oldCard = history.querySelector('.journey-entry');
     Object.defineProperty(history, 'scrollHeight', { value: 1200 });
     Object.defineProperty(history, 'clientHeight', { value: 300, configurable: true });
     history.scrollTop = 120;
     history.dispatchEvent(new win.Event('scroll'));
-    click('[data-action="toggle-pack"]');
+    click('[data-action="open-pack"]');
     Object.defineProperty(history, 'clientHeight', { value: 0, configurable: true });
     history.scrollTop = 0;
     history.dispatchEvent(new win.Event('scroll'));
@@ -176,7 +173,8 @@ test('history appends without replaying old cards and preserves the reading posi
     ui.render();
     assert.equal(history.querySelector('.journey-entry'), oldCard);
     Object.defineProperty(history, 'clientHeight', { value: 300, configurable: true });
-    click('[data-action="toggle-pack"]');
+    g.state.phase = 'journey';
+    ui.render();
     assert.equal(history.scrollTop, 120);
     assert.equal(history.querySelectorAll('.journey-time').length, 1);
     assert.equal(history.querySelectorAll('.journey-entry').length, 3);
@@ -222,8 +220,8 @@ test('damage feedback shows actual life lost after shield absorption', () => {
   const g = start();
   g.continueCamp();
   g.continueJourney();
-  g.state.enemy!.attack = 100;
-  g.state.player.shield = 10;
+  setEnemy(g, { attack: 100 });
+  setPlayer(g, { shield: 10 });
   const before = g.state.player.hp;
   g.state.combat.order = ['enemy', 'hero'];
   g.state.combat.actionIndex = 0;
@@ -241,6 +239,16 @@ test('discarded opening equipment remains under the departure marker', () => {
   g.enterChapters();
   g.recruit('warrior');
   g.balanceAllocation();
+  if (g.state.phase === 'configure' && !g.state.run.trainee?.tomeId) g.confirmAllocation();
+  g.selectTome(
+    (
+      {
+        warrior: 'warrior_sword_tome',
+        mage: 'mage_flame_tome',
+        rogue: 'rogue_poison_tome',
+      } as const
+    )[g.state.run.profession],
+  );
   g.startRun();
   g.claimStarterRound();
   g.claimStarterRound();

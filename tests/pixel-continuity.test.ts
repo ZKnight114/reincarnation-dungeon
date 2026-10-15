@@ -5,7 +5,9 @@ import { Window } from 'happy-dom';
 import { Game } from '../src/game';
 import { UI } from '../src/ui';
 import { availableItems, dimensions, openBagCells, RESONANCES } from '../src/backpack';
-import { start, positionEvent } from './helpers';
+import { start, positionEvent, recruitToConfigure, advanceCamp, prepare } from './helpers';
+import { realmName } from '../src/progression';
+import { parseSave } from '../src/save';
 
 // Exercise the full stylesheet cascade alongside real game state transitions.
 // happy-dom computes CSS but does not paint or measure browser layout.
@@ -17,7 +19,8 @@ function setup(g: Game) {
     localStorage: w.localStorage,
     getComputedStyle: w.getComputedStyle.bind(w),
   });
-  for (const name of ['style', 'pack', 'v9', 'journey', 'v10', 'v11', 'v14', 'guild-pixel']) {
+  const entry = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
+  for (const [, name] of entry.matchAll(/import '\.\/([^']+)\.css';/g)) {
     const style = w.document.createElement('style');
     style.textContent = readFileSync(new URL('../src/' + name + '.css', import.meta.url), 'utf8');
     w.document.head.append(style);
@@ -46,6 +49,8 @@ test('enlarged seven-by-six pack fits below resonances and above controls with s
       strip = css('#resonance-strip');
     assert.equal(grid.width, '350px');
     assert.equal(grid.height, '300px');
+    assert.ok(parseFloat(board.top) + parseFloat(pack.top) > 426);
+    assert.ok(parseFloat(slots.height) < 65);
     assert.equal(parseFloat(grid.gap), 0);
     assert.equal(parseFloat(grid.width) / 7, parseFloat(grid.height) / 6);
     assert.ok(
@@ -151,6 +156,11 @@ test('trial and awakening keep the altar visible and restore real growth before 
       new RegExp('恢复生命 ' + g.state.awakening!.healed),
     );
     assert.ok(g.state.awakening!.healed > 0);
+    assert.equal(el('.realm-promotion span').textContent, realmName(g.state.run.realm - 1));
+    assert.equal(el('.realm-promotion strong').textContent, realmName(g.state.run.realm));
+    assert.ok(parseFloat(css('.realm-promotion strong').fontSize) >= 24);
+    const resumed = new Game(parseSave(JSON.stringify(g.state)));
+    assert.equal(resumed.state.run.realm, g.state.run.realm);
     g.finishAwakening();
     ui.render();
     assert.equal(g.state.phase, 'reward');
@@ -183,9 +193,9 @@ test('every profession loose footprint uses one square-cell size without indepen
         assert.equal(s.maxHeight, 'none');
         assert.equal(s.maxWidth, 'none');
         // calc()/custom properties remain unevaluated by this DOM engine.
-        assert.equal(s.width.replace(/\s/g, ''), `calc(${d.w}*31px)`);
-        assert.equal(s.height.replace(/\s/g, ''), `calc(${d.h}*31px)`);
-        assert.ok(d.h * 31 < parseFloat(css('#field-items').height));
+        assert.equal(s.width.replace(/\s/g, ''), `calc(${d.w}*50px)`);
+        assert.equal(s.height.replace(/\s/g, ''), `calc(${d.h}*50px)`);
+        assert.ok(d.h * 50 + 12 + 10 <= parseFloat(css('#field-items').height));
       }
     } finally {
       w.happyDOM.close();
@@ -204,7 +214,7 @@ test('touch dragging targets the enlarged grid at native and scaled sizes and st
       { w, el, css } = setup(g);
     try {
       const left = 20 * scale,
-        top = 426 * scale,
+        top = (parseFloat(css('#shared-board').top) + parseFloat(css('#view-pack').top)) * scale,
         width = parseFloat(css('#pack-grid').width) * scale,
         height = parseFloat(css('#pack-grid').height) * scale;
       (el('#pack-grid') as any).getBoundingClientRect = () => ({
@@ -280,8 +290,10 @@ test('graduation restores four saved resonance slots, with rank colors distinct 
       const row = css('.graduate-resonances'),
         record = css('.summary-record'),
         details = css('[data-action="hero-details"]');
-      assert.ok(parseFloat(row.top) + parseFloat(row.height) < parseFloat(record.top));
-      assert.ok(parseFloat(record.top) + parseFloat(record.height) < parseFloat(details.top));
+      assert.equal(row.position, 'static');
+      assert.equal(record.position, 'static');
+      assert.equal(details.position, 'static');
+      assert.equal(css('.graduation-spotlight').display, 'grid');
     } finally {
       w.happyDOM.close();
     }
@@ -306,6 +318,170 @@ test('the spinning event pauses the explorer until its applied result is confirm
     assert.equal(el('#battle-panel').classList.contains('exploring'), true);
   } finally {
     Date.now = realNow;
+    w.happyDOM.close();
+  }
+});
+
+test('configuration attributes, tome selection and start control occupy distinct bounds on one canvas', () => {
+  const g = recruitToConfigure(new Game());
+  g.backToAllocation();
+  const { w, el, css, click } = setup(g);
+  try {
+    const bounds = (q: string) => {
+      const s = css(q);
+      return [parseFloat(s.top), parseFloat(s.height)] as const;
+    };
+    const rows = bounds('.attribute-rows'),
+      row = css('.attribute-row'),
+      submit = bounds('.admission-submit');
+    assert.ok(rows[0] + parseFloat(row.height) * 4 < submit[0]);
+    assert.ok(submit[0] + submit[1] <= parseFloat(css('.admission-file').height));
+    assert.equal(w.document.querySelector('.tome-config'), null);
+    click('[data-action="confirm-allocation"]');
+    assert.equal(g.state.phase, 'tome');
+    assert.equal(el('.tome-catalogue').children.length, 9);
+    assert.equal(css('.tome-catalogue').gridTemplateColumns, 'repeat(3, 1fr)');
+    const cardRows =
+      parseFloat(css('.tome-catalogue').gridAutoRows) * 3 +
+      parseFloat(css('.tome-catalogue').gap) * 2;
+    assert.ok(cardRows <= parseFloat(css('.tome-catalogue').height));
+    assert.equal(css('.tome-start').bottom, '0px');
+    assert.equal((el('[data-action="start"]') as any).disabled, false);
+    click('.tome-page-details');
+    assert.match(el('#modal-body').textContent, /第 1 阶.*第 2 阶.*第 3 阶/);
+  } finally {
+    w.happyDOM.close();
+  }
+});
+
+test('guild scenery cannot intercept taps and progression controls sit above the background', () => {
+  const g = new Game(),
+    { w, css } = setup(g);
+  try {
+    assert.equal(css('.guild-scene').pointerEvents, 'none');
+    assert.ok(parseInt(css('.guild-progress-controls').zIndex) > 0);
+  } finally {
+    w.happyDOM.close();
+  }
+});
+
+test('footer colors follow exploration, loot, resonance and graduation without changing continuation rules', () => {
+  const g = start(),
+    { w, ui, el, css } = setup(g);
+  try {
+    const colors = new Set<string>();
+    const color = (tone: string) => {
+      assert.equal(el('#adventure-footer').getAttribute('data-tone'), tone);
+      colors.add(css('#adventure-footer .primary-button').backgroundColor);
+    };
+    color('explore');
+    g.continueCamp();
+    ui.render();
+    color('journey');
+    g.continueJourney();
+    ui.render();
+    assert.equal(el('#adventure-footer').getAttribute('data-tone'), 'battle');
+    g.state.enemy!.hp = 0;
+    g.advanceTurn();
+    ui.render();
+    color('loot');
+    positionEvent(g, 'boss');
+    g.state.enemy!.hp = 0;
+    g.advanceTurn();
+    ui.render();
+    color('resonance');
+    g.finishAwakening();
+    g.chooseReward(0);
+    g.state.run.extreme = true;
+    positionEvent(g, 'ending');
+    g.chooseEvent('finish');
+    ui.render();
+    color('graduate');
+    assert.equal(colors.size, 5);
+  } finally {
+    w.happyDOM.close();
+  }
+});
+
+test('item grade border stays above its illustration and badges differ on all four stages', () => {
+  const g = start(),
+    { w, ui, el, css } = setup(g);
+  try {
+    const item = g.state.inventory[0],
+      colors = new Set<string>();
+    for (let n = 1; n <= 4; n++) {
+      const upgraded = g.makeItem(item.templateId, n);
+      g.state.inventory.push(upgraded);
+      g.state.revision++;
+      ui.render();
+      const q = `#field-items [data-pack-item="${upgraded.id}"]`;
+      const piece = el(q),
+        drawing = piece.querySelector('.item-painting')!;
+      assert.equal(drawing.nextElementSibling!.getAttribute('class'), 'item-grade-rim');
+      assert.ok(piece.classList.contains('quality-' + upgraded.quality));
+      assert.equal(piece.querySelector('.item-level')!.textContent, n + '阶');
+      colors.add((piece as any).style.getPropertyValue('--item-color'));
+      assert.equal(css(q + ' .item-grade-rim').pointerEvents, 'none');
+      assert.equal(css(q + ' .item-grade-badge').pointerEvents, 'none');
+    }
+    assert.equal(colors.size, 4);
+  } finally {
+    w.happyDOM.close();
+  }
+});
+
+test('graduation immediately shows a one-screen summary with a prominent realm and no tome reward', () => {
+  const g = start();
+  positionEvent(g, 'graduation');
+  const { w, ui, el, css, click } = setup(g);
+  try {
+    click('[data-event="graduate"]');
+    assert.equal(g.state.phase, 'summary');
+    assert.equal(el('#decision-sheet').hasAttribute('open'), false);
+    assert.equal(el('#summary-screen').hasAttribute('hidden'), false);
+    const hero = g.state.meta.heroes[0];
+    assert.equal(el('.summary-realm strong').textContent, realmName(hero.realm));
+    assert.ok(parseFloat(css('.summary-realm strong').fontSize) >= 24);
+    assert.match(el('.summary-record').textContent, /32\/32 步/);
+    assert.equal(w.document.querySelector('#summary-screen [data-action="pending-pages"]'), null);
+    assert.equal(g.state.meta.pendingPages.length, 0);
+    const frame = css('.graduation-spotlight');
+    const rows = frame.gridTemplateRows.split(' ').map(parseFloat);
+    const contentHeight =
+      rows.reduce((total, height) => total + height, 0) +
+      (rows.length - 1) * parseFloat(frame.rowGap || frame.gap) +
+      parseFloat(frame.paddingTop) +
+      parseFloat(frame.paddingBottom);
+    assert.ok(contentHeight <= 844);
+    for (const child of el('.graduation-spotlight').children) {
+      const style = w.getComputedStyle(child);
+      assert.notEqual(style.position, 'absolute', child.className);
+    }
+    click('[data-action="hero-details"]');
+    assert.ok(el('[data-bound-item]'));
+    click('[data-action="close"]');
+    click('[data-action="selection"]');
+    assert.equal(g.state.phase, 'home');
+    ui.render();
+  } finally {
+    w.happyDOM.close();
+  }
+});
+test('tutorial graduation offers only completion and does not advertise an unavailable extreme challenge', () => {
+  const g = new Game();
+  recruitToConfigure(g, 1, 'warrior');
+  g.startRun();
+  prepare(g);
+  positionEvent(g, 'graduation');
+  const { w, el, click } = setup(g);
+  try {
+    assert.doesNotMatch(el('#decision').textContent, /挑战.*极限/);
+    assert.equal(w.document.querySelector('[data-event="extreme"]'), null);
+    assert.doesNotMatch(g.state.run.journey.at(-1)!.text, /极限/);
+    click('[data-event="graduate"]');
+    assert.match(el('.summary-record').textContent, /18\/18 步/);
+    assert.equal(g.state.meta.pendingPages.length, 0);
+  } finally {
     w.happyDOM.close();
   }
 });

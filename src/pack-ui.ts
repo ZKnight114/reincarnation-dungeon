@@ -1,24 +1,22 @@
-import { resonanceRankClass, resonanceRankName } from './resonance-appearance';
 import {
-  PACK_COLS,
-  PACK_ROWS,
-  openBagCells,
-  bagCapacity,
   BRANCHES,
   cells,
+  contributionPoints,
   definition,
   dimensions,
-  itemStats,
-  LEVEL_POWER,
-  contributionPoints,
+  PACK_COLS,
+  PACK_ROWS,
   RESONANCES,
   resonanceScore,
+  runBagCapacity,
+  runBagCells,
   SHAPE_NAMES,
-  PROFESSIONS,
 } from './backpack';
 import { QUALITIES } from './data';
-import { itemPainting, shapePath } from './scene';
 import type { Game } from './game';
+import { adjacencyDescription, readableEffect, itemProposal, itemStageText } from './item-rules';
+import { itemPainting, shapePath } from './scene';
+import { itemSkills } from './skills';
 import type { Equipment, ResonanceKey } from './types';
 export const esc = (s: string) =>
   s.replace(
@@ -46,14 +44,14 @@ export function shapePreview(item: Equipment) {
   return `<span class="shape-name">${SHAPE_NAMES[definition(item).shape]}</span>`;
 }
 const gradeFill: Record<Equipment['quality'], string> = {
-  white: '#414c46',
-  green: '#3b6040',
-  blue: '#344d6e',
-  purple: '#594367',
+  white: '#65716d',
+  green: '#195e38',
+  blue: '#184f80',
+  purple: '#623285',
   orange: '#755234',
 };
 export function itemCard(item: Equipment) {
-  return `<span class="card-art quality-${item.quality}" style="--quality-color:${QUALITIES[item.quality].color}">${itemPainting(item)}</span><strong>${esc(item.name)} <small>Lv.${item.level}</small></strong><span class="branch-label" style="color:${BRANCHES[item.branch].color}">${BRANCHES[item.branch].name} · 共鸣 ${contributionPoints(item)} 点 · 效果倍率 ${Math.round(item.potency * 100)}%</span><p>${item.attack ? `伤害 ${item.attack.toFixed(0)} · ` : ''}${item.hp ? `生命 +${item.hp.toFixed(0)} · ` : ''}${item.defense ? `防御 +${item.defense.toFixed(1)} · ` : ''}${shapePreview(item)}</p>`;
+  return `<span class="card-art quality-${item.quality}" style="--quality-color:${QUALITIES[item.quality].color}">${itemPainting(item)}</span><strong>${esc(item.name)} <small>Lv.${item.level}</small></strong><span class="branch-label" style="color:${BRANCHES[item.branch].color}">${BRANCHES[item.branch].name} · 共鸣 ${contributionPoints(item)} 点 · 属性倍率 ${Math.round(item.potency * 100)}%</span><p>${item.attack ? `攻击 +${item.attack.toFixed(0)} · ` : ''}${item.hp ? `生命 +${item.hp.toFixed(0)} · ` : ''}${item.defense ? `防御 +${item.defense.toFixed(1)} · ` : ''}${shapePreview(item)}</p>`;
 }
 type Gesture = { pointer: number; id: string; x: number; y: number; dragging: boolean };
 export class PackUI {
@@ -87,6 +85,20 @@ export class PackUI {
       const button = (e.target as Element).closest<HTMLButtonElement>('[data-pack-action]');
       if (button && !button.disabled) this.action(button.dataset.packAction!);
     });
+    // A compatibility click after a drag must never redeem points or open details.
+    this.root.addEventListener(
+      'click',
+      (e) => {
+        if (
+          Date.now() < this.suppressUntil &&
+          (e.target as Element).closest('[data-pack-item],#point-redeem')
+        ) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+        }
+      },
+      true,
+    );
     this.root.addEventListener('click', (e) => {
       const el = (e.target as Element).closest<HTMLElement>('[data-pack-item],[data-pack-action]');
       if (!el) return;
@@ -174,7 +186,12 @@ export class PackUI {
         return;
       }
       const point = this.point(e.clientX, e.clientY);
-      if (point) {
+      if (this.recycleTarget(e.clientX, e.clientY)) {
+        if (this.game.recycleItem(g.id)) {
+          this.selected = null;
+          this.toast('已转化 · +1 点');
+        } else this.toast('最后一件武器不能转化');
+      } else if (point) {
         const plan = this.game.previewMove(
             g.id,
             point.x - this.anchor[0],
@@ -277,29 +294,33 @@ export class PackUI {
     if (!item) return;
     this.highlight();
     const s = this.game.state,
-      d = definition(item),
       owned = s.inventory.some((i) => i.id === id),
       placed = s.draft.some((p) => p.id === id),
-      a = this.game.packAnalysis(true),
-      partner = this.game.mergePartner(id),
-      keys = s.run.resonances.filter((k) => RESONANCES[k].matches(item));
-    const next =
-      item.level < 5 ? itemStats(item.templateId, item.level + 1, item.profession) : null;
-    this.details.innerHTML = `<header><span class="eyebrow">EQUIPMENT</span><button data-pack-action="close" aria-label="关闭装备详情">×</button></header><div class="detail-title" style="--quality-color:${QUALITIES[item.quality].color}">${itemPainting(item, this.rotation, 'detail')}<div><h2>${esc(item.name)}</h2><strong>${QUALITIES[item.quality].label} · Lv.${item.level}</strong><p>${placed ? '已装备' : owned ? '战场暂放' : s.phase === 'opening' ? '起始赠送' : '待选择'} · ${shapePreview(item)}</p></div></div><div class="detail-category">${PROFESSIONS[item.profession].name} / ${BRANCHES[item.branch].name} / ${d.style === 'melee' ? '近战物理' : d.style === 'ranged' ? '远程物理' : d.style === 'spell' ? '法术攻击' : '防御 / 辅助'}</div><div class="detail-stats"><span>伤害<b>${item.attack.toFixed(1)}</b></span><span>生命<b>+${item.hp.toFixed(0)}</b></span><span>防御<b>+${item.defense.toFixed(1)}</b></span></div><p>${esc(d.description)}</p><div class="detail-meta"><span>共鸣贡献 <b>${contributionPoints(item)} 点</b></span><span>分支效果倍率 <b>${Math.round(item.potency * 100)}%</b></span></div><h3>共鸣效果</h3>${keys.length ? '' : '<p>尚未选择匹配的共鸣。装备基础属性与自身效果照常生效。</p>'}${keys
-      .map((k) => {
-        const r = resonanceScore(s.inventory, s.draft, k),
-          active = s.run.resonances.includes(k);
-        return `<p class="detail-effect ${resonanceRankClass(RESONANCES[k].rank)} ${active ? '' : 'muted'}"><b>${RESONANCES[k].name} · ${resonanceRankName(RESONANCES[k].rank)} · ${active ? `${r.tier} 段` : '尚未选择'}</b><small>${RESONANCES[k].description}${active ? '' : '（选择对应共鸣后生效）'}</small></p>`;
-      })
-      .join('')}<h3>相邻联动</h3>${
-      a.links
-        .filter((l) => l.source === id || l.target === id)
-        .map(
-          (l) =>
-            `<p>${esc(this.game.findItem(l.source === id ? l.target : l.source)!.name)} · ${l.label}</p>`,
-        )
-        .join('') || '<p class="muted">暂无联动。无分支物品相邻武器可增加伤害。</p>'
-    }<h3>${next ? '合并后预览' : '已达到最高等级'}</h3>${next ? `<p>Lv.${item.level + 1} · 伤害 ${next.attack.toFixed(1)} / 生命 +${next.hp.toFixed(0)} / 防御 +${next.defense.toFixed(1)} · 共鸣 ${cells(item).length * 2 ** item.level} 点</p><small>${partner ? `可拖到 ${esc(partner.name)} Lv.${partner.level} 合并` : '需要另一件同名同级装备，拖动到一起合并'}</small>` : ''}<div class="detail-actions">${owned ? `<button class="danger-button" data-pack-action="discard" ${this.game.editable() ? '' : 'disabled'}>弃用 · +1 点</button>` : ''}</div>`;
+      a = this.game.packAnalysis(true);
+    const proposal = itemProposal(item.templateId);
+    const links = a.links.filter((l) => l.source === id || l.target === id);
+    const role =
+      proposal.adjacency.direction === '给别人'
+        ? '增幅相邻物品'
+        : proposal.adjacency.direction === '别人给自己'
+          ? '相邻物品增强自身'
+          : '相邻效果';
+    this.details.innerHTML = `<header class="item-description-header" style="--quality-color:${QUALITIES[item.quality].color}"><h2>${esc(item.name)} <small>【${item.level}阶】</small></h2><span>${placed ? '装备中' : owned ? '暂放中' : '起始补给'}</span><button data-pack-action="close" aria-label="关闭装备详情">×</button></header>
+    <div class="item-description-overview"><div class="item-description-tags">${itemPainting(item, 0, 'detail')}<strong>${proposal.contributionTags.join(' · ')}</strong><small>共鸣值：${contributionPoints(item)}</small><small>${shapePreview(item)}</small></div><div class="item-description-attributes"><p>人物攻击 <b>+${item.attack}</b></p><p>人物防御 <b>+${item.defense}</b></p><p>人物生命 <b>+${item.hp}</b></p></div></div>
+    <section class="item-native-effect"><h3>当前效果</h3><p>${esc(readableEffect(itemStageText(item)))}</p></section>
+    <section class="item-adjacency-effect"><h3>${role}</h3><p>${esc(adjacencyDescription(item))}</p><small>相邻指物品格子边缘接触，斜角不算。</small>${
+      links.length
+        ? `<div class="item-active-links"><strong>当前已生效</strong>${links
+            .map((l) => {
+              const source = this.game.findItem(l.source)!,
+                target = this.game.findItem(l.target)!;
+              return `<p>${esc(source.name)} → ${esc(target.name)}：${l.label}</p>`;
+            })
+            .join('')}</div>`
+        : '<small class="muted">当前没有相邻增幅生效</small>'
+    }</section>
+    <section class="item-stage-changes"><h3>升阶效果</h3>${proposal.stageEffects.map((text, n) => `<p class="${item.level === n + 1 ? 'reached' : 'muted'}"><b>【${n + 1}阶】</b>${esc(readableEffect(text))}</p>`).join('')}<details><summary>各阶人物属性</summary>${proposal.attributes.map((v, n) => `<p>${n + 1}阶 · 攻击 +${v.attack} · 生命 +${v.hp} · 防御 +${v.defense}</p>`).join('')}</details></section>
+    <small class="item-contribution-note">贡献标签：${proposal.contributionTags.join(' + ')} · ${contributionPoints(item)} 点</small><div class="detail-actions">${owned ? `<button class="danger-button" data-pack-action="discard" ${this.game.editable() ? '' : 'disabled'}>弃用 · +1 点</button>` : ''}</div>`;
     if (!this.details.open) this.details.showModal();
   }
   private action(action: string) {
@@ -347,6 +368,17 @@ export class PackUI {
     const r = document.getElementById('battle-panel')!.getBoundingClientRect();
     return r.width > 0 && x >= r.left && x < r.right && y >= r.top && y < r.bottom;
   }
+  private recycleTarget(x: number, y: number) {
+    // Only the visible footer button accepts recycling; bag cells always win
+    // if layout changes ever cause the two rectangles to overlap.
+    if (this.point(x, y)) return null;
+    const button = document.getElementById('point-redeem');
+    if (!button || !this.game.editable()) return null;
+    const r = button.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && x >= r.left && x < r.right && y >= r.top && y < r.bottom
+      ? button
+      : null;
+  }
   private upperTarget(x: number, y: number, source: string) {
     for (const el of this.root.querySelectorAll<SVGElement>('#field-items [data-pack-item]')) {
       if (el.dataset.packItem === source) continue;
@@ -376,6 +408,7 @@ export class PackUI {
     this.root
       .querySelectorAll('.merge-target')
       .forEach((el) => el.classList.remove('merge-target'));
+    this.root.querySelector('.recycle-target')?.classList.remove('recycle-target');
   }
   private cancel() {
     const g = this.gesture;
@@ -398,6 +431,11 @@ export class PackUI {
     this.floating.style.cssText = `width:${(d.w * r.width) / PACK_COLS}px;height:${(d.h * r.height) / PACK_ROWS}px;left:${clientX - (this.anchor[0] * r.width) / PACK_COLS - r.width / (PACK_COLS * 2)}px;top:${clientY - (this.anchor[1] * r.height) / PACK_ROWS - r.height / (PACK_ROWS * 2)}px`;
     this.floating.innerHTML = itemPainting(item, this.rotation, 'floating');
     document.body.append(this.floating);
+    const recycle = this.recycleTarget(clientX, clientY);
+    if (recycle) {
+      recycle.classList.add('recycle-target');
+      return;
+    }
     const point = this.point(clientX, clientY);
     if (!point) {
       const target = this.upperTarget(clientX, clientY, item.id);
@@ -440,7 +478,7 @@ export class PackUI {
       const editable = this.game.editable(),
         layout = editable ? s.draft : s.placements,
         a = this.game.packAnalysis(editable);
-      const open = openBagCells(s.run.kills),
+      const open = runBagCells(s),
         newCells = this.lastOpen
           ? new Set([...open].filter((k) => !this.lastOpen!.has(k)))
           : new Set<string>();
@@ -456,11 +494,10 @@ export class PackUI {
             const item = this.game.findItem(p.id)!,
               d = dimensions(item, p),
               points = cells(item, p.rotation);
-            return `<svg class="pack-piece" data-pack-item="${item.id}" role="button" tabindex="0" aria-label="${esc(item.name)}，等级${item.level}" style="left:${(p.x / 7) * 100}%;top:${(p.y / 6) * 100}%;width:${(d.w / 7) * 100}%;height:${(d.h / 6) * 100}%;--item-color:${QUALITIES[item.quality].color};--item-fill:${gradeFill[item.quality]}" viewBox="0 0 ${d.w * 100} ${d.h * 100}"><path class="item-outline" d="${shapePath(points)}"/>${itemPainting(item, p.rotation, 'board')}<text class="item-level" x="${points[0][0] * 100 + 12}" y="${points[0][1] * 100 + 25}">Lv.${item.level}</text></svg>`;
+            return `<svg class="pack-piece quality-${item.quality}" data-pack-item="${item.id}" role="button" tabindex="0" aria-label="${esc(item.name)}，等级${item.level}" style="left:${(p.x / 7) * 100}%;top:${(p.y / 6) * 100}%;width:${(d.w / 7) * 100}%;height:${(d.h / 6) * 100}%;--item-color:${QUALITIES[item.quality].color};--item-fill:${gradeFill[item.quality]}" viewBox="0 0 ${d.w * 100} ${d.h * 100}"><path class="item-outline" d="${shapePath(points)}"/>${itemPainting(item, p.rotation, 'board')}<path class="item-grade-rim" d="${shapePath(points)}"/><rect class="item-grade-badge" x="${points[0][0] * 100 + 7}" y="${points[0][1] * 100 + 6}" width="55" height="27" rx="3"/><text class="item-level" x="${points[0][0] * 100 + 12}" y="${points[0][1] * 100 + 25}">${item.level}阶</text></svg>`;
           })
           .join('');
-      document.getElementById('pack-space')!.textContent =
-        `${a.occupied}/${bagCapacity(s.run.kills)} 格`;
+      document.getElementById('pack-space')!.textContent = `${a.occupied}/${runBagCapacity(s)} 格`;
       document.getElementById('pack-hint')!.textContent = this.selected
         ? `${this.game.findItem(this.selected)!.name} · ${this.rotation * 90}°`
         : '';
@@ -479,7 +516,7 @@ export class PackUI {
   private fieldItem(i: Equipment, offer: boolean) {
     const d = dimensions(i, { rotation: 0 }),
       points = cells(i);
-    return `<svg class="field-piece field-item quality-${i.quality} ${offer ? 'offer' : ''}" data-pack-item="${i.id}" role="button" tabindex="0" aria-label="${esc(i.name)}，等级${i.level}，${cells(i).length}格" style="--shape-w:${d.w};--shape-h:${d.h};--item-color:${QUALITIES[i.quality].color};--item-fill:${gradeFill[i.quality]}" viewBox="0 0 ${d.w * 100} ${d.h * 100}"><title>${esc(i.name)} · Lv.${i.level} · ${BRANCHES[i.branch].name}</title><path class="item-outline" d="${shapePath(points)}"/>${itemPainting(i, 0, 'field')}<text class="item-level" x="${points[0][0] * 100 + 12}" y="${points[0][1] * 100 + 25}">${i.level}</text></svg>`;
+    return `<svg class="field-piece field-item quality-${i.quality} ${offer ? 'offer' : ''}" data-pack-item="${i.id}" role="button" tabindex="0" aria-label="${esc(i.name)}，等级${i.level}，${cells(i).length}格" style="--shape-w:${d.w};--shape-h:${d.h};--item-color:${QUALITIES[i.quality].color};--item-fill:${gradeFill[i.quality]}" viewBox="0 0 ${d.w * 100} ${d.h * 100}"><title>${esc(i.name)} · Lv.${i.level} · ${BRANCHES[i.branch].name}</title><path class="item-outline" d="${shapePath(points)}"/>${itemPainting(i, 0, 'field')}<path class="item-grade-rim" d="${shapePath(points)}"/><rect class="item-grade-badge" x="${points[0][0] * 100 + 7}" y="${points[0][1] * 100 + 6}" width="55" height="27" rx="3"/><text class="item-level" x="${points[0][0] * 100 + 12}" y="${points[0][1] * 100 + 25}">${i.level}阶</text></svg>`;
   }
   private cooldowns() {
     const s = this.game.state;
@@ -487,11 +524,8 @@ export class PackUI {
       const id = el.dataset.packItem!,
         i = this.game.findItem(id);
       if (!i) continue;
-      const d = definition(i),
-        remaining = Math.max(0, (s.combat.timers[id] ?? 0) - 1),
-        inCombat = s.phase === 'combat',
-        starved = inCombat && !!d.resource && remaining === 0 && s.combat[d.resource] < d.cost;
-      el.classList.toggle('resource-starved', starved);
+      const remaining = Math.max(0, (s.combat.timers[id] ?? 0) - 1),
+        inCombat = s.phase === 'combat';
       let label = el.querySelector<SVGTextElement>('.cooldown-label');
       if (!label) {
         label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -502,12 +536,10 @@ export class PackUI {
         el.append(label);
       }
       label.textContent =
-        inCombat && d.cooldown
-          ? starved
-            ? '资源不足'
-            : remaining
-              ? `${remaining} 回合`
-              : '就绪'
+        inCombat && itemSkills(i.templateId, i.level).some((s) => s.cooldown)
+          ? remaining
+            ? `${remaining} 回合`
+            : '就绪'
           : '';
     }
   }

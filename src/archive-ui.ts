@@ -1,15 +1,16 @@
-import { bagCells, cells, dimensions, RESONANCES, resonanceScore, PROFESSIONS } from './backpack';
+import { bagCells, cells, dimensions, PROFESSIONS, RESONANCES, resonanceScore } from './backpack';
 import { QUALITIES } from './data';
 import { ATTRIBUTE_KEYS, ATTRIBUTES, TALENTS } from './hero';
-import { RUN_LENGTH, STAGES, TRIALS } from './journey';
+import { STAGES, TRIALS } from './journey';
 import { esc } from './pack-ui';
-import { heroArt, itemPainting, shapePath } from './scene';
+import { realmName, tome } from './progression';
 import { resonanceRankClass, resonanceRankName } from './resonance-appearance';
+import { heroArt, itemPainting, shapePath } from './scene';
 import type { HeroRecord } from './types';
 export type ArchiveTab = 'profile' | 'resonances' | 'equipment';
 export const archiveOutcome = (h: HeroRecord) =>
   h.outcome === 'win'
-    ? h.completed === RUN_LENGTH
+    ? h.completed === h.routeLength && h.routeLength > h.normalLength
       ? '极限毕业'
       : '正常结业'
     : h.outcome === 'death'
@@ -19,7 +20,7 @@ export function archiveDetails(h: HeroRecord, tab: ArchiveTab) {
   const b = h.loadout;
   const content =
     tab === 'profile'
-      ? `<section class="archive-attributes"><h3>最终属性</h3><div class="hero-stats"><span>输出 <b>${h.stats.attack}/回合</b></span><span>生命 <b>${h.stats.hp}</b></span><span>防御 <b>${h.stats.defense}</b></span><span>速度 <b>${h.stats.speed}</b></span></div><small>续航 ${h.stats.sustain}/回合</small></section><section class="archive-talents"><h3>起始天赋</h3><div class="talent-grid">${h.talents.map((k) => `<div class="talent-badge"><strong>${TALENTS[k].name}</strong><small>${TALENTS[k].description}</small></div>`).join('')}</div><p>${ATTRIBUTE_KEYS.map((k) => `${ATTRIBUTES[k].name} +${h.allocation[k]} 点`).join(' · ')}</p></section><div class="graduate-trials">${h.trials.map((t, n) => `<span class="${n < h.stages ? 'passed' : ''}">${STAGES[n]}<small>${n < h.stages ? TRIALS[t ?? 0].name : '未通过'}</small></span>`).join('')}</div><p class="archive-score">战力来源：成长 ${h.score.growth} + 构筑 ${h.score.build} + 表现 ${h.score.performance}</p>`
+      ? `<section class="archive-attributes"><h3>${realmName(h.realm)}</h3><p>${h.tomeId ? (tome(h.tomeId)?.name ?? '') : ''}${h.tomeLevel ? ' · Lv.' + h.tomeLevel : ''}</p><h3>当前属性</h3><div class="hero-stats"><span>攻击 <b>${h.stats.attack}</b></span><span>生命 <b>${h.stats.hp}</b></span><span>防御 <b>${h.stats.defense}</b></span><span>速度 <b>${h.stats.speed}</b></span></div><small>续航 ${h.stats.sustain}/回合</small></section><section class="archive-talents"><h3>起始天赋</h3><div class="talent-grid">${h.talents.map((k) => `<div class="talent-badge"><strong>${TALENTS[k].name}</strong><small>${TALENTS[k].description}</small></div>`).join('')}</div><p>${ATTRIBUTE_KEYS.map((k) => `${ATTRIBUTES[k].name} +${h.allocation[k]} 点`).join(' · ')}</p></section><div class="graduate-trials">${h.trials.map((t, n) => `<span class="${n < h.stages ? 'passed' : ''}">${STAGES[n]}<small>${n < h.stages ? TRIALS[t ?? 0].name : '未通过'}</small></span>`).join('')}</div><p class="archive-score">战力来源：成长 ${h.score.growth} + 构筑 ${h.score.build} + 表现 ${h.score.performance}</p>`
       : tab === 'resonances'
         ? `<div class="archive-resonances">${
             h.resonances.length
@@ -46,5 +47,5 @@ export function archiveDetails(h: HeroRecord, tab: ArchiveTab) {
                   )}</div><div class="bound-item-detail" data-bound-detail><strong>仅供 ${esc(h.name)} 使用</strong><p>计入最终战力</p></div>`
               : '<p>没有绑定装备</p>'
           }</section>`;
-  return `<article class="archive-frame"><header class="archive-heading"><h2>勇者档案</h2></header><div class="archive-identity">${heroArt(h.profession)}</div><h2 class="archive-name">${esc(h.name)}</h2><p class="archive-power">${PROFESSIONS[h.profession].name} · <span class="rating-${h.rating}">${h.rating} 级</span> · 战力 ${h.power}</p><nav class="archive-tabs" aria-label="档案页面">${(['profile', 'resonances', 'equipment'] as const).map((t, n) => `<button data-archive-tab="${t}" aria-pressed="${t === tab}" class="${t === tab ? 'selected' : ''}">${['档案', '共鸣', '装备'][n]}</button>`).join('')}</nav><div class="archive-content">${content}</div><footer>第 ${h.chapter} 关 · ${h.completed}/${RUN_LENGTH} 步 · ${archiveOutcome(h)}</footer></article>`;
+  return `<article class="archive-frame"><header class="archive-heading"><h2>勇者档案</h2></header><div class="archive-identity">${heroArt(h.profession)}</div><h2 class="archive-name">${esc(h.name)}</h2><p class="archive-power">${PROFESSIONS[h.profession].name} · <span class="rating-${h.rating}">${h.rating} 级</span> · 战力 ${h.power}</p><nav class="archive-tabs" aria-label="档案页面">${(['profile', 'resonances', 'equipment'] as const).map((t, n) => `<button data-archive-tab="${t}" aria-pressed="${t === tab}" class="${t === tab ? 'selected' : ''}">${['档案', '共鸣', '装备'][n]}</button>`).join('')}</nav><div class="archive-content">${content}</div><footer>第 ${h.chapter} 关 · ${h.completed}/${h.routeLength} 步 · ${archiveOutcome(h)}</footer></article>`;
 }

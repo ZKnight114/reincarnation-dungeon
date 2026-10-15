@@ -1,3 +1,4 @@
+import { setEnemy, setPlayer } from './helpers';
 import test, { beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { Window } from 'happy-dom';
@@ -27,7 +28,7 @@ test('route removes opening/pet/mentor years while preserving observed trial, re
     assert.equal(e[4].kind, 'dig');
     assert.equal(e[11].kind, 'treasure');
     assert.equal(e[19].kind, 'chance');
-    for (const node of [8, 16, 24]) assert.equal(e[node].kind, 'elite');
+    for (const node of [8, 16, 24]) assert.equal(e[node].kind, 'boss');
     for (const node of [5, 13, 17, 22]) assert.equal(e[node].kind, 'rest');
     assert.equal(e[31].kind, 'graduation');
     assert.equal(e[36].kind, 'ending');
@@ -106,6 +107,16 @@ test('graduation binds only equipped gear with its merged level, exact shape ori
   g.enterChapters();
   g.recruit('mage');
   g.balanceAllocation();
+  if (g.state.phase === 'configure' && !g.state.run.trainee?.tomeId) g.confirmAllocation();
+  g.selectTome(
+    (
+      {
+        warrior: 'warrior_sword_tome',
+        mage: 'mage_flame_tome',
+        rogue: 'rogue_poison_tome',
+      } as const
+    )[g.state.run.profession],
+  );
   g.startRun();
   g.claimStarterRound();
   assert.deepEqual(g.state.meta.heroes[0], original);
@@ -155,8 +166,8 @@ test('monthly spring offers actual healing versus a permanent basic max-health g
 });
 test('journey retains event results even after many combat turns; loot and milestone records are distinct', () => {
   const g = pendingTrial(1);
-  g.state.enemy!.maxHp = g.state.enemy!.hp = 1e7;
-  g.state.player.maxHp = g.state.player.hp = 1e5;
+  setEnemy(g, { maxHp: 1e7, hp: 1e7 });
+  setPlayer(g, { maxHp: 1e5, hp: 1e5 });
   for (let n = 0; n < 60; n++) g.advanceTurn();
   g.state.enemy!.hp = 0;
   g.update(0.01);
@@ -208,10 +219,9 @@ test('the lower region shows journey, special choices open in a modal, or the ba
   assert.equal(el('#decision-sheet').tagName, 'DIALOG');
   assert.equal(win.document.querySelector('.sheet-backdrop'), null);
   assert.equal(win.document.querySelector('#battle-panel .journey-entry'), null);
-  click('[data-action="toggle-pack"]');
+  click('[data-action="open-pack"]');
   assert.equal(el('#view-pack').hidden, false);
   assert.equal(el('#journey-panel').hidden, true);
-  click('[data-action="toggle-pack"]');
   click('[data-event="heal"]');
   assert.equal(g.state.phase, 'camp');
   assert.equal(el('#journey-panel').hidden, false);
@@ -272,7 +282,6 @@ test('graduate equipment can be inspected by click or keyboard without exposing 
 test('journey markup escapes externally supplied names and text, including results', () => {
   g.chronicle('<img src=x>', '<script>alert(1)</script>', 'loot', 0);
   ui.render();
-  click('[data-action="toggle-pack"]');
   assert.equal(win.document.querySelector('#journey-history img'), null);
   assert.equal(win.document.querySelector('#journey-history script'), null);
   assert.match(el('#journey-history').textContent, /<img src=x>/);

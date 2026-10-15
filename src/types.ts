@@ -114,6 +114,8 @@ export interface Effect {
   sourceId: string;
 }
 export interface Enemy {
+  templateId?: string;
+  profession?: Profession;
   name: string;
   species: number;
   hp: number;
@@ -188,8 +190,16 @@ export interface Trainee {
   recruitment: 'random' | 'targeted';
   talents: TalentKey[];
   allocation: Attributes;
+  realmStart?: number;
+  tomeId?: string | null;
+  tomeLevel?: number;
 }
 export interface HeroRecord extends Trainee {
+  ratingVersion: 14 | 15;
+  realm: number;
+  guildAtGraduation: number;
+  routeLength: number;
+  normalLength: number;
   chapter: number;
   outcome: Outcome;
   completed: number;
@@ -226,11 +236,12 @@ export interface DigState {
   claimed: string[];
 }
 export interface GameState {
-  version: 14;
+  version: 15;
   phase:
     | 'home'
     | 'chapter'
     | 'configure'
+    | 'tome'
     | 'opening'
     | 'initial'
     | 'camp'
@@ -241,6 +252,11 @@ export interface GameState {
     | 'reward'
     | 'summary';
   meta: {
+    guildLevel: number;
+    staminaSpent: number;
+    tomes: Record<string, { level: number; pages: number }>;
+    tomeGifts: Profession[];
+    pendingPages: { heroId: string; choices: string[]; refreshed: boolean; extreme: boolean }[];
     gold: number;
     energy: { value: number; updatedAt: number };
     heroes: HeroRecord[];
@@ -277,6 +293,12 @@ export interface GameState {
     storyElapsed: number;
     autoExplore: boolean;
     dig: DigState | null;
+    realm: number;
+    peakStrength: number;
+    encounter: Enemy | null;
+    enemyHistory: Profession[];
+    boundTome: { id: string; level: number } | null;
+    legacyRoute?: boolean;
   };
   awakening: {
     stage: number;
@@ -309,6 +331,7 @@ export interface GameState {
     hits: Record<string, number>;
     contributions: Record<string, Contribution>;
     counters: Record<string, number>;
+    runtime: import('./skill-types').BattleRuntime | null;
   };
   skipCombat: boolean;
   enemy: Enemy | null;

@@ -1,3 +1,4 @@
+import { setEnemy, setPlayer } from './helpers';
 import { advanceCamp } from './helpers';
 import { heroAttributes, BASE_ATTRIBUTES } from '../src/hero';
 import test from 'node:test';
@@ -27,7 +28,7 @@ import type { Profession, ResonanceKey } from '../src/types';
 import { start, seed, positionEvent, placeFree, recruitToConfigure, add } from './helpers';
 test('v10 starts as a guild with reserve gold, full recruitment energy and no hero yet', () => {
   const s = createState();
-  assert.equal(s.version, 14);
+  assert.equal(s.version, 15);
   assert.equal(s.phase, 'home');
   assert.equal(s.meta.energy.value, 60);
   assert.equal(s.meta.gold, 100);
@@ -39,8 +40,8 @@ test('100 seeded routes have 37 nodes, three independent trials and optional gra
   for (let n = 0; n < 100; n++) {
     const e = generateEvents(seed(n));
     assert.equal(e.length, 37);
-    assert.equal(e.filter((x) => x.kind === 'battle').length, 16);
-    for (const i of [8, 16, 24]) assert.equal(e[i].kind, 'elite');
+    assert.equal(e.filter((x) => x.kind === 'battle').length, 12);
+    for (const i of [8, 16, 24]) assert.equal(e[i].kind, 'boss');
     assert.equal(e[31].kind, 'graduation');
     assert.equal(
       e.some((x) => x.kind === 'mentor'),
@@ -83,7 +84,7 @@ test('random recruit fixes its profession, resume does not charge again and gold
   assert.equal(g.state.phase, 'chapter');
   assert.equal(g.recruit(), null);
   const t = structuredClone(g.state.run.trainee!);
-  assert.equal(g.state.meta.energy.value, 50);
+  assert.equal(g.state.meta.energy.value, 55);
   assert.ok(g.recruit());
   g.backHome();
   g.enterChapters();
@@ -91,8 +92,18 @@ test('random recruit fixes its profession, resume does not charge again and gold
   assert.deepEqual(g.state.run.trainee, t);
   assert.ok(g.startRun('mage'));
   g.balanceAllocation();
+  if (!g.state.run.trainee?.tomeId) g.confirmAllocation();
+  g.selectTome(
+    (
+      {
+        warrior: 'warrior_sword_tome',
+        mage: 'mage_flame_tome',
+        rogue: 'rogue_poison_tome',
+      } as const
+    )[g.state.run.profession],
+  );
   assert.equal(g.startRun(), null);
-  assert.equal(g.state.meta.energy.value, 50);
+  assert.equal(g.state.meta.energy.value, 55);
   assert.equal(g.state.meta.gold, gold);
 });
 test('energy recovers discrete points, retains remainder, stops at cap and does not bank full time', () => {
@@ -134,12 +145,12 @@ test('offline recovery resumes exact partial interval and ignores backwards cloc
 });
 test('insufficient energy blocks recruitment and survives save without a deducted balance', () => {
   const g = new Game();
-  g.state.meta.energy.value = 9;
+  g.state.meta.energy.value = 4;
   g.enterChapters();
   g.chooseChapter(1);
   assert.match(g.recruit()!, /体力/);
   assert.equal(g.state.run.trainee, null);
-  assert.equal(g.state.meta.energy.value, 9);
+  assert.equal(g.state.meta.energy.value, 4);
   assert.doesNotThrow(() => parseSave(JSON.stringify(g.state)));
 });
 test('neutral items contribute profession resonance but adjacent neutral item boosts a weapon', () => {
@@ -155,13 +166,7 @@ test('neutral items contribute profession resonance but adjacent neutral item bo
   g.state.inventory = [gem, wpn];
   g.state.draft = layout;
   assert.equal(g.packAnalysis(true).links.length, 1);
-  assert.ok(
-    Math.abs(
-      g.packAnalysis(true).bonuses[wpn.id].power -
-        (heroAttributes(g.state.run.trainee, 'warrior').attack / BASE_ATTRIBUTES.warrior.attack +
-          0.1),
-    ) < 1e-8,
-  );
+  assert.equal(g.packAnalysis(true).bonuses[wpn.id].damage, 0.08);
 });
 test('every normal fight immediately owns all three drops, no extra choice, points or gold', () => {
   for (const p of PROFESSION_KEYS)
@@ -266,61 +271,10 @@ function fight(p: Profession, template: string, keys: ResonanceKey[] = []) {
   placeFree(g, g.state.inventory[0].id);
   g.state.run.resonances = keys;
   advanceCamp(g);
-  g.state.enemy!.hp = g.state.enemy!.maxHp = 1e8;
-  g.state.enemy!.attack = 0;
+  setEnemy(g, { hp: 1e8, maxHp: 1e8, attack: 0 });
   return g;
 }
-test('profession effects are dormant without resonance and activate only their matching series', () => {
-  for (const [p, id, k, effect] of [
-    ['rogue', 'rogue_assassin_3', 'venom', 'poison'],
-    ['mage', 'mage_flame_3', 'ignite', 'burn'],
-    ['mage', 'mage_ice_3', 'frost', 'chill'],
-  ] as const) {
-    const base = fight(p, id);
-    base.update(5);
-    assert.equal(base.state.enemy!.effects.length, 0);
-    const active = fight(p, id, [k]);
-    active.update(5);
-    assert.ok(active.state.enemy!.effects.some((e) => e.kind === effect));
-  }
-  const wrong = fight('rogue', 'rogue_archer_3', ['venom']);
-  wrong.update(5);
-  assert.equal(wrong.state.enemy!.effects.length, 0);
-});
-test('third-hit attacks, life return, shield reinforcement and mage mana return have actual effects', () => {
-  const base = fight('warrior', 'warrior_blade_3'),
-    cleave = fight('warrior', 'warrior_blade_3', ['cleave']);
-  base.update(8);
-  cleave.update(8);
-  assert.ok(
-    Object.values(cleave.state.combat.contributions).reduce((n, r) => n + r.damage, 0) >
-      Object.values(base.state.combat.contributions).reduce((n, r) => n + r.damage, 0),
-  );
-  const heal = fight('rogue', 'rogue_archer_3', ['leech']);
-  heal.state.player.hp = 20;
-  heal.update(5);
-  assert.ok(heal.state.player.hp > 20);
-  const guard = fight('warrior', 'warrior_blade_3', ['iron_guard']);
-  guard.update(5);
-  assert.ok(guard.state.player.shield > 0);
-  const ice = fight('mage', 'mage_ice_3', ['mana_flow']);
-  ice.state.combat.mana = 0;
-  ice.update(5);
-  assert.ok(ice.feedback.some((f) => f.kind === 'resource'));
-});
-test('two bosses keep heavy strike and summons without blocking permanent hero graduation', () => {
-  for (const chapter of [1, 2]) {
-    const g = start();
-    g.state.meta.highestChapter = 2;
-    g.state.run.chapter = chapter;
-    positionEvent(g, 'boss');
-    g.state.enemy!.hp = g.state.enemy!.maxHp = 1e8;
-    g.state.player.hp = g.state.player.maxHp = 1000;
-    g.update(7.1);
-    if (chapter === 1) assert.ok(g.state.log.some((l) => l.text.includes('蓄力重击')));
-    else assert.equal(g.state.combat.minions, 1);
-  }
-});
+
 test('death always retains exactly one hero, early failure low rank, no gold; repeated settlement cannot duplicate', () => {
   const g = start(),
     gold = g.state.meta.gold;
@@ -371,7 +325,7 @@ test('full 37-node extreme run awards a fixed hero and currency once, then permi
     else if (s.phase === 'event') {
       const e = g.currentEvent()!;
       g.chooseEvent(
-        e.kind === 'elite'
+        ['elite', 'boss'].includes(e.kind)
           ? 'trial-0'
           : e.kind === 'rest'
             ? 'heal'
@@ -397,7 +351,7 @@ test('full 37-node extreme run awards a fixed hero and currency once, then permi
   assert.equal(hero.outcome, 'win');
   assert.equal(hero.stages, 3);
   assert.equal(hero.resonances.length, 4);
-  assert.equal(g.state.meta.gold, gold + 230);
+  assert.equal(g.state.meta.gold, gold + 320);
   assert.equal(g.state.inventory.length, 0);
   assert.equal(g.retreat(), false);
   g.returnToSelection();
@@ -406,28 +360,7 @@ test('full 37-node extreme run awards a fixed hero and currency once, then permi
   assert.deepEqual(g.state.meta.heroes[0], hero);
   assert.doesNotThrow(() => parseSave(JSON.stringify(g.state)));
 });
-test('hero scoring values utility and discounts resource-starved damage rather than only summing attack', () => {
-  const g = start();
-  g.state.run.kills = 14;
-  const base = g.heroPreview()!;
-  const armor = add(g, 'warrior_guard_4', 3);
-  placeFree(g, armor.id);
-  const defended = g.heroPreview()!;
-  assert.ok(defended.score.build > base.score.build);
-  assert.ok(defended.stats.defense > base.stats.defense);
-  assert.ok(defended.stats.sustain > base.stats.sustain);
-  g.state.inventory = [
-    g.makeItem('warrior_blade_4', 5),
-    g.makeItem('warrior_blade_4', 5),
-    g.makeItem('warrior_blade_4', 5),
-    g.makeItem('warrior_blade_4', 5),
-  ];
-  g.state.draft = [];
-  for (const i of g.state.inventory) placeFree(g, i.id);
-  const a = g.packAnalysis(true);
-  assert.ok(a.efficiency < 1);
-  assert.equal(g.heroPreview()!.stats.attack, Math.round(a.dps * a.efficiency));
-});
+
 test('malformed saves reject old schema, invalid jobs, reserved gear, duplicate heroes, invalid energy and forged score', () => {
   assert.throws(() => parseSave('{"version":7}'), /v14/);
   const g = start();

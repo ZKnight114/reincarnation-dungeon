@@ -49,6 +49,20 @@ const begin = () => {
   click('[data-profession="warrior"]');
   click('[data-action="recruit"]');
   click('[data-action="balance-allocation"]');
+  click('[data-action="confirm-allocation"]');
+  if (game.state.phase === 'tome' && !game.state.run.trainee?.tomeId) {
+    game.confirmAllocation();
+    game.selectTome(
+      (
+        {
+          warrior: 'warrior_sword_tome',
+          mage: 'mage_flame_tome',
+          rogue: 'rogue_poison_tome',
+        } as const
+      )[game.state.run.profession],
+    );
+    ui.render();
+  }
   click('[data-action="start"]');
 };
 const start = () => {
@@ -120,7 +134,7 @@ const drag = (id: string, from: [number, number], to: [number, number], end = 'p
   );
 };
 test('guild to targeted recruit and configured hero flow has one entry; no removed controls remain', () => {
-  assert.equal(win.document.querySelectorAll('#home-screen button').length, 2);
+  assert.equal(win.document.querySelectorAll('#home-screen button').length, 4);
   begin();
   assert.equal(game.state.phase, 'opening');
   assert.equal(game.state.run.trainee!.talents.length, 4);
@@ -136,12 +150,83 @@ test('guild to targeted recruit and configured hero flow has one entry; no remov
   ])
     assert.equal(win.document.querySelector(selector), null);
 });
+
+test('guild library and level controls survive render frames during a touch press and open their panels', () => {
+  const library = el('.guild-progress-controls [data-action="library"]'),
+    level = el('.guild-progress-controls [data-action="guild-level"]');
+  library.dispatchEvent(
+    new win.PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' }),
+  );
+  for (let n = 0; n < 5; n++) {
+    now += 100;
+    ui.render();
+  }
+  assert.equal(el('.guild-progress-controls [data-action="library"]'), library);
+  assert.equal(el('.guild-progress-controls [data-action="guild-level"]'), level);
+  library.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+  assert.equal((el('#modal') as any).open, true);
+  assert.match(el('#modal-body').textContent, /公会典籍/);
+  assert.equal(win.document.querySelectorAll('.library-list section').length, 9);
+  click('[data-action="close"]');
+  level.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+  assert.match(el('#modal-body').textContent, /冒险公会 Lv.1/);
+  assert.ok(el('[data-action="upgrade-guild"]'));
+});
+
+test('allocation precedes an independent nine-book screen, with class filters and a cross-class preview', () => {
+  click('[data-action="chapters"]');
+  click('[data-recruit-mode="targeted"]');
+  click('[data-profession="warrior"]');
+  click('[data-action="recruit"]');
+  assert.equal(win.document.querySelector('[data-tome]'), null);
+  assert.equal(win.document.querySelector('[data-action="start"]'), null);
+  click('[data-action="balance-allocation"]');
+  click('[data-action="confirm-allocation"]');
+  assert.equal(game.state.phase, 'tome');
+  assert.equal(win.document.querySelectorAll('[data-tome]').length, 9);
+  click('[data-tome-filter="mage"]');
+  assert.equal(win.document.querySelectorAll('[data-tome]').length, 3);
+  click('[data-tome="mage_flame_tome"]');
+  assert.match(el('.tome-effects').textContent, /灼烧/);
+  assert.match(el('.tome-source').textContent, /15%.*法师.*法杖/);
+  assert.equal(game.state.meta.tomes.mage_flame_tome.level, 0);
+  assert.equal(loadSave()!.phase, 'tome');
+  click('[data-action="back-allocation"]');
+  assert.equal(game.state.phase, 'configure');
+  assert.equal(win.document.querySelector('[data-tome]'), null);
+  click('[data-action="confirm-allocation"]');
+  click('[data-action="start"]');
+  assert.equal(game.state.phase, 'opening');
+  assert.equal(game.state.run.profession, 'warrior');
+  assert.deepEqual(game.state.run.boundTome, { id: 'mage_flame_tome', level: 1 });
+  assert.equal(game.state.meta.tomes.mage_flame_tome.level, 1);
+  assert.deepEqual(game.state.meta.tomeGifts, ['warrior']);
+});
+
+test('detail layout names adjacency recipients, concrete effects and both fighters professions', () => {
+  start();
+  const sword = game.state.inventory.find((i) => i.templateId === 'warrior_blade_3')!;
+  click(`[data-pack-item="${sword.id}"]`);
+  assert.match(el('.item-adjacency-effect').textContent, /每相邻1件盾.*自身直接伤害增加8%/);
+  assert.match(el('.item-native-effect').textContent, /人物攻击|人物最大生命/);
+  assert.doesNotMatch(el('#equipment-detail').textContent, /%[AHD]|外给增幅|接受联动/);
+  assert.equal(el('.item-description-header h2').textContent, sword.name + ' 【1阶】');
+  click('[data-pack-action="close"]');
+  click('[data-action="continue"]');
+  assert.equal(el('#player-hp .profession-icon').getAttribute('aria-label'), '战士');
+  const professions = { warrior: '战士', mage: '法师', rogue: '盗贼' };
+  assert.equal(
+    el('#enemy-hp .profession-icon').getAttribute('aria-label'),
+    professions[game.state.enemy!.profession!],
+  );
+  assert.equal(el('#combat-hud .profession-icon').getAttribute('aria-label'), '战士');
+});
 test('tap opens structured details and tapping an empty cell never places equipment', () => {
   start();
   const i = fixture('warrior_blade_3');
   click(`[data-pack-item="${i.id}"]`);
   assert.equal((el('#equipment-detail') as any).open, true);
-  assert.match(el('#equipment-detail').textContent, /幽毒|共鸣贡献|效果倍率|合并后预览|尚未选择/);
+  assert.match(el('#equipment-detail').textContent, /人物攻击|四阶变化|贡献标签/);
   click('#equipment-detail [data-pack-action="close"]');
   click('[data-pack-cell="0,0"]');
   click('[data-pack-cell="3,3"]');
@@ -195,7 +280,7 @@ test('exact dragged duplicate merges into receiver without consuming a spare', (
   assert.equal(game.findItem(source.id), null);
   assert.ok(game.findItem(spare.id));
   assert.equal(game.state.draft[0].id, target.id);
-  assert.match(el('.pack-piece').getAttribute('style')!, /#3b6040/);
+  assert.ok(el('.pack-piece').classList.contains('quality-green'));
 });
 test('occupied backpack drop swaps when both fit, otherwise ejects to upper area', () => {
   start();
@@ -310,19 +395,19 @@ test('opening gifts and upper equipment survive reload and continue into next ro
   click('[data-action="claim-starters"]');
   assert.equal(game.state.inventory.length, 6);
 });
-test('cleanup deletes only old game data and preserves subsequent v13 saves', () => {
+test('save cleanup preserves previous raw data and current v15 saves', () => {
   localStorage.setItem('recursion-dungeon-save-v6', 'old');
   localStorage.setItem(SAVE_KEY, 'stale');
   localStorage.setItem('other-project', 'keep');
   cleanLegacyData();
-  assert.equal(localStorage.getItem('recursion-dungeon-save-v6'), null);
-  assert.equal(localStorage.getItem(SAVE_KEY), null);
+  assert.equal(localStorage.getItem('recursion-dungeon-save-v6'), 'old');
+  assert.equal(localStorage.getItem(SAVE_KEY), 'stale');
   assert.equal(localStorage.getItem('other-project'), 'keep');
   ui.persist();
   const raw = localStorage.getItem(SAVE_KEY);
   cleanLegacyData();
   assert.equal(localStorage.getItem(SAVE_KEY), raw);
-  assert.equal(loadSave()!.version, 14);
+  assert.equal(loadSave()!.version, 15);
 });
 test('names, descriptions and logs escape injected markup', () => {
   start();
@@ -334,7 +419,6 @@ test('names, descriptions and logs escape injected markup', () => {
   click(`[data-pack-item="${i.id}"]`);
   assert.equal(el('#equipment-detail').querySelectorAll('img').length, 0);
   click('#equipment-detail [data-pack-action="close"]');
-  click('[data-action="toggle-pack"]');
   assert.equal(el('#journey-panel').querySelectorAll('img').length, 0);
 });
 test('retreat clears local points and equipment; reset returns to the one-entry camp', () => {
@@ -384,14 +468,14 @@ test('pointer capture loss cancels an active drag without moving or consuming eq
   assert.equal(win.document.querySelector('.drag-floating'), null);
   assert.equal(JSON.stringify(game.state.draft), before);
 });
-test('a ready weapon short of its required resource shows the starvation state', () => {
+test('equipment no longer depends on stamina or mana', () => {
   start();
   click('[data-action="continue"]');
   const i = game.state.inventory.find((i) => i.templateId === 'warrior_blade_2')!;
   game.state.combat.stamina = 0;
   game.state.combat.timers[i.id] = 0;
   ui.render();
-  assert.ok(el(`[data-pack-item="${i.id}"]`).classList.contains('resource-starved'));
+  assert.equal(el(`[data-pack-item="${i.id}"]`).classList.contains('resource-starved'), false);
   game.state.combat.stamina = 10;
   ui.render();
   assert.equal(el(`[data-pack-item="${i.id}"]`).classList.contains('resource-starved'), false);

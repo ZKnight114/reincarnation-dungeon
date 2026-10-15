@@ -1,6 +1,11 @@
-import { weaponEffect, shieldMultiplier } from './combat-effects';
 import { CATALOGUE } from './catalogue';
-import { RESONANCES, RESONANCE_KEYS, itemResonanceTiers } from './resonances';
+import { estimateBuild } from './combat';
+import { heroAttributes } from './hero';
+import { itemProposal, receivingLink, LINK_EFFECT_NAMES } from './item-rules';
+import { runRoute } from './journey';
+import { guildMultiplier, tomeAttributes } from './progression';
+import { DESIGN_RESONANCE_IDS, RESONANCES, RESONANCE_KEYS } from './resonances';
+import { itemSkills, resonanceSkills, tomeSkills } from './skills';
 import type {
   Branch,
   BuffKey,
@@ -11,10 +16,9 @@ import type {
   ResonanceKey,
   Shape,
 } from './types';
-import { BASE_ATTRIBUTES, heroAttributes } from './hero';
 export const PACK_COLS = 7,
   PACK_ROWS = 6,
-  LEVEL_POWER = [0, 1, 1.5, 2.1, 2.8, 3.6];
+  LEVEL_POWER = [0, 1, 1.5, 2, 3];
 export const PROFESSIONS: Record<
   Profession,
   {
@@ -31,7 +35,7 @@ export const PROFESSIONS: Record<
   warrior: {
     name: '战士',
     color: '#c4aa77',
-    description: '剑重击与长枪连击，盾牌守护。近战武器消耗耐力，可混合两条攻击路线。',
+    description: '剑重击与长枪连击，盾牌守护。可混合两条攻击路线。',
     trait: '剑 / 长枪 / 盾牌',
     hp: 190,
     defense: 3,
@@ -44,7 +48,7 @@ export const PROFESSIONS: Record<
   mage: {
     name: '法师',
     color: '#9dafe0',
-    description: '火焰爆发与冰霜控制，法袍和魔力辅助。法术消耗法力，选择共鸣解锁灼烧、减速等效果。',
+    description: '火焰爆发与冰霜控制，法袍辅助。物品自带灼烧、减速等回合技能。',
     trait: '法杖 / 魔导书 / 法袍',
     hp: 150,
     defense: 0,
@@ -57,7 +61,7 @@ export const PROFESSIONS: Record<
   rogue: {
     name: '盗贼',
     color: '#96b994',
-    description: '匕首近战与弓弩远程，皮甲辅助。两条攻击路线消耗耐力，毒刃和连射依赖对应共鸣。',
+    description: '匕首近战与弓弩远程，皮甲辅助。物品自带毒伤和标记，可选择专精或混搭。',
     trait: '匕首 / 弓弩 / 皮甲',
     hp: 165,
     defense: 1,
@@ -82,7 +86,7 @@ export const BRANCHES: Record<Branch, { name: string; color: string }> = {
   leather: { name: '皮甲', color: '#bfa985' },
 };
 export const BUFFS: Record<BuffKey, { name: string; description: string }> = {
-  power: { name: '力量', description: '武器伤害 +12%' },
+  power: { name: '力量', description: '人物攻击 +12%' },
   tempo: { name: '敏捷', description: '基础速度 +2' },
   vitality: { name: '体魄', description: '生命上限 +12%（不恢复当前生命）' },
   defense: { name: '护甲', description: '防御 +3' },
@@ -161,184 +165,93 @@ export interface PackItemDefinition {
   style: 'melee' | 'ranged' | 'spell' | null;
   available: boolean;
 }
-type Series = {
-  branch: Branch;
-  names: string[];
-  arts: string[];
-  style: 'melee' | 'ranged' | 'spell';
-  attack: number[];
-  cooldown: number[];
-  cost: number[];
-};
-const series: Record<Profession, Series[]> = {
-  warrior: [
-    {
-      branch: 'blade',
-      names: ['铁剑', '裂石战斧', '骑士大剑', '王庭巨剑'],
-      arts: ['sword', 'axe', 'greatsword', 'greatsword'],
-      style: 'melee',
-      attack: [21, 32, 46, 65],
-      cooldown: [2, 2, 3, 4],
-      cost: [3, 4, 5, 6],
-    },
-    {
-      branch: 'pole',
-      names: ['短矛', '贯穿长枪', '军团战戟', '龙牙战枪'],
-      arts: ['spear', 'spear', 'spear', 'spear'],
-      style: 'melee',
-      attack: [16, 25, 37, 53],
-      cooldown: [1, 2, 2, 3],
-      cost: [2, 3, 4, 5],
-    },
-  ],
-  mage: [
-    {
-      branch: 'flame',
-      names: ['火花短杖', '焰息法杖', '烈焰长杖', '陨火权杖'],
-      arts: ['staff', 'staff', 'staff', 'staff'],
-      style: 'spell',
-      attack: [25, 38, 52, 74],
-      cooldown: [2, 2, 3, 4],
-      cost: [3, 4, 5, 6],
-    },
-    {
-      branch: 'ice',
-      names: ['霜晶法器', '寒冰宝珠', '极霜法典', '凛冬秘典'],
-      arts: ['orb', 'orb', 'tome', 'tome'],
-      style: 'spell',
-      attack: [19, 29, 42, 58],
-      cooldown: [1, 2, 2, 3],
-      cost: [2, 3, 4, 5],
-    },
-  ],
-  rogue: [
-    {
-      branch: 'assassin',
-      names: ['刺客匕首', '双刃短刀', '影牙军刀', '夜幕双刃'],
-      arts: ['dagger', 'dagger', 'sword', 'dagger'],
-      style: 'melee',
-      attack: [18, 28, 41, 57],
-      cooldown: [1, 2, 2, 3],
-      cost: [2, 3, 4, 5],
-    },
-    {
-      branch: 'archer',
-      names: ['轻弩', '猎手长弓', '游侠重弩', '月影巨弓'],
-      arts: ['crossbow', 'bow', 'crossbow', 'bow'],
-      style: 'ranged',
-      attack: [22, 34, 48, 68],
-      cooldown: [2, 2, 3, 4],
-      cost: [3, 4, 5, 6],
-    },
-  ],
-};
-export const PACK_ITEMS: PackItemDefinition[] = [];
-for (const profession of PROFESSION_KEYS) {
-  const gem = { warrior: '勇气徽章', mage: '奥术核心', rogue: '暗影宝石' }[profession];
-  PACK_ITEMS.push({
-    id: `${profession}_gem`,
+// Active definitions use reviewed attributes, skills, art and fixed footprints.
+export const PACK_ITEMS: PackItemDefinition[] = Object.entries(CATALOGUE).map(([id, c]) => {
+  const profession = id.split('_')[0] as Profession,
+    raw = id.split('_')[1],
+    branch = (raw === 'gem' ? 'neutral' : raw) as Branch;
+  const p = itemProposal(id),
+    functional = ['guard', 'ward', 'leather'].includes(branch),
+    neutral = branch === 'neutral';
+  return {
+    id,
     profession,
-    branch: 'neutral',
-    name: gem,
-    art: profession === 'warrior' ? 'rune' : 'crystal',
-    slot: 'accessory',
+    branch,
+    name: c.name,
+    art: neutral
+      ? profession === 'warrior'
+        ? 'rune'
+        : 'crystal'
+      : (
+          {
+            blade: 'sword',
+            pole: 'spear',
+            guard: 'shield',
+            flame: 'staff',
+            ice: 'tome',
+            ward: 'robe',
+            assassin: 'dagger',
+            archer: id.endsWith('_3') ? 'bow' : 'crossbow',
+            leather: 'armor',
+          } as Record<string, string>
+        )[branch],
+    slot: neutral ? 'accessory' : functional ? 'armor' : 'weapon',
     shape: 'dot',
-    role: 'support',
-    cooldown: 0,
+    role: neutral
+      ? 'support'
+      : functional
+        ? id === 'mage_ward_3' || id === 'rogue_leather_2'
+          ? 'heal'
+          : 'shield'
+        : 'weapon',
+    cooldown: itemSkills(id, 1).find((k) => k.cooldown > 0)?.cooldown ?? 0,
     cost: 0,
     resource: null,
-    attack: 0,
-    hp: 0,
-    defense: 0,
-    description:
-      '相邻武器伤害 +10% × 等级倍率；耐力与法力每回合额外恢复 0.5 × 等级倍率；提供本职业流派共鸣贡献。',
-    damageType: 'magic',
-    style: null,
+    ...p.attributes[0],
+    description: p.stageEffects[0],
+    damageType: profession === 'mage' ? 'magic' : 'physical',
+    style:
+      neutral || functional
+        ? null
+        : profession === 'mage'
+          ? 'spell'
+          : branch === 'archer'
+            ? 'ranged'
+            : 'melee',
     available: true,
-  });
-  for (const line of series[profession])
-    for (let n = 0; n < 4; n++) {
-      const size = n + 2,
-        shape: Shape =
-          size === 2
-            ? 'domino'
-            : size === 3
-              ? line === series[profession][0]
-                ? 'L3'
-                : 'I3'
-              : size === 4
-                ? line === series[profession][0]
-                  ? 'L4'
-                  : 'O4'
-                : 'Z5',
-        resource = profession === 'mage' ? 'mana' : 'stamina';
-      PACK_ITEMS.push({
-        id: `${profession}_${line.branch}_${size}`,
-        profession,
-        branch: line.branch,
-        name: line.names[n],
-        art: line.arts[n],
-        slot: 'weapon',
-        shape,
-        role: 'weapon',
-        cooldown: line.cooldown[n],
-        cost: line.cost[n],
-        resource,
-        attack: line.attack[n],
-        hp: 0,
-        defense: 0,
-        description: `每 ${line.cooldown[n]} 回合${line.style === 'melee' ? '近战' : line.style === 'ranged' ? '远程' : '施法'}攻击，消耗 ${line.cost[n]} ${resource === 'mana' ? '法力' : '耐力'}。特殊效果需选择共鸣。`,
-        damageType: profession === 'mage' ? 'magic' : 'physical',
-        style: line.style,
-        available: size < 5,
-      });
-    }
-  const branch: Branch = { warrior: 'guard', mage: 'ward', rogue: 'leather' }[profession] as Branch,
-    names = {
-      warrior: ['圆盾', '行军护具', '重骑板甲', '王庭重铠'],
-      mage: ['护身法袍', '回魔法袍', '星纹长袍', '大法师礼袍'],
-      rogue: ['轻皮甲', '游猎皮甲', '暗影皮甲', '夜行披甲'],
-    }[profession];
-  for (let n = 0; n < 4; n++) {
-    const size = n + 2,
-      role: PackRole =
-        n === 1
-          ? profession === 'mage'
-            ? 'mana'
-            : profession === 'warrior'
-              ? 'stamina'
-              : 'heal'
-          : 'shield';
+  };
+});
+// Five-cell definitions stay reserved and never enter a loot pool.
+for (const profession of PROFESSION_KEYS)
+  for (const branch of (
+    {
+      warrior: ['blade', 'pole', 'guard'],
+      mage: ['flame', 'ice', 'ward'],
+      rogue: ['assassin', 'archer', 'leather'],
+    } as const
+  )[profession]) {
+    const functional = ['guard', 'ward', 'leather'].includes(branch);
     PACK_ITEMS.push({
-      id: `${profession}_${branch}_${size}`,
+      id: `${profession}_${branch}_5`,
       profession,
       branch,
-      name: names[n],
-      art:
-        profession === 'warrior' && n === 0 ? 'shield' : profession === 'mage' ? 'robe' : 'armor',
-      slot: 'armor',
-      shape: size === 2 ? 'domino' : size === 3 ? 'L3' : size === 4 ? 'O4' : 'Z5',
-      role,
-      cooldown: 2,
+      name: '五格保留物品',
+      art: 'reserved',
+      slot: functional ? 'armor' : 'weapon',
+      shape: 'Z5',
+      role: functional ? 'shield' : 'weapon',
+      cooldown: 0,
       cost: 0,
       resource: null,
       attack: 0,
-      hp: [15, 20, 35, 50][n],
-      defense: [2, 2, 4, 6][n],
-      description:
-        role === 'shield'
-          ? '每 2 回合产生护盾；提供生命与防御。'
-          : role === 'mana'
-            ? '每 2 回合恢复法力，无需相邻。'
-            : role === 'stamina'
-              ? '每 2 回合恢复耐力。'
-              : '每场战斗最多治疗两次，满血时保留次数。',
-      damageType: 'magic',
+      hp: 0,
+      defense: 0,
+      description: '后续扩展，暂不投放',
+      damageType: profession === 'mage' ? 'magic' : 'physical',
       style: null,
-      available: size < 5,
+      available: false,
     });
   }
-}
 // Names and occupied cells come from the approved pixel catalogue. Five-cell entries stay reserved.
 for (const d of PACK_ITEMS) {
   const c = CATALOGUE[d.id as keyof typeof CATALOGUE];
@@ -380,6 +293,13 @@ export const bagCapacity = (kills: number) => Math.min(42, 15 + kills * 2);
 export const bagCells = (capacity = 42) =>
   new Set(BAG_ORDER.slice(0, capacity).map((p) => p.join(',')));
 export const openBagCells = (kills: number) => bagCells(bagCapacity(kills));
+export function runBagCapacity(s: GameState) {
+  if (s.run.legacyRoute) return bagCapacity(s.run.kills);
+  const r = runRoute(s),
+    battles = r.kinds.slice(0, r.normal).filter((k) => k === 'battle' || k === 'boss').length;
+  return Math.min(42, 15 + Math.ceil((27 * s.run.kills) / Math.max(1, battles)));
+}
+export const runBagCells = (s: GameState) => bagCells(runBagCapacity(s));
 export const availableItems = (profession: Profession) =>
   PACK_ITEMS.filter((d) => d.profession === profession && d.available);
 export function definition(item: Pick<Equipment, 'templateId'>) {
@@ -390,8 +310,9 @@ export function definition(item: Pick<Equipment, 'templateId'>) {
 export function itemStats(templateId: string, level: number, profession: Profession) {
   const d = definition({ templateId });
   if (d.profession !== profession) throw new Error('装备与职业不匹配');
-  const scale = LEVEL_POWER[level];
-  return { attack: d.attack * scale, hp: d.hp * scale, defense: d.defense * scale, potency: scale };
+  if (!Number.isInteger(level) || level < 1 || level > 4) throw new Error('常规装备最高四阶');
+  const attributes = itemProposal(templateId).attributes[level - 1];
+  return { ...attributes, potency: LEVEL_POWER[level] };
 }
 export function contributionPoints(i: Equipment) {
   return cells(i).length * 2 ** (i.level - 1);
@@ -481,7 +402,7 @@ export function planMove(
   if (bounds) return invalid(bounds);
   const matches = (target: Equipment | undefined | null) =>
     target &&
-    source.level < 5 &&
+    source.level < 4 &&
     source.level === target.level &&
     source.profession === target.profession &&
     source.templateId === target.templateId;
@@ -518,7 +439,7 @@ export function planMove(
     ejected: collisions.map((p) => p.id),
   };
 }
-export { RESONANCES, RESONANCE_KEYS, resonanceMatch, itemResonanceTiers } from './resonances';
+export { RESONANCES, RESONANCE_KEYS, itemResonanceTiers, resonanceMatch } from './resonances';
 export function resonanceScore(items: Equipment[], layout: Placement[], key: ResonanceKey | null) {
   const d = key ? RESONANCES[key] : null,
     score = d
@@ -526,7 +447,7 @@ export function resonanceScore(items: Equipment[], layout: Placement[], key: Res
           .filter((i) => layout.some((p) => p.id === i.id) && d.matches(i))
           .reduce((n, i) => n + contributionPoints(i), 0)
       : 0;
-  const thresholds = d?.kind === 'item' ? [2, 8, 24] : [12, 80, 200];
+  const thresholds = d?.kind === 'item' ? [4, 12, 24] : [12, 48, 96];
   return {
     score,
     tier: score >= thresholds[2] ? 3 : score >= thresholds[1] ? 2 : score >= thresholds[0] ? 1 : 0,
@@ -538,31 +459,82 @@ export function resonanceScore(items: Equipment[], layout: Placement[], key: Res
 export function analyzePack(
   items: Equipment[],
   layout: Placement[],
-  growthAttack = 0,
-  buffs: Partial<Record<BuffKey, number>> = {},
+  _growthAttack = 0,
+  _buffs: Partial<Record<BuffKey, number>> = {},
   resonances: ResonanceKey[] = [],
 ) {
   const active = layout
-      .map((p) => items.find((i) => i.id === p.id))
-      .filter((i): i is Equipment => !!i),
-    bonuses: Record<string, { power: number; potency: number; mana: boolean }> = {},
-    links: { source: string; target: string; label: string }[] = [];
+    .map((p) => items.find((i) => i.id === p.id))
+    .filter((i): i is Equipment => !!i);
+  const bonuses: Record<
+    string,
+    {
+      power: number;
+      potency: number;
+      mana: boolean;
+      damage: number;
+      shield: number;
+      heal: number;
+      hp: number;
+      counter: number;
+    }
+  > = {};
+  const links: { source: string; target: string; label: string }[] = [];
   for (const i of active)
-    bonuses[i.id] = { power: 1 + growthAttack, potency: i.potency, mana: true };
-  for (const a of layout) {
-    const ai = active.find((i) => i.id === a.id)!;
-    for (const b of layout) {
-      const bi = active.find((i) => i.id === b.id)!;
-      if (a.id === b.id || !adjacent(a, ai, b, bi)) continue;
-      if (definition(ai).role === 'support' && definition(bi).role === 'weapon') {
-        bonuses[bi.id].power += 0.1 * LEVEL_POWER[ai.level];
+    bonuses[i.id] = {
+      power: 1,
+      potency: i.potency,
+      mana: true,
+      damage: 0,
+      shield: 0,
+      heal: 0,
+      hp: 0,
+      counter: 0,
+    };
+  for (const target of active) {
+    const p = layout.find((p) => p.id === target.id)!;
+    const neighbors = active.filter(
+      (i) =>
+        i.id !== target.id &&
+        adjacent(
+          p,
+          target,
+          layout.find((p) => p.id === i.id)!,
+          i,
+        ),
+    );
+    const gems = neighbors
+      .filter((i) => i.branch === 'neutral' && i.profession === target.profession)
+      .sort((a, b) => b.level - a.level || a.id.localeCompare(b.id))
+      .slice(0, 2);
+    for (const g of gems) {
+      const kind =
+        target.slot === 'weapon'
+          ? 'damage'
+          : g.level === 4 && g.profession === 'mage'
+            ? 'shield'
+            : g.level === 4 && g.profession === 'rogue'
+              ? 'heal'
+              : null;
+      if (!kind) continue;
+      const amount = kind === 'damage' ? [0.08, 0.12, 0.16, 0.2][g.level - 1] : 0.1;
+      bonuses[target.id][kind] += amount;
+      links.push({
+        source: g.id,
+        target: target.id,
+        label: LINK_EFFECT_NAMES[kind] + ' +' + Math.round(amount * 100) + '%',
+      });
+    }
+    const rule = receivingLink(target);
+    if (rule)
+      for (const i of neighbors.filter((i) => rule.branches.includes(i.branch)).slice(0, 3)) {
+        bonuses[target.id][rule.kind] += rule.amount;
         links.push({
-          source: ai.id,
-          target: bi.id,
-          label: `武器伤害 +${Math.round(10 * LEVEL_POWER[ai.level])}%`,
+          source: i.id,
+          target: target.id,
+          label: LINK_EFFECT_NAMES[rule.kind] + ' +' + Math.round(rule.amount * 100) + '%',
         });
       }
-    }
   }
   const tiers = Object.fromEntries(
     RESONANCE_KEYS.map((k) => [
@@ -570,105 +542,117 @@ export function analyzePack(
       resonances.includes(k) ? resonanceScore(items, layout, k).tier : 0,
     ]),
   ) as Record<ResonanceKey, number>;
-  for (const i of active)
-    if (i.profession === 'warrior')
-      bonuses[i.id].power *= 1 + [0, 0.1, 0.2, 0.35][tiers.warrior_mix];
-  let dps = 0,
-    staminaUse = 0,
-    manaUse = 0,
-    staminaRegen = 3,
-    manaRegen = 2,
-    sustain = 0;
-  const power = 1 + (buffs.power ?? 0) * 0.12;
-  const effects = {
-      burn: !!tiers.ignite && active.some((i) => i.branch === 'flame'),
-      chill: !!tiers.frost && active.some((i) => i.branch === 'ice'),
-      poison: !!tiers.venom && active.some((i) => i.branch === 'assassin'),
-    },
-    dots = { burn: 0, poison: 0 };
-  // Twelve-hit sustained estimate against a 30-defense reference target; one strongest DOT per type.
-  for (const i of active) {
-    const d = definition(i),
-      scale = LEVEL_POWER[i.level];
-    if (d.role === 'weapon') {
-      const strikes = Array.from({ length: 12 }, (_, n) =>
-        weaponEffect(i, tiers, n + 1, effects, i.attack * bonuses[i.id].power * power, 30),
-      );
-      const perRound = strikes.reduce((n, x) => n + x.damage, 0) / 12 / d.cooldown;
-      dps += perRound;
-      const dotTier =
-        i.branch === 'flame' ? tiers.ignite : i.branch === 'assassin' ? tiers.venom : 0;
-      if (dotTier) {
-        const kind = i.branch === 'flame' ? 'burn' : 'poison';
-        dots[kind] = Math.max(
-          dots[kind],
-          strikes[0].power *
-            [0, 0.1, 0.18, 0.28][dotTier] *
-            i.potency *
-            Math.min(1, 3 / d.cooldown),
-        );
-      }
-      if (d.resource === 'stamina') staminaUse += d.cost / d.cooldown;
-      else manaUse += d.cost / d.cooldown;
-      if (i.branch === 'pole') staminaRegen += tiers.spear_storm / (3 * d.cooldown);
-      if (i.branch === 'ice') manaRegen += tiers.mana_flow / d.cooldown;
-      if (i.profession === 'mage') manaRegen += tiers.archmage / (3 * d.cooldown);
-      const drain =
-        i.branch === 'pole'
-          ? [0, 0.02, 0.04, 0.06][tiers.second_wind]
-          : i.branch === 'archer'
-            ? [0, 0.03, 0.06, 0.1][tiers.leech]
-            : 0;
-      sustain += perRound * drain;
-      if (i.branch === 'blade')
-        sustain += ([0, 2, 4, 6][tiers.iron_guard] * i.potency) / d.cooldown;
-    } else {
-      if (d.role === 'stamina') staminaRegen += (6 * scale) / d.cooldown;
-      if (d.role === 'mana') manaRegen += (7 * scale) / d.cooldown;
-      if (d.role === 'heal') sustain += (8 * scale * 2) / 12;
-      if (d.role === 'shield')
-        sustain += ((12 * scale + i.defense) * shieldMultiplier(i, tiers)) / d.cooldown;
-      const resource = d.cooldown ? itemResonanceTiers(i, tiers).advanced / d.cooldown : 0;
-      if (i.profession === 'mage') manaRegen += resource;
-      else staminaRegen += resource;
-    }
-  }
-  dps += dots.burn + dots.poison;
-  const neutralRegen = active
-    .filter((i) => i.branch === 'neutral')
-    .reduce((n, i) => n + 0.5 * LEVEL_POWER[i.level], 0);
-  staminaRegen += neutralRegen;
-  manaRegen += neutralRegen;
-  const efficiency = Math.min(
-    1,
-    staminaUse ? staminaRegen / staminaUse : 1,
-    manaUse ? manaRegen / manaUse : 1,
-  );
+  const attributes = {
+    attack: active.reduce((v, i) => v + i.attack, 0),
+    hp: active.reduce((v, i) => v + i.hp * (1 + bonuses[i.id].hp), 0),
+    defense: active.reduce((v, i) => v + i.defense, 0),
+  };
   return {
     active,
     bonuses,
     links,
     tiers,
-    dps,
-    staminaUse,
-    manaUse,
-    staminaRegen,
-    manaRegen,
-    sustain,
-    efficiency,
-    neutralRegen,
+    attributes,
+    dps: 0,
+    sustain: 0,
+    efficiency: 1,
+    staminaUse: 0,
+    manaUse: 0,
+    staminaRegen: 0,
+    manaRegen: 0,
+    neutralRegen: 0,
     occupied: active.reduce((n, i) => n + cells(i).length, 0),
-    hasWeapon: active.some((i) => definition(i).role === 'weapon'),
+    hasWeapon: active.some((i) => i.slot === 'weapon'),
   };
 }
-export function analysis(state: GameState, draft = false) {
-  const base = heroAttributes(state.run.trainee, state.run.profession),
-    attackScale = base.attack / BASE_ATTRIBUTES[state.run.profession].attack;
-  return analyzePack(
+export function finalAttributes(state: GameState, draft = false) {
+  const a = analyzePack(
+      state.inventory,
+      draft ? state.draft : state.placements,
+      0,
+      state.run.buffs,
+      state.run.resonances,
+    ),
+    base = heroAttributes(state.run.trainee, state.run.profession);
+  const bound =
+    state.run.boundTome ??
+    (state.run.trainee?.tomeId
+      ? { id: state.run.trainee.tomeId, level: state.run.trainee.tomeLevel ?? 1 }
+      : null);
+  const t = tomeAttributes(bound?.id ?? null, bound?.level ?? 0),
+    g = guildMultiplier(state.meta.guildLevel ?? 1);
+  return {
+    attack:
+      (base.attack + a.attributes.attack) *
+      (1 + state.run.growth.attack + state.run.eventGrowth.attack) *
+      (1 + state.run.buffs.power * 0.12) *
+      (t.attack ?? 1) *
+      g,
+    hp:
+      (base.hp + state.run.growth.hp + state.run.eventGrowth.hp + a.attributes.hp) *
+      (1 + state.run.buffs.vitality * 0.12) *
+      (t.hp ?? 1) *
+      g,
+    defense:
+      (base.defense +
+        state.run.growth.defense +
+        state.run.eventGrowth.defense +
+        a.attributes.defense +
+        state.run.buffs.defense * 3) *
+      (t.defense ?? 1) *
+      g,
+    speed: base.speed + state.run.buffs.tempo * 2 + state.run.eventGrowth.speed,
+  };
+}
+export function buildSources(state: GameState, draft = false) {
+  const a = analyzePack(
     state.inventory,
     draft ? state.draft : state.placements,
-    (1 + state.run.growth.attack + state.run.eventGrowth.attack) * attackScale - 1,
+    0,
     state.run.buffs,
     state.run.resonances,
   );
+  const sources: import('./skill-types').Source[] = a.active.map((i) => ({
+    id: i.id,
+    name: i.name,
+    kind: 'item',
+    skills: itemSkills(i.templateId, i.level),
+    damageBonus: a.bonuses[i.id].damage,
+    shieldBonus: a.bonuses[i.id].shield,
+    healBonus: a.bonuses[i.id].heal,
+    counterBonus: a.bonuses[i.id].counter,
+    ranged: i.branch === 'archer',
+  }));
+  const bound = state.run.boundTome;
+  if (bound)
+    sources.push({
+      id: 'tome:' + bound.id,
+      name: bound.id,
+      kind: 'tome',
+      skills: tomeSkills(bound.id, bound.level),
+    });
+  for (const key of state.run.resonances)
+    if (a.tiers[key])
+      sources.push({
+        id: 'resonance:' + key,
+        name: RESONANCES[key].name,
+        kind: 'resonance',
+        skills: resonanceSkills(DESIGN_RESONANCE_IDS[key], a.tiers[key]),
+      });
+  return sources;
+}
+export function analysis(state: GameState, draft = false) {
+  const a = analyzePack(
+    state.inventory,
+    draft ? state.draft : state.placements,
+    0,
+    state.run.buffs,
+    state.run.resonances,
+  );
+  const estimate = estimateBuild(
+    finalAttributes(state, draft),
+    buildSources(state, draft),
+    a.active.some((i) => i.branch === 'assassin') && a.active.some((i) => i.branch === 'archer'),
+  );
+  return { ...a, dps: estimate.output, sustain: estimate.sustain, strength: estimate.strength };
 }

@@ -1,6 +1,5 @@
-import { pixel, actorArt } from './pixel';
-import { spriteName, BRANCHES, cells, definition, PROFESSIONS } from './backpack';
-import { QUALITIES } from './data';
+import { cells, spriteName } from './backpack';
+import { actorArt, pixel } from './pixel';
 import type { Equipment, Profession } from './types';
 
 export function dungeonArt(chapter: number) {

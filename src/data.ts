@@ -1,10 +1,10 @@
 import type { DamageType, EquipmentSlot, Quality } from './types';
 export const ENCOUNTERS = 30;
 export const QUALITIES: Record<Quality, { label: string; multiplier: number; color: string }> = {
-  white: { label: '普通', multiplier: 1, color: '#afb7a8' },
-  green: { label: '优秀', multiplier: 1.2, color: '#9ecb98' },
-  blue: { label: '稀有', multiplier: 1.5, color: '#91bdde' },
-  purple: { label: '史诗', multiplier: 2, color: '#c1a3de' },
+  white: { label: '普通', multiplier: 1, color: '#e5e9e7' },
+  green: { label: '优秀', multiplier: 1.2, color: '#59ec8b' },
+  blue: { label: '稀有', multiplier: 1.5, color: '#4cb8ff' },
+  purple: { label: '史诗', multiplier: 2, color: '#d17bff' },
   orange: { label: '传说', multiplier: 3, color: '#e2b776' },
 };
 export const QUALITY_ORDER: Quality[] = ['white', 'green', 'blue', 'purple', 'orange'];

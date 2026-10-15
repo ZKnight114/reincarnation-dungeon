@@ -72,5 +72,6 @@ test('pending recruit survives returning to guild and resumes without losing its
   assert.equal(restored.state.phase, 'configure');
   assert.deepEqual(restored.state.run.trainee, trainee);
   assert.equal(restored.state.meta.energy.value, energy);
+  restored.confirmAllocation();
   assert.equal(restored.startRun(), null);
 });

@@ -6,8 +6,10 @@ export const RUN_LENGTH = VIDEO_YEARS.length,
 export const GRADUATION_NODE = 31,
   ENDING_NODE = RUN_LENGTH - 1,
   EXTREME_START = GRADUATION_NODE + 1;
-export const trialIndex = (index: number) => TRIAL_NODES.indexOf(index as 8 | 16 | 24);
-export const routeStage = (index: number) => TRIAL_NODES.filter((n) => n < index).length;
+export const trialIndex = (index: number, chapter = 4) =>
+  chapterRoute(chapter).trials.indexOf(index);
+export const routeStage = (index: number, chapter = 4) =>
+  chapterRoute(chapter).trials.filter((n) => n < index).length;
 export const ROUTE_KINDS: EventKind[] = [
   'battle',
   'choice',
@@ -47,23 +49,67 @@ export const ROUTE_KINDS: EventKind[] = [
   'battle',
   'ending',
 ];
+export function chapterRoute(chapter: number) {
+  const normal = chapter === 1 ? 18 : chapter === 2 ? 24 : chapter === 3 ? 28 : 32;
+  const trials =
+    chapter === 1
+      ? [4, 9, 13]
+      : chapter === 2
+        ? [5, 11, 17]
+        : chapter === 3
+          ? [6, 13, 20]
+          : [8, 16, 24];
+  const length = chapter <= 2 ? normal : chapter === 3 ? 31 : 37;
+  const kinds: EventKind[] =
+    chapter >= 4
+      ? [...ROUTE_KINDS]
+      : Array.from({ length }, (_, n) => {
+          if (n === normal - 1) return 'graduation';
+          if (n === length - 1 && length > normal) return 'ending';
+          if (n >= normal) return 'boss';
+          if (trials.includes(n)) return 'boss';
+          if (n === 2) return 'supply';
+          if (n % 7 === 5) return 'rest';
+          if (n % 8 === 7) return 'choice';
+          if (n === normal - 3) return 'dig';
+          if (n === normal - 5 && chapter > 1) return 'chance';
+          return 'battle';
+        });
+  for (const n of trials) kinds[n] = 'boss';
+  if (chapter >= 4) for (let n = normal; n < length - 1; n++) kinds[n] = 'boss';
+  return {
+    normal,
+    length,
+    trials,
+    kinds,
+    graduation: normal - 1,
+    ending: length - 1,
+    extremeStart: normal,
+    hasExtreme: length > normal,
+  };
+}
+export function runRoute(s: import('./types').GameState) {
+  return s.run.legacyRoute
+    ? { ...chapterRoute(4), trials: [8, 16, 24], kinds: s.run.events.map((e) => e.kind) }
+    : chapterRoute(s.run.chapter);
+}
 import { PROFESSIONS } from './backpack';
 import type { EventKind, Profession, TrialTier } from './types';
 
 export const STAGES = ['启程', '淬炼', '觉醒'];
 export const TRIALS = [
-  { name: '守望试炼', hp: 1, attack: 1, growth: 1, description: '迎战守门者，稳步晋阶。' },
+  { name: '守望试炼', hp: 1, attack: 1, growth: 1, description: '迎战守关Boss，稳步晋阶。' },
   {
     name: '勇气试炼',
-    hp: 1.35,
-    attack: 1.2,
+    hp: 1.2,
+    attack: 1.12,
     growth: 1.35,
     description: '更强的守门者，换取更多成长。',
   },
   {
     name: '英雄试炼',
-    hp: 1.75,
-    attack: 1.45,
+    hp: 1.45,
+    attack: 1.28,
     growth: 1.8,
     description: '挑战守门者的全力，争取最高成长。',
   },
@@ -86,9 +132,9 @@ export function stageGrowth(profession: Profession, trials: (TrialTier | null)[]
 export function trialGain(profession: Profession, tier: TrialTier) {
   const d = PROFESSIONS[profession].growth,
     factor = TRIALS[tier].growth;
-  return `伤害 +${+(d.attack * factor * 100).toFixed(1)}% · 生命上限 +${Math.round(d.hp * factor)} · 防御 +${+(d.defense * factor).toFixed(2)}`;
+  return `攻击 +${+(d.attack * factor * 100).toFixed(1)}% · 生命上限 +${Math.round(d.hp * factor)} · 防御 +${+(d.defense * factor).toFixed(2)}`;
 }
-export function eventStory(kind: EventKind, variant = 0) {
+export function eventStory(kind: EventKind, variant = 0, hasExtreme = true) {
   switch (kind) {
     case 'treasure':
       return '破损的石门后藏着一只古老宝箱，封印间透出微光。';
@@ -110,10 +156,12 @@ export function eventStory(kind: EventKind, variant = 0) {
         '矿壁中嵌着一柄完整武器，取出它需要付出生命。',
         '泉水映出你的身影：现在疗伤，或积累更强的体魄？',
         '战损铜甲藏着护身符文。解开它的封印会耗损生命。',
-        '流浪占卜师邀请你转动命运之轮，接受未知的馈赠。',
+        '流浪占卜师愿以一道符文赐福交换鲜血。你会接受这份未知的力量吗？',
       ][variant % 5];
     case 'graduation':
-      return '勇者已完成三次晋阶。现在可以返回公会结业，也可以挑战自身极限。';
+      return hasExtreme
+        ? '勇者已通过三次试炼。现在可以返回公会结业，也可以挑战自身极限。'
+        : '勇者已通过三次试炼，可以带着最终构筑返回公会结业。';
     case 'mentor':
       return '公会导师在归途等待，将一份经验传授给即将毕业的勇者。';
     case 'ending':

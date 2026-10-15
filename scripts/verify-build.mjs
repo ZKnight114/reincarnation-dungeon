@@ -49,21 +49,21 @@ try {
   const inline = win.document.querySelector('script:not([src])');
   assert.ok(inline);
   new Function(inline.textContent)();
-  const save = () => JSON.parse(win.localStorage.getItem('recursion-dungeon-save-v14'));
+  const save = () => JSON.parse(win.localStorage.getItem('recursion-dungeon-save-v15'));
   const click = (q) => {
     now += 500;
     const el = win.document.querySelector(q);
     assert.ok(el, q);
     el.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
   };
-  assert.equal(save().version, 14);
+  assert.equal(save().version, 15);
   assert.equal(save().phase, 'home');
   assert.ok(win.document.querySelector('.guild-art'));
   assert.equal(save().meta.energy.value, 60);
   assert.equal(save().meta.heroes.length, 0);
-  assert.equal(win.localStorage.getItem('recursion-dungeon-save-v8'), null);
-  assert.equal(win.localStorage.getItem('recursion-dungeon-save-v7'), null);
-  assert.equal(win.localStorage.getItem('recursion-dungeon-save-v1-recovery'), null);
+  assert.equal(win.localStorage.getItem('recursion-dungeon-save-v8'), 'old');
+  assert.equal(win.localStorage.getItem('recursion-dungeon-save-v7'), 'old');
+  assert.equal(win.localStorage.getItem('recursion-dungeon-save-v1-recovery'), 'old');
   assert.equal(win.localStorage.getItem('other-game'), 'keep');
   click('[data-action="chapters"]');
   assert.equal(save().phase, 'chapter');
@@ -75,12 +75,23 @@ try {
   click('[data-action="recruit"]');
   assert.equal(save().meta.energy.value, 40);
   assert.equal(save().phase, 'configure');
+  assert.equal(
+    win.getComputedStyle(win.document.querySelector('.admission-submit')).top,
+    '666px',
+    'Bundled configuration must retain the final pixel-layout stylesheet overrides',
+  );
   assert.equal(win.document.querySelectorAll('.talent-badge').length, 4);
   assert.equal(win.document.querySelectorAll('.attribute-row').length, 4);
   click('[data-action="balance-allocation"]');
   assert.equal(save().run.trainee.allocation.speed, 3);
+  click('[data-action="confirm-allocation"]');
+  assert.equal(save().phase, 'tome');
+  click('[data-tome="warrior_sword_tome"]');
   click('[data-action="start"]');
   assert.equal(save().phase, 'opening');
+  const gridStyle = win.getComputedStyle(win.document.getElementById('pack-grid'));
+  assert.equal(gridStyle.width, '350px');
+  assert.equal(gridStyle.height, '300px');
   assert.equal(win.document.querySelector('#field-items button'), null);
   const positions = [
     [1, 1],
@@ -159,7 +170,7 @@ try {
   assert.equal(save().combat.round, 1);
   assert.equal(save().isRunning, false);
   console.log(
-    `Standalone v14 guild → chapter carousel → targeted recruitment → four talents and allocation → six shape gifts with touch drags → initial resonance → discrete combat passed (${Math.round(Buffer.byteLength(source) / 1024)} KB).`,
+    `Standalone v15 guild → chapter carousel → targeted recruitment → four talents and allocation → six shape gifts with touch drags → initial resonance → discrete combat passed (${Math.round(Buffer.byteLength(source) / 1024)} KB).`,
   );
 } finally {
   Date.now = realNow;

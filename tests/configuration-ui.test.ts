@@ -118,8 +118,22 @@ test('attribute plus/minus, reset, balanced assignment and remaining budget cont
   assert.equal((el('[data-attribute="hp"][data-delta="1"]') as any).disabled, true);
   click('[data-action="reset-allocation"]');
   assert.equal(el('#remaining-points').textContent, '12');
-  assert.equal((el('[data-action="start"]') as any).disabled, true);
+  assert.equal((el('[data-action="confirm-allocation"]') as any).disabled, true);
   click('[data-action="balance-allocation"]');
+  click('[data-action="confirm-allocation"]');
+  if (game.state.phase === 'tome' && !game.state.run.trainee?.tomeId) {
+    game.confirmAllocation();
+    game.selectTome(
+      (
+        {
+          warrior: 'warrior_sword_tome',
+          mage: 'mage_flame_tome',
+          rogue: 'rogue_poison_tome',
+        } as const
+      )[game.state.run.profession],
+    );
+    ui.render();
+  }
   click('[data-action="start"]');
   assert.equal(game.state.phase, 'opening');
   assert.equal(loadSave()!.run.trainee!.allocation.speed, 3);
@@ -136,7 +150,7 @@ test('returning to chapter changes destination while preserving recruited identi
   assert.equal(win.document.querySelector('[data-action="recruit"]'), null);
   click('[data-action="resume-recruit"]');
   assert.deepEqual(game.state.run.trainee, recruit);
-  assert.equal(game.state.meta.energy.value, 50);
+  assert.equal(game.state.meta.energy.value, 55);
   assert.match(el('.admission-file').textContent, /第 2 关/);
 });
 test('drops and displaced items occupy one continuous shape group with no equipment cards or temporary section', () => {
