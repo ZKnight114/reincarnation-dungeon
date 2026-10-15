@@ -1,0 +1,598 @@
+.dungeon-select {
+  max-width: 650px;
+  padding: 18px 18px 28px;
+  background: linear-gradient(#25332e, #172720);
+  min-height: 100dvh;
+}
+.dungeon-select header {
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+.dungeon-carousel {
+  position: relative;
+  touch-action: pan-y;
+  border: 1px solid #938666;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 35px #0005;
+}
+.dungeon-view {
+  position: relative;
+  height: clamp(290px, 42dvh, 430px);
+  isolation: isolate;
+}
+.dungeon-art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+}
+.dungeon-view:after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(#12232011, #12232000 35%, #122320dd);
+  z-index: -1;
+}
+.dungeon-caption {
+  position: absolute;
+  inset: auto 40px 26px;
+  text-align: center;
+  text-shadow: 0 2px 8px #000;
+}
+.dungeon-caption .eyebrow {
+  margin-bottom: 8px;
+  color: #d9c391;
+  font-size: 9px;
+}
+.dungeon-caption h1 {
+  font-size: 40px;
+  letter-spacing: 4px;
+  color: #f0e1be;
+  margin-bottom: 9px;
+}
+.dungeon-caption h2 {
+  font-size: 17px;
+  color: #e7d6ad;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+.dungeon-caption p {
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+.dungeon-caption small {
+  border: 1px solid #a28c59;
+  border-radius: 20px;
+  background: #253d30aa;
+  padding: 4px 12px;
+  color: #ddcf9f;
+}
+.chapter-arrow {
+  position: absolute;
+  top: 45%;
+  width: 42px;
+  height: 58px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 40px;
+  line-height: 1;
+  background: #13251bbb;
+  border: 1px solid #ab936766;
+  z-index: 1;
+}
+.chapter-arrow.previous {
+  left: 8px;
+}
+.chapter-arrow.next {
+  right: 8px;
+}
+.chapter-arrow:disabled {
+  opacity: 0.3;
+}
+.swipe-hint {
+  text-align: center;
+  font-size: 10px !important;
+  letter-spacing: 1px;
+  margin: 10px 0 16px;
+}
+.recruit-panel {
+  border: 1px solid #8f835f;
+  background: #334133;
+  border-radius: 14px;
+  padding: 16px;
+}
+.recruit-energy {
+  font-size: 11px;
+  color: #e1cfa0;
+  margin-bottom: 14px;
+}
+.recruit-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.recruit-tabs button {
+  font-size: 14px;
+  padding: 12px 6px;
+  background: #293c2f;
+}
+.recruit-tabs small {
+  display: block;
+  font-size: 10px;
+  margin-top: 6px;
+}
+.recruit-tabs .selected,
+.profession-targets .selected {
+  border-color: #e1c085;
+  background: #635c3b;
+  box-shadow: inset 0 0 0 1px #d9bd7244;
+}
+.recruit-description {
+  font-size: 11px;
+  margin: 12px 0;
+}
+.recruit-panel > .primary-button {
+  width: 100%;
+  min-height: 46px;
+  font-size: 14px;
+}
+.recruit-panel > small {
+  display: block;
+  text-align: center;
+  font-size: 9px;
+  margin-top: 12px;
+}
+.profession-targets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.profession-targets button {
+  padding: 6px;
+  font-size: 11px;
+  background: #28392d;
+}
+.profession-targets .hero-portrait {
+  width: 54px;
+  height: 70px;
+  display: block;
+  margin: auto;
+}
+.profession-targets strong {
+  display: block;
+}
+.admission-file {
+  position: relative;
+  padding: 20px 18px;
+  background: linear-gradient(130deg, #e5d9b9, #c6b994);
+  color: #483b2a;
+  border: 3px double #8d7850;
+  border-radius: 14px;
+  box-shadow: 0 12px 35px #0005;
+  color-scheme: light;
+}
+.file-heading {
+  position: relative;
+  text-align: center;
+  border-bottom: 1px solid #88765066;
+  padding: 2px 20px 12px;
+  margin-bottom: 16px;
+}
+.file-heading .eyebrow {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #917349;
+  margin-bottom: 7px;
+}
+.file-heading h1 {
+  font-size: 26px;
+  letter-spacing: 3px;
+  margin-bottom: 5px;
+  color: #4c3b29;
+}
+.file-stamp {
+  position: absolute;
+  right: -6px;
+  top: 11px;
+  border: 2px double #a3503e;
+  color: #a3503e;
+  transform: rotate(12deg);
+  font-size: 12px;
+  padding: 6px 3px;
+  font-family: Georgia, 'SimSun', serif;
+}
+.admission-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.admission-identity .hero-portrait {
+  width: 85px;
+  height: 125px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 3px #49342233);
+}
+.admission-identity h2 {
+  font-size: 23px;
+  margin: 8px 0;
+  color: #443423;
+}
+.admission-identity h2 span {
+  font-size: 12px;
+  padding: 3px 6px;
+  margin-left: 4px;
+  border: 1px solid #87734e;
+  border-radius: 4px;
+  font-family: inherit;
+}
+.admission-file p,
+.admission-file small {
+  color: #776347;
+}
+.admission-identity p {
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.admission-identity small {
+  font-size: 9px;
+}
+.talent-heading,
+.allocation-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+.talent-heading small {
+  font-size: 9px;
+}
+.talent-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 9px 0 20px;
+}
+.talent-badge {
+  background: #ad936133;
+  border: 1px solid #9c845a;
+  border-radius: 7px;
+  padding: 9px 6px;
+  text-align: center;
+}
+.talent-badge strong {
+  display: block;
+  font-size: 12px;
+  color: #59452d;
+}
+.talent-badge small {
+  display: block;
+  font-size: 9px;
+  margin-top: 5px;
+}
+.talent-attack {
+  border-left: 4px solid #a97653;
+}
+.talent-hp {
+  border-left: 4px solid #8c9b60;
+}
+.talent-defense {
+  border-left: 4px solid #698b9e;
+}
+.talent-speed {
+  border-left: 4px solid #98829b;
+}
+.allocation-heading {
+  flex-wrap: wrap;
+  border-top: 1px solid #927e4d66;
+  padding-top: 14px;
+}
+.allocation-heading b {
+  color: #a35830;
+  font-size: 20px;
+  margin: 0 3px;
+}
+.allocation-heading div {
+  display: flex;
+  gap: 5px;
+}
+.admission-file button {
+  background: #cebb91;
+  border-color: #9a8052;
+  color: #5b4329;
+  min-height: 34px;
+  font-size: 10px;
+  padding: 7px 9px;
+}
+.allocation-note {
+  font-size: 9px;
+  margin: 9px 0;
+}
+.attribute-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.attribute-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 10px;
+  background: #a8916c33;
+  border: 1px solid #9f8b6166;
+  border-radius: 8px;
+}
+.attribute-name strong {
+  font-family: Georgia, 'SimSun', serif;
+  font-size: 18px;
+  display: block;
+}
+.attribute-name small {
+  font-size: 8px;
+  line-height: 1.45;
+  display: block;
+  max-width: 200px;
+  margin-top: 5px;
+}
+.attribute-value {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.attribute-value i {
+  font-style: normal;
+  color: #9e8863;
+  font-size: 12px;
+}
+.attribute-value b {
+  color: #b26131;
+}
+.attribute-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 100px;
+  justify-content: flex-end;
+}
+.attribute-controls button {
+  width: 34px;
+  height: 38px;
+  padding: 0;
+  font-size: 21px;
+}
+.attribute-controls span {
+  width: 20px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+.file-footnote {
+  font-size: 9px;
+  line-height: 1.6;
+  margin: 14px 0;
+}
+.admission-file .primary-button {
+  background: linear-gradient(120deg, #d5b876, #b28b4f);
+  color: #382c1c;
+  font-size: 13px;
+  min-height: 47px;
+  width: 100%;
+}
+.admission-file > small {
+  display: block;
+  text-align: center;
+  font-size: 9px;
+  margin-top: 10px;
+}
+.selection-screen:not(.dungeon-select) > header {
+  margin-bottom: 20px;
+}
+@media (max-width: 699px) {
+  .admission-file {
+    padding: 16px 14px;
+  }
+  .file-heading {
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+  }
+  .admission-identity {
+    margin-bottom: 12px;
+  }
+  .admission-identity .hero-portrait {
+    height: 105px;
+    width: 74px;
+  }
+  .talent-grid {
+    margin-bottom: 14px;
+  }
+  .talent-badge {
+    padding: 7px 6px;
+  }
+  .attribute-row {
+    padding: 9px 8px;
+  }
+  .file-footnote {
+    margin: 10px 0;
+  }
+}
+.turn-order {
+  font-size: 9px;
+  color: #dbc79c;
+  border-top: 1px solid #8d8f6655;
+  margin-top: 8px;
+  padding-top: 7px;
+  line-height: 1.6;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.fighter.acting > svg {
+  filter: drop-shadow(0 0 5px #f0cf84);
+}
+.cooldown-label {
+  font-size: 16px;
+  font-weight: 700;
+  fill: #e2cca0;
+  paint-order: stroke;
+  stroke: #1e2d24;
+  stroke-width: 4;
+  pointer-events: none;
+}
+.resource-starved .cooldown-label {
+  fill: #efb097;
+}
+.field-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 9px;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.field-label span {
+  color: #a9b69c;
+  font-size: 8px;
+}
+.field-shapes {
+  --field-cell: clamp(28px, 8.8vw, 40px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 4px 12px;
+  max-height: 220px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  touch-action: pan-y;
+}
+.field-piece.field-item {
+  width: calc(var(--shape-w) * var(--field-cell));
+  height: calc(var(--shape-h) * var(--field-cell));
+  flex: 0 0 auto;
+  display: block;
+  position: relative;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+  pointer-events: none;
+  touch-action: none;
+  filter: drop-shadow(0 3px 2px #0008);
+}
+.field-piece .item-outline {
+  fill: var(--item-fill);
+  stroke: var(--item-color);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  pointer-events: all;
+  cursor: grab;
+}
+.field-piece > .item-painting {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.field-piece.selected {
+  translate: 0 -4px;
+  box-shadow: none;
+  filter: drop-shadow(0 6px 4px #000a) drop-shadow(0 0 4px #e5cb89);
+}
+.field-piece.selected .item-outline {
+  stroke: #f1d69b;
+  stroke-width: 4;
+}
+.field-piece.linked .item-outline {
+  stroke: #d7d593;
+  stroke-dasharray: 5 4;
+}
+.field-piece.offer .item-outline {
+  filter: drop-shadow(0 0 1px #b5b08966);
+}
+.adventure-footer {
+  flex-wrap: wrap;
+}
+.adventure-footer [data-action='step-turn'] {
+  font-size: 10px;
+  padding: 9px;
+  min-height: 38px;
+}
+@media (max-width: 380px) {
+  .dungeon-select {
+    padding: 14px 12px 22px;
+  }
+  .dungeon-view {
+    height: 280px;
+  }
+  .dungeon-caption h1 {
+    font-size: 34px;
+  }
+  .admission-file {
+    padding: 17px 12px;
+  }
+  .attribute-row {
+    gap: 6px;
+    padding: 9px 7px;
+    grid-template-columns: minmax(75px, 1fr) auto auto;
+  }
+  .attribute-controls {
+    min-width: 91px;
+    gap: 3px;
+  }
+  .attribute-controls button {
+    width: 31px;
+    height: 36px;
+  }
+  .attribute-name strong {
+    font-size: 16px;
+  }
+  .attribute-value {
+    font-size: 13px;
+    gap: 4px;
+  }
+  .admission-identity {
+    gap: 10px;
+  }
+  .admission-identity h2 {
+    font-size: 20px;
+  }
+  .file-heading h1 {
+    font-size: 23px;
+  }
+  .field-shapes {
+    gap: 10px;
+  }
+}
+@media (min-width: 700px) {
+  .admission-file {
+    max-width: 620px;
+    margin: auto;
+    padding: 28px;
+  }
+  .admission-identity .hero-portrait {
+    width: 110px;
+    height: 145px;
+  }
+  .attribute-row {
+    padding: 14px 16px;
+  }
+  .attribute-name small {
+    font-size: 10px;
+  }
+  .talent-badge {
+    padding: 12px;
+  }
+}

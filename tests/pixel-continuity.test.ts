@@ -1,0 +1,311 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { Window } from 'happy-dom';
+import { Game } from '../src/game';
+import { UI } from '../src/ui';
+import { availableItems, dimensions, openBagCells, RESONANCES } from '../src/backpack';
+import { start, positionEvent } from './helpers';
+
+// Exercise the full stylesheet cascade alongside real game state transitions.
+// happy-dom computes CSS but does not paint or measure browser layout.
+function setup(g: Game) {
+  const w = new Window({ url: 'http://localhost/' });
+  Object.assign(globalThis, {
+    window: w,
+    document: w.document,
+    localStorage: w.localStorage,
+    getComputedStyle: w.getComputedStyle.bind(w),
+  });
+  for (const name of ['style', 'pack', 'v9', 'journey', 'v10', 'v11', 'v14', 'guild-pixel']) {
+    const style = w.document.createElement('style');
+    style.textContent = readFileSync(new URL('../src/' + name + '.css', import.meta.url), 'utf8');
+    w.document.head.append(style);
+  }
+  w.document.body.innerHTML = '<div id="app"></div>';
+  const ui = new UI(g, () => {});
+  const el = (q: string) => {
+    const node = w.document.querySelector(q);
+    assert.ok(node, q);
+    return node;
+  };
+  const css = (q: string) => w.getComputedStyle(el(q));
+  const click = (q: string) => el(q).dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+  return { w, ui, el, css, click };
+}
+
+test('enlarged seven-by-six pack fits below resonances and above controls with square aligned cells', () => {
+  const g = start(),
+    { w, ui, el, css } = setup(g);
+  try {
+    const grid = css('#pack-grid'),
+      pack = css('#view-pack'),
+      board = css('#shared-board'),
+      footer = css('#adventure-footer'),
+      slots = css('.resonance-slot'),
+      strip = css('#resonance-strip');
+    assert.equal(grid.width, '350px');
+    assert.equal(grid.height, '300px');
+    assert.equal(parseFloat(grid.gap), 0);
+    assert.equal(parseFloat(grid.width) / 7, parseFloat(grid.height) / 6);
+    assert.ok(
+      parseFloat(pack.left) >= 0 &&
+        parseFloat(pack.left) + parseFloat(pack.width) <= parseFloat(board.width),
+    );
+    assert.ok(parseFloat(pack.top) >= parseFloat(strip.top) + parseFloat(slots.height));
+    assert.ok(
+      parseFloat(board.top) + parseFloat(pack.top) + parseFloat(grid.height) <
+        parseFloat(footer.top),
+    );
+    assert.equal(
+      el('#pack-grid').querySelectorAll('.pack-cell.open').length,
+      openBagCells(g.state.run.kills).size,
+    );
+    assert.notEqual(
+      css('.pack-cell.open').backgroundColor,
+      css('.pack-cell.closed').backgroundColor,
+    );
+    assert.notEqual(
+      css('.pack-cell.edge-top').borderTopColor,
+      css('.pack-cell.closed').borderTopColor,
+    );
+    // Responsive scale applies to this same board rather than shrinking only its grid.
+    for (const [width, height] of [
+      [390, 844],
+      [360, 740],
+      [320, 568],
+      [1280, 900],
+    ]) {
+      Object.defineProperty(w, 'innerWidth', { value: width, configurable: true });
+      Object.defineProperty(w, 'innerHeight', { value: height, configurable: true });
+      ui.render();
+      const scale = +w.document.documentElement.style.getPropertyValue('--game-scale');
+      assert.ok(390 * scale <= width + 0.1 && 844 * scale <= height + 0.1);
+      assert.equal(css('#pack-grid').width, '350px');
+    }
+  } finally {
+    w.happyDOM.close();
+  }
+});
+
+test('exploring, combat and loot share the left hero position and baseline; decisions pause walking', () => {
+  const g = start(),
+    { w, ui, el, css } = setup(g);
+  try {
+    const fighter = () => [
+      css('.hero-fighter').width,
+      css('.hero-fighter').height,
+      css('.hero-fighter').transform,
+      css('.hero-fighter').animationName,
+      css('.battle-scene').left,
+      css('.battle-scene').top,
+      css('.actor-sprite').bottom,
+    ];
+    const origin = fighter();
+    assert.equal(el('#battle-panel').classList.contains('exploring'), true);
+    assert.equal(css('.battle-scene').justifyContent, 'space-between');
+    assert.equal(css('.hero-fighter').animation, 'none');
+    g.continueCamp();
+    ui.render();
+    assert.equal(g.state.phase, 'journey');
+    assert.deepEqual(fighter(), origin);
+    g.continueJourney();
+    ui.render();
+    assert.equal(g.state.phase, 'combat');
+    assert.deepEqual(fighter(), origin);
+    assert.equal(el('#battle-panel').classList.contains('exploring'), false);
+    g.state.enemy!.hp = 0;
+    g.advanceTurn();
+    ui.render();
+    assert.equal(g.state.phase, 'camp');
+    assert.deepEqual(fighter(), origin);
+    assert.equal(el('#battle-panel').classList.contains('has-offers'), true);
+    assert.equal(el('#battle-panel').classList.contains('exploring'), true);
+    positionEvent(g, 'rest');
+    ui.render();
+    assert.equal(el('#battle-panel').classList.contains('exploring'), false);
+    assert.equal(el('#battle-panel').classList.contains('waiting'), true);
+    assert.equal(css('.actor-sprite').backgroundPositionY, '0px');
+  } finally {
+    w.happyDOM.close();
+  }
+});
+
+test('trial and awakening keep the altar visible and restore real growth before resonance choice', () => {
+  const g = start();
+  positionEvent(g, 'elite');
+  const { w, ui, el, css } = setup(g);
+  try {
+    assert.equal(css('.trial-altar').display, 'block');
+    assert.equal(css('.scene-ground').display, 'block');
+    g.state.player.hp = 30;
+    g.state.enemy!.hp = 0;
+    g.advanceTurn();
+    ui.render();
+    assert.equal(g.state.phase, 'awakening');
+    assert.equal(css('.trial-altar').display, 'block');
+    assert.equal(css('.battle-scene').justifyContent, 'center');
+    assert.equal(el('#battle-panel').classList.contains('exploring'), false);
+    assert.match(
+      el('#awakening-result').textContent,
+      new RegExp('恢复生命 ' + g.state.awakening!.healed),
+    );
+    assert.ok(g.state.awakening!.healed > 0);
+    g.finishAwakening();
+    ui.render();
+    assert.equal(g.state.phase, 'reward');
+    assert.equal(el('#battle-panel').classList.contains('waiting'), true);
+    assert.equal(el('#battle-panel').classList.contains('exploring'), false);
+    assert.equal(el('#decision').querySelectorAll('[data-resonance]').length, 3);
+    for (const step of el('#stage-route').querySelectorAll('.route-step'))
+      assert.ok(parseFloat(w.getComputedStyle(step).fontSize) > 0);
+    assert.equal(
+      el('#stage-route').querySelectorAll('.route-step').length,
+      g.state.run.events.length,
+    );
+  } finally {
+    w.happyDOM.close();
+  }
+});
+
+test('every profession loose footprint uses one square-cell size without independent SVG height clipping', () => {
+  for (const job of ['warrior', 'mage', 'rogue'] as const) {
+    const g = start(job);
+    g.state.inventory.push(...availableItems(job).map((d) => g.makeItem(d.id)));
+    g.state.revision++;
+    const { w, el, css } = setup(g);
+    try {
+      const loose = g.looseItems();
+      assert.equal(el('#field-items').querySelectorAll('[data-pack-item]').length, loose.length);
+      for (const item of loose) {
+        const s = css(`#field-items [data-pack-item="${item.id}"]`),
+          d = dimensions(item, { rotation: 0 });
+        assert.equal(s.maxHeight, 'none');
+        assert.equal(s.maxWidth, 'none');
+        // calc()/custom properties remain unevaluated by this DOM engine.
+        assert.equal(s.width.replace(/\s/g, ''), `calc(${d.w}*31px)`);
+        assert.equal(s.height.replace(/\s/g, ''), `calc(${d.h}*31px)`);
+        assert.ok(d.h * 31 < parseFloat(css('#field-items').height));
+      }
+    } finally {
+      w.happyDOM.close();
+    }
+  }
+});
+
+test('touch dragging targets the enlarged grid at native and scaled sizes and still rejects locked cells', () => {
+  for (const scale of [1, 0.8767772511848341]) {
+    const g = start();
+    g.state.inventory = [g.makeItem('warrior_blade_2')];
+    g.state.draft = [];
+    g.state.placements = [];
+    g.state.revision++;
+    const item = g.state.inventory[0],
+      { w, el, css } = setup(g);
+    try {
+      const left = 20 * scale,
+        top = 426 * scale,
+        width = parseFloat(css('#pack-grid').width) * scale,
+        height = parseFloat(css('#pack-grid').height) * scale;
+      (el('#pack-grid') as any).getBoundingClientRect = () => ({
+        left,
+        top,
+        right: left + width,
+        bottom: top + height,
+        width,
+        height,
+      });
+      const drag = (x: number, y: number) => {
+        const source = el(`#field-items [data-pack-item="${item.id}"]`),
+          root = el('#adventure-screen');
+        source.dispatchEvent(
+          new w.PointerEvent('pointerdown', {
+            bubbles: true,
+            pointerType: 'touch',
+            pointerId: 1,
+            button: 0,
+            clientX: 30 * scale,
+            clientY: 150 * scale,
+          }),
+        );
+        for (const type of ['pointermove', 'pointerup'])
+          root.dispatchEvent(
+            new w.PointerEvent(type, {
+              bubbles: true,
+              pointerType: 'touch',
+              pointerId: 1,
+              clientX: left + ((x + 0.5) * width) / 7,
+              clientY: top + ((y + 0.5) * height) / 6,
+            }),
+          );
+      };
+      drag(0, 0);
+      assert.equal(g.state.draft.length, 0);
+      assert.ok(g.findItem(item.id));
+      drag(1, 1);
+      assert.deepEqual(g.state.draft, [{ id: item.id, x: 1, y: 1, rotation: 0 }]);
+      const piece = el(`.pack-piece[data-pack-item="${item.id}"]`);
+      assert.ok(
+        Math.abs((parseFloat((piece as any).style.left) / 100) * width - width / 7) < 0.001,
+      );
+      assert.ok(
+        Math.abs((parseFloat((piece as any).style.height) / 100) * height - height / 3) < 0.001,
+      );
+    } finally {
+      w.happyDOM.close();
+    }
+  }
+});
+
+test('graduation restores four saved resonance slots, with rank colors distinct from effect stages', () => {
+  for (const count of [1, 4]) {
+    const g = start();
+    g.state.run.resonances = (
+      ['cleave', 'warrior_mix', 'execution', 'warrior_sword_base'] as const
+    ).slice(0, count);
+    g.retreat();
+    const h = g.state.meta.heroes[0],
+      { w, el, css } = setup(g);
+    try {
+      assert.equal(el('.graduate-resonances').children.length, 4);
+      assert.equal(el('.graduate-resonances').querySelectorAll('.empty').length, 4 - count);
+      const colors = new Set<string>();
+      for (const key of h.resonances) {
+        const slot = el(`[data-summary-resonance="${key}"]`);
+        assert.match(slot.textContent, new RegExp(`${h.resonanceTiers[key] ?? 0}/3 段`));
+        assert.ok(slot.classList.contains('resonance-rank-' + RESONANCES[key].rank));
+        colors.add(w.getComputedStyle(slot).borderTopColor);
+      }
+      if (count === 4) assert.equal(colors.size, 3);
+      const row = css('.graduate-resonances'),
+        record = css('.summary-record'),
+        details = css('[data-action="hero-details"]');
+      assert.ok(parseFloat(row.top) + parseFloat(row.height) < parseFloat(record.top));
+      assert.ok(parseFloat(record.top) + parseFloat(record.height) < parseFloat(details.top));
+    } finally {
+      w.happyDOM.close();
+    }
+  }
+});
+
+test('the spinning event pauses the explorer until its applied result is confirmed', () => {
+  const realNow = Date.now;
+  let now = realNow();
+  Date.now = () => now;
+  const g = start();
+  g.state.run.events[19].variant = 0;
+  positionEvent(g, 'chance', 19);
+  const { w, ui, el, click } = setup(g);
+  try {
+    click('[data-event="spin"]');
+    assert.equal(el('#battle-panel').classList.contains('exploring'), false);
+    assert.equal(el('#battle-panel').classList.contains('waiting'), true);
+    now += 3700;
+    ui.render();
+    click('[data-action="wheel-confirm"]');
+    assert.equal(el('#battle-panel').classList.contains('exploring'), true);
+  } finally {
+    Date.now = realNow;
+    w.happyDOM.close();
+  }
+});

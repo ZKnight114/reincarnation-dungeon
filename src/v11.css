@@ -1,0 +1,1001 @@
+:root {
+  --panel: #243740;
+  --muted: #a5b5ad;
+  --gold: #d6bd86;
+  color: #e8dec8;
+  background: #0d1921;
+}
+body {
+  background: radial-gradient(ellipse at 40% 20%, #243746, #0b1118 75%);
+}
+button {
+  border-radius: 2px;
+  touch-action: manipulation;
+}
+img.pixel-actor,
+.item-painting {
+  image-rendering: pixelated;
+}
+.pixel-actor {
+  object-fit: contain;
+}
+.enemy-pixel {
+  transform: scaleX(-1);
+}
+body.playing {
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body.playing #app {
+  width: var(--game-width);
+  height: var(--game-height);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+body.playing .app-shell {
+  width: 390px;
+  min-height: 0;
+  height: 844px;
+  margin: 0;
+  position: relative;
+}
+#adventure-screen.adventure-screen.compact {
+  position: absolute;
+  inset: 0;
+  width: 390px;
+  height: 844px;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  transform: scale(var(--game-scale));
+  transform-origin: top left;
+  background: #192c35;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#adventure-screen .adventure-header {
+  position: absolute;
+  z-index: 4;
+  top: 9px;
+  left: 18px;
+  right: 14px;
+  height: 34px;
+  padding: 0;
+}
+#adventure-screen .adventure-header small {
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: #e3d5b5;
+}
+#adventure-screen .adventure-header strong {
+  font-size: 10px;
+  color: #b6c3b8;
+  line-height: 1.2;
+  margin: 4px 0 0;
+}
+#hero-power {
+  display: none;
+}
+#adventure-screen .header-actions button {
+  padding: 2px 4px;
+  color: #d6bd86;
+}
+#adventure-screen .stage-route {
+  position: absolute;
+  z-index: 4;
+  top: 47px;
+  left: 20px;
+  right: 20px;
+  height: 19px;
+  padding: 0;
+  margin: 0;
+  gap: 6px;
+  background: none;
+  border: 0;
+}
+#adventure-screen .stage-node {
+  padding: 0;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  gap: 5px;
+  background: none;
+  border: 0;
+  min-height: 0;
+}
+#adventure-screen .stage-node b {
+  font-size: 9px;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #a39366;
+  border-radius: 0;
+  line-height: 14px;
+  margin: 0;
+}
+#adventure-screen .stage-node small {
+  display: none;
+}
+#adventure-screen .stage-line {
+  height: 1px;
+  background: #8a8e7055;
+  width: 16px;
+  flex: 0 0 16px;
+}
+#adventure-screen .battle-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 390px;
+  height: 326px;
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  background: linear-gradient(#0b1925a8, #12242a11 40%, #14252d7c 77%, #192c35 100%);
+  image-rendering: pixelated;
+}
+#adventure-screen .battle-scene {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 115px;
+  height: 181px;
+  padding: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+}
+#adventure-screen .fighter {
+  width: 115px;
+  height: 181px;
+  justify-content: end;
+  z-index: 1;
+}
+#adventure-screen .fighter img {
+  width: 108px;
+  height: 170px;
+  filter: drop-shadow(0 5px 3px #06121b);
+  object-position: center bottom;
+}
+#adventure-screen .fighter > span:last-child {
+  font-size: 10px;
+  color: #eee0c0;
+  margin-top: 2px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#adventure-screen .versus {
+  display: none;
+}
+#adventure-screen .trail-marker {
+  opacity: 0;
+}
+#adventure-screen .fighter.acting {
+  animation: pixel-strike 0.24s ease-out;
+}
+@keyframes pixel-strike {
+  50% {
+    translate: 10px -2px;
+    filter: brightness(1.4);
+  }
+}
+#adventure-screen .enemy-fighter.acting {
+  animation: pixel-foe 0.24s ease-out;
+}
+@keyframes pixel-foe {
+  50% {
+    translate: -10px -2px;
+    filter: brightness(1.4);
+  }
+}
+#adventure-screen .fighter-health {
+  position: absolute;
+  top: 76px;
+  left: 22px;
+  right: 22px;
+  padding: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 52px;
+  z-index: 3;
+}
+#adventure-screen .fighter-health > div {
+  width: 145px;
+}
+#adventure-screen .fighter-health span {
+  display: block;
+  font-size: 10px;
+  color: #eadfc5;
+  margin: 0 0 5px;
+}
+#adventure-screen .bar {
+  height: 7px;
+  background: #102029;
+  border: 1px solid #8b9a7655;
+  border-radius: 0;
+  box-shadow: 0 1px 3px #0009;
+}
+#adventure-screen .bar i {
+  background: #83b880;
+}
+#adventure-screen .enemy-bar i {
+  background: #c3886e;
+}
+#adventure-screen .turn-order {
+  position: absolute;
+  top: 114px;
+  left: 130px;
+  right: 22px;
+  text-align: center;
+  font-size: 10px;
+  padding: 0;
+  margin: 0;
+  z-index: 3;
+  background: none;
+  border: 0;
+  color: #d6c7a2;
+  min-height: 0;
+}
+#adventure-screen .enemy-effects {
+  position: absolute;
+  top: 299px;
+  right: 22px;
+  display: flex;
+  gap: 5px;
+  font-size: 8px;
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+  z-index: 4;
+}
+#adventure-screen .enemy-effects span,
+#adventure-screen .enemy-effects small {
+  font-size: 8px;
+}
+#adventure-screen .has-offers .fighter-health {
+  visibility: hidden;
+}
+#adventure-screen .has-offers .enemy-fighter {
+  visibility: hidden;
+}
+#adventure-screen .exploring .battle-scene {
+  left: 30px;
+  right: 30px;
+  top: 140px;
+  height: 170px;
+  pointer-events: none;
+}
+#adventure-screen .exploring .hero-fighter {
+  width: 82px;
+  height: 123px;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  animation: explore-path var(--explore-duration, 6s) linear infinite;
+}
+#adventure-screen .exploring .hero-fighter img {
+  width: 78px;
+  height: 115px;
+  animation: explore-step 0.38s ease-in-out infinite alternate;
+  object-position: center bottom;
+}
+#adventure-screen .exploring .hero-fighter > span:last-child {
+  display: none;
+}
+#adventure-screen .exploring .enemy-fighter,
+#adventure-screen .exploring .fighter-health {
+  visibility: hidden;
+}
+#adventure-screen .has-offers .hero-fighter {
+  opacity: 0.48;
+  filter: saturate(0.7) brightness(0.8);
+  z-index: 0;
+}
+#adventure-screen .has-offers:not(.exploring) .battle-scene {
+  left: 28px;
+  top: 194px;
+  height: 100px;
+  pointer-events: none;
+}
+#adventure-screen .has-offers:not(.exploring) .hero-fighter {
+  width: 65px;
+  height: 100px;
+}
+#adventure-screen .has-offers:not(.exploring) .hero-fighter img {
+  width: 60px;
+  height: 95px;
+}
+#adventure-screen .has-offers:not(.exploring) .hero-fighter > span:last-child {
+  display: none;
+}
+@keyframes explore-path {
+  0% {
+    transform: translateX(0) scaleX(1);
+  }
+  48% {
+    transform: translateX(248px) scaleX(1);
+  }
+  50% {
+    transform: translateX(248px) scaleX(-1);
+  }
+  98% {
+    transform: translateX(0) scaleX(-1);
+  }
+  100% {
+    transform: translateX(0) scaleX(1);
+  }
+}
+@keyframes explore-step {
+  from {
+    translate: 0 0;
+    rotate: -1deg;
+  }
+  to {
+    translate: 0 -3px;
+    rotate: 1deg;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #adventure-screen .exploring .hero-fighter,
+  #adventure-screen .exploring .hero-fighter img {
+    animation: none;
+  }
+}
+#adventure-screen .playing-story .journey-entry {
+  animation: story-arrival 0.45s ease-out;
+}
+#adventure-screen .playing-story .journey-paper p {
+  font-size: 15px;
+  line-height: 2;
+  color: #e4dec5;
+}
+@keyframes story-arrival {
+  from {
+    opacity: 0;
+    translate: 0 9px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+#adventure-screen .field-piece.merge-target {
+  filter: drop-shadow(0 0 6px #ffe6a2);
+  transform: translateY(-3px);
+}
+#adventure-screen .field-items {
+  position: absolute;
+  top: 102px;
+  left: 22px;
+  width: 346px;
+  height: 211px;
+  z-index: 6;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+#adventure-screen .field-shapes {
+  display: flex;
+  align-items: start;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px 0 8px;
+  min-height: 185px;
+  max-height: none;
+  flex-wrap: wrap;
+  background: none;
+  border: 0;
+  --field-cell: 38px;
+}
+#adventure-screen .field-piece {
+  position: relative;
+  flex: 0 0 auto;
+  width: min(96px, calc(var(--shape-w) * 40px));
+  height: auto;
+  max-height: 176px;
+  aspect-ratio: var(--shape-w) / var(--shape-h);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  pointer-events: none;
+  overflow: visible;
+  touch-action: none;
+}
+#adventure-screen .field-piece .item-outline {
+  pointer-events: all;
+  fill: var(--item-fill);
+  stroke: var(--item-color);
+  stroke-width: 3;
+  cursor: grab;
+}
+#adventure-screen .field-piece .item-painting {
+  pointer-events: none;
+  overflow: visible;
+  width: 100%;
+  height: 100%;
+}
+#adventure-screen .point-control {
+  position: absolute;
+  bottom: 9px;
+  right: 20px;
+  left: 143px;
+  z-index: 5;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 10px;
+  color: #d6c7a2;
+  justify-content: end;
+  gap: 9px;
+}
+#adventure-screen .point-control button {
+  min-height: 28px;
+  padding: 4px 8px;
+  background: #142b33a0;
+  border: 1px solid #917b5355;
+  font-size: 10px;
+}
+#shared-board {
+  position: absolute;
+  left: 14px;
+  top: 326px;
+  width: 362px;
+  height: 446px;
+  background: linear-gradient(#28434b, #203640);
+  border: 0;
+  padding: 15px 0 0;
+  box-shadow:
+    0 -1px #71817455,
+    inset 0 1px #d2bc8355;
+}
+#adventure-screen .combat-hud {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 362px;
+  height: 32px;
+  border: 1px solid #857c61;
+  background: linear-gradient(#324751, #223842);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 5px;
+  padding: 0 7px;
+  margin: 0;
+  border-radius: 0;
+  font-size: 10px;
+  color: #d4d8be;
+}
+#adventure-screen .combat-hud strong {
+  font-size: 11px;
+  color: #e7d4aa;
+}
+#adventure-screen .combat-hud small {
+  font-size: 8px;
+  color: #b0c0b2;
+}
+#adventure-screen .resonance-strip {
+  position: absolute;
+  left: 0;
+  top: 39px;
+  width: 362px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+#adventure-screen .resonance-slot {
+  height: 53px;
+  min-height: 0;
+  min-width: 0;
+  border: 1px solid #758471;
+  border-radius: 0;
+  padding: 5px 2px;
+  background: linear-gradient(#29434b, #1b313a);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  box-shadow: inset 0 0 0 2px #0f242944;
+}
+#adventure-screen .resonance-slot svg {
+  display: none;
+}
+#adventure-screen .resonance-slot b {
+  font-size: 9px;
+  white-space: nowrap;
+  line-height: 12px;
+  font-weight: 500;
+  color: #e8d3a3;
+}
+#adventure-screen .resonance-slot small {
+  font-size: 8px;
+  color: #b5c3b4;
+}
+#adventure-screen .resonance-slot.empty {
+  border-color: #45636b;
+  background: #1e333b;
+  color: #8aa0a4;
+}
+.tier-marks {
+  display: flex;
+  gap: 5px;
+}
+.tier-marks i {
+  height: 3px;
+  width: 13px;
+  background: #79908933;
+  border: 1px solid #8b9b8744;
+}
+.tier-marks i.on {
+  background: #d3bf88;
+  border-color: #e8d6a1;
+}
+#adventure-screen #view-pack {
+  position: absolute;
+  left: 13px;
+  top: 109px;
+  width: 336px;
+  height: 288px;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+#adventure-screen .workbench {
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: 0;
+}
+.pack-grid,
+#adventure-screen .pack-grid {
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  width: 336px;
+  height: 288px;
+  aspect-ratio: 7/6;
+  max-width: 100%;
+  border: 0;
+  outline: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #172a33;
+  margin: 0;
+}
+.pack-cell {
+  position: relative;
+  background: #3d5558;
+  border: 1px solid #82988b;
+  box-shadow: inset 0 0 0 2px #2e4446;
+}
+.pack-cell.closed {
+  background: repeating-linear-gradient(135deg, #101d25, #101d25 6px, #17262e 6px, #17262e 8px);
+  opacity: 1;
+  border: 1px solid #263840;
+  box-shadow: inset 0 0 0 2px #101c23;
+}
+.pack-cell.closed::after {
+  content: '×';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  color: #415159;
+  pointer-events: none;
+}
+.pack-cell.edge-top {
+  border-top: 2px solid #dcc490;
+}
+.pack-cell.edge-bottom {
+  border-bottom: 2px solid #dcc490;
+}
+.pack-cell.edge-left {
+  border-left: 2px solid #dcc490;
+}
+.pack-cell.edge-right {
+  border-right: 2px solid #dcc490;
+}
+#adventure-screen .pack-hint {
+  display: none;
+}
+.pack-piece .item-outline {
+  stroke-width: 2;
+  vector-effect: none;
+}
+.item-level {
+  font-size: 19px;
+}
+.item-painting image {
+  pointer-events: none;
+}
+.cooldown-label {
+  font-size: 15px;
+}
+.drag-floating {
+  z-index: 50;
+}
+#adventure-screen .journey-panel {
+  position: absolute;
+  left: 13px;
+  top: 109px;
+  width: 336px;
+  height: 314px;
+  min-height: 0;
+  max-height: none;
+  padding: 8px 12px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(transparent, #34444833);
+  overflow: hidden;
+}
+#adventure-screen .journey-heading {
+  display: none;
+}
+#adventure-screen .journey-history,
+#adventure-screen.resonance-screen .journey-history {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  padding: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+#adventure-screen .journey-entry {
+  display: block;
+  padding: 10px 0;
+  border: 0;
+  margin: 0;
+  background: none;
+  box-shadow: none;
+}
+#adventure-screen .journey-paper {
+  border: 0;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+}
+#adventure-screen .journey-time {
+  font-size: 8px;
+  color: #8fa5a6;
+}
+#adventure-screen .journey-paper strong {
+  font-size: 15px;
+  color: #e7d8b3;
+  font-weight: 500;
+}
+#adventure-screen .journey-paper p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #c6d0bf;
+  margin: 8px 0;
+}
+#adventure-screen .journey-paper > span {
+  display: none;
+}
+#adventure-screen .adventure-footer {
+  position: absolute;
+  left: 0;
+  top: 780px;
+  width: 390px;
+  height: 64px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 12px;
+  padding: 0 21px 5px;
+  margin: 0;
+  background: linear-gradient(transparent, #142730);
+  border: 0;
+}
+#adventure-screen .adventure-footer button {
+  height: 44px;
+  min-height: 44px;
+  padding: 0 13px;
+  font-size: 12px;
+  flex: 0 1 auto;
+}
+#adventure-screen .adventure-footer .primary-button {
+  width: 178px;
+  flex: 0 0 178px;
+  font-size: 15px;
+  letter-spacing: 1px;
+  border: 9px solid transparent;
+  border-image: url('./assets/buttonLong_beige.png') 10 fill stretch;
+  padding: 0;
+  color: #34352b;
+  background: #d0b585;
+  box-shadow: 0 2px 5px #0005;
+}
+#adventure-screen .adventure-footer .view-toggle {
+  font-size: 11px;
+  background: none;
+  border-color: #75807155;
+  width: 75px;
+  padding: 0;
+}
+#adventure-screen .stage-route {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  top: 48px;
+  height: 17px;
+}
+#adventure-screen .route-step {
+  flex: 1;
+  min-width: 0;
+  height: 8px;
+  background: #213440;
+  border: 1px solid #697b79;
+  position: relative;
+}
+#adventure-screen .route-step.complete {
+  background: #90ae85;
+  border-color: #bdd0a2;
+}
+#adventure-screen .route-step.current {
+  background: #f1d999;
+  border-color: #fff0bb;
+  box-shadow: 0 0 5px #e7cc86;
+}
+#adventure-screen .route-step.current::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-bottom: 3px solid #f1d999;
+}
+#adventure-screen .route-step.milestone {
+  height: 14px;
+  border-color: #c4a873;
+}
+#adventure-screen .route-step.optional:not(.complete):not(.current) {
+  background: #302d3b;
+  border-color: #75697c;
+}
+#adventure-screen .adventure-footer {
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 14px 5px;
+}
+#adventure-screen .adventure-footer .reforge-button {
+  width: 62px;
+  flex: 0 0 62px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  background: #233940;
+  border: 1px solid #9c8b64;
+  font-size: 12px;
+}
+#adventure-screen .reforge-button small {
+  font-size: 10px;
+  color: #d5c699;
+}
+#adventure-screen .adventure-footer .speed-button {
+  width: 44px;
+  flex: 0 0 44px;
+  padding: 0;
+  background: #233940;
+  border: 1px solid #9c8b64;
+  font-size: 16px;
+}
+#adventure-screen .footer-main {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+#adventure-screen .footer-main button:not(.primary-button) {
+  padding: 0 9px;
+  min-width: 44px;
+  font-size: 11px;
+}
+#adventure-screen .board-view-toggle {
+  position: absolute;
+  bottom: 5px;
+  right: 13px;
+}
+#adventure-screen .board-view-toggle button {
+  height: 24px;
+  min-height: 24px;
+  padding: 0 8px;
+  font-size: 10px;
+  background: #253e46;
+  border-color: #7d8c7b66;
+}
+dialog.event-dialog,
+#modal,
+.equipment-detail {
+  width: min(92vw, 390px);
+  max-height: 88dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding: 18px 13px;
+  background: #e5d6b4;
+  color: #3d3c31;
+  border: 10px solid transparent;
+  border-image: url('./assets/panel_beigeLight.png') 12 fill stretch;
+  border-radius: 0;
+  color-scheme: light;
+  box-shadow: 0 15px 65px #000b;
+}
+dialog::backdrop {
+  background: #071722bd;
+  backdrop-filter: blur(2px);
+}
+.event-dialog h2 {
+  font-size: 19px;
+  text-align: center;
+  letter-spacing: 1px;
+  margin: 0 0 14px;
+}
+.event-dialog p {
+  font-size: 12px;
+  color: #5f533b;
+}
+.event-dialog small,
+#modal small {
+  color: #84724f;
+}
+.event-dialog button {
+  color: #413b2a;
+  background: #cfba8f;
+  border-color: #a48e60;
+}
+.event-dialog .choice-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.event-dialog .resonance-choice {
+  display: grid;
+  grid-template-columns: 25px 1fr;
+  text-align: left;
+  align-items: start;
+  padding: 11px;
+  min-height: 0;
+  gap: 0 6px;
+}
+.event-dialog .resonance-choice strong {
+  font-size: 13px;
+}
+.event-dialog .resonance-choice > small {
+  grid-column: 2;
+  font-size: 9px;
+}
+.event-dialog .resonance-levels {
+  grid-column: 2;
+}
+.event-dialog .resonance-levels span {
+  font-size: 10px;
+  line-height: 1.6;
+}
+.event-dialog .trial-choice,
+.event-dialog .reward-card {
+  padding: 12px;
+  text-align: left;
+  border-radius: 2px;
+  min-height: 0;
+}
+.event-dialog .trial-choice strong {
+  font-size: 14px;
+}
+.event-dialog .trial-choice small,
+.event-dialog .trial-choice b {
+  display: block;
+  font-size: 10px;
+  margin: 4px 0;
+}
+.event-dialog .trial-crest {
+  display: none;
+}
+.event-dialog .trial-subtitle {
+  text-align: center;
+}
+.event-dialog .fate-wheel {
+  font-size: 45px;
+  text-align: center;
+}
+.event-dialog .event-actions {
+  display: flex;
+  gap: 9px;
+}
+.event-dialog .dig-board {
+  width: min(260px, 100%);
+}
+.event-dialog .primary-button {
+  width: 100%;
+  min-height: 42px;
+}
+.event-dialog .reached {
+  color: #3d613d;
+}
+#modal p {
+  color: #554d3a;
+}
+#modal button {
+  color: #3f392b;
+  background: #cbb58a;
+  border-color: #a88f60;
+}
+#modal .hero-portrait {
+  width: 90px;
+  height: 120px;
+}
+#modal .muted {
+  color: #8b7c61;
+}
+.graduate-pack {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 7/6;
+}
+.hero-equipment-section .graduate-pack {
+  grid-template-columns: repeat(7, 1fr);
+  width: 100%;
+  height: auto;
+  aspect-ratio: 7/6;
+}
+#toast {
+  z-index: 100;
+  max-width: calc(100vw - 32px);
+}
+.guild-home,
+.selection-screen,
+.summary-screen {
+  background: linear-gradient(#253b43, #162730);
+}
+.guild-content {
+  background: linear-gradient(#243b43, #14262e);
+}
+.hero-card {
+  background: #263c45;
+  border-color: #7a826c;
+}
+.hero-card img {
+  height: 85px;
+  width: 65px;
+}
+.profession-targets img {
+  width: 70px;
+  height: 100px;
+}
+.admission-identity img {
+  width: 90px;
+  height: 130px;
+}
+.guild-expedition {
+  border: 9px solid transparent;
+  border-image: url('./assets/buttonLong_beige.png') 10 fill stretch;
+}
+.admission-file {
+  border-radius: 2px;
+  background: #233941;
+  border-color: #82785a;
+}

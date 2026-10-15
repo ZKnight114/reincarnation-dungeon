@@ -1,0 +1,560 @@
+/* One continuous scene; action frames preserve the approved pixel artwork. */
+#adventure-screen .battle-panel {
+  overflow: hidden;
+  background: none;
+  isolation: isolate;
+}
+#adventure-screen .battle-panel:before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: var(--dungeon-scene) 0 45%/780px auto repeat-x;
+  animation: journey-scenery 22s linear infinite;
+  animation-play-state: paused;
+}
+#adventure-screen .battle-panel:after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background: linear-gradient(#0b192588, transparent 45%, #14252d44 78%, #192c35);
+}
+#adventure-screen .battle-panel.exploring:before {
+  animation-play-state: running;
+  animation-duration: calc(var(--explore-duration, 6s) * 3.7);
+}
+@keyframes journey-scenery {
+  to {
+    background-position: -780px 45%;
+  }
+}
+#adventure-screen .battle-scene,
+#adventure-screen .exploring .battle-scene,
+#adventure-screen .has-offers:not(.exploring) .battle-scene {
+  display: flex;
+  left: 28px;
+  right: 28px;
+  top: 142px;
+  height: 166px;
+}
+#adventure-screen .hero-fighter,
+#adventure-screen .exploring .hero-fighter,
+#adventure-screen .has-offers:not(.exploring) .hero-fighter {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  width: 100px;
+  height: 156px;
+  animation: none;
+  transform: none;
+}
+#adventure-screen .fighter img,
+#adventure-screen .exploring .hero-fighter img,
+#adventure-screen .has-offers:not(.exploring) .hero-fighter img {
+  width: 94px;
+  height: 142px;
+  animation: none;
+  rotate: none;
+  translate: none;
+}
+#adventure-screen .hero-fighter > img {
+  display: none;
+}
+.actor-sprite {
+  width: 96px;
+  height: 136px;
+  background-size: 576px 544px;
+  background-position: 0 0;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+  animation: actor-idle 0.9s steps(6) infinite;
+  filter: drop-shadow(0 4px 2px #06121b);
+}
+#adventure-screen .actor-sprite {
+  position: absolute;
+  left: 2px;
+  bottom: 14px;
+}
+#adventure-screen .hero-fighter > span:last-child {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+@keyframes actor-idle {
+  to {
+    background-position-x: -576px;
+  }
+}
+#adventure-screen .exploring .actor-sprite {
+  background-position-y: -136px;
+  animation-duration: 0.66s;
+}
+#adventure-screen .fighter.acting {
+  animation: none;
+}
+#adventure-screen .hero-fighter.acting .actor-sprite {
+  background-position-y: -272px;
+  animation: actor-idle 0.32s steps(6) 1;
+}
+#adventure-screen .hero-fighter.hurt .actor-sprite {
+  background-position-y: -408px;
+  animation: actor-idle 0.36s steps(6) 1;
+  filter: brightness(1.4) sepia(0.5) drop-shadow(0 0 4px #b36353);
+}
+#adventure-screen .enemy-fighter.hurt {
+  animation: foe-hurt 0.3s ease-out;
+}
+@keyframes foe-hurt {
+  50% {
+    translate: 7px 0;
+    filter: brightness(1.6);
+  }
+}
+#adventure-screen .enemy-fighter.acting {
+  animation: pixel-foe 0.3s ease-out;
+}
+#adventure-screen .has-offers .hero-fighter {
+  opacity: 0.78;
+  filter: brightness(0.9);
+  z-index: 0;
+}
+#adventure-screen .waiting .fighter-health,
+#adventure-screen .waiting .enemy-fighter {
+  visibility: hidden;
+}
+#adventure-screen .waiting .hero-fighter > span:last-child {
+  display: none;
+}
+#adventure-screen .has-offers .field-items {
+  z-index: 6;
+}
+#adventure-screen .combat-hud {
+  height: 39px;
+}
+#adventure-screen .combat-hud strong {
+  font-size: 10px;
+  line-height: 1.5;
+}
+#adventure-screen .combat-hud strong small {
+  display: block;
+  color: #bdddab;
+  font-size: 9px;
+}
+#adventure-screen .resonance-strip {
+  top: 46px;
+  gap: 5px;
+}
+#adventure-screen .resonance-slot {
+  position: relative;
+  padding-left: 18px;
+  gap: 2px;
+}
+#adventure-screen .resonance-slot svg {
+  display: block;
+  position: absolute;
+  left: 4px;
+  top: 8px;
+  width: 12px;
+  height: 12px;
+  color: #c9b27d;
+}
+#adventure-screen .resonance-slot b {
+  font-size: 8px;
+}
+.resonance-meter {
+  height: 2px;
+  background: #71897d44;
+  width: 90%;
+  overflow: hidden;
+}
+.resonance-meter i {
+  display: block;
+  height: 100%;
+  background: #d4bf88;
+}
+.resonance-fired {
+  animation: resonance-flash 0.65s ease-out;
+}
+@keyframes resonance-flash {
+  20% {
+    background: #826c3b;
+    box-shadow: 0 0 10px #edce76;
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+.pack-cell.just-opened {
+  animation: cell-reveal 1.4s ease-out;
+}
+@keyframes cell-reveal {
+  0%,
+  25% {
+    background: #c9b275;
+    box-shadow: inset 0 0 9px #ffe5a3;
+  }
+  100% {
+    background: #496363;
+  }
+}
+#adventure-screen .journey-heading {
+  display: none;
+}
+#adventure-screen .journey-history {
+  height: 100%;
+  max-height: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 3px 12px;
+  touch-action: pan-y;
+  overflow-anchor: none;
+  scrollbar-width: thin;
+}
+#adventure-screen .journey-group {
+  margin: 0 0 14px;
+}
+#adventure-screen .journey-time {
+  position: static;
+  font-size: 9px;
+  color: #d1bc8a;
+  margin: 4px 0 7px;
+}
+#adventure-screen .journey-entry,
+#adventure-screen .playing-story .journey-entry {
+  display: block;
+  margin: 0 0 7px;
+  animation: none;
+}
+#adventure-screen .journey-entry.journey-new,
+#adventure-screen .playing-story .journey-entry.journey-new {
+  animation: story-arrival 0.35s ease-out;
+}
+#adventure-screen .journey-paper {
+  padding: 9px 11px;
+  background: #e4d7b9;
+  border: 1px solid #b4a07c;
+  color: #4b4b3d;
+  box-shadow: none;
+}
+#adventure-screen .journey-paper strong {
+  font-size: 11px;
+  color: #655332;
+}
+#adventure-screen .journey-paper p,
+#adventure-screen .playing-story .journey-paper p {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #444e43;
+  margin: 4px 0 0;
+}
+#adventure-screen .journey-growth .journey-paper {
+  background: #d7cfdf;
+  border-color: #a899b7;
+}
+#adventure-screen .journey-rest .journey-paper {
+  background: #ccd8bc;
+  border-color: #91ad85;
+}
+#adventure-screen .journey-danger .journey-paper {
+  background: #e1c9bb;
+  border-color: #be8e7b;
+}
+#adventure-screen .journey-loot .journey-paper {
+  background: #e7d7a9;
+  border-color: #b8a068;
+}
+#adventure-screen .stage-route {
+  gap: 3px;
+}
+#adventure-screen .route-step {
+  position: relative;
+  min-width: 0;
+  width: auto;
+  flex: 1;
+  height: 12px;
+  font-size: 8px;
+  line-height: 10px;
+  text-align: center;
+  color: #7d968f;
+  background: #12262b;
+  border: 1px solid #658478;
+}
+#adventure-screen .route-step:before {
+  content: none;
+}
+#adventure-screen .route-step.complete {
+  color: #b7ccac;
+  background: #38564c;
+  border-color: #789876;
+}
+#adventure-screen .route-step.current {
+  color: #ffe3a4;
+  border-color: #f1cd83;
+  background: #806742;
+  box-shadow: 0 0 4px #ccb277;
+}
+#adventure-screen .route-step.milestone {
+  height: 16px;
+  color: #d6c49a;
+}
+.combat-tools {
+  min-width: 30px;
+  font-size: 19px;
+  padding: 4px !important;
+  background: none;
+  border: 0;
+}
+.combat-number.hurt {
+  color: #e6a590;
+}
+.combat-number.blocked {
+  color: #b5d6e4;
+  top: 35%;
+}
+.hero-effects {
+  position: absolute;
+  left: 28px;
+  top: 125px;
+  display: flex;
+  gap: 5px;
+  font-size: 9px;
+  color: #bcd1b3;
+  z-index: 4;
+}
+.hero-effects span {
+  background: #1e3836cc;
+  padding: 2px 4px;
+}
+.battle-panel:not(.in-combat) .hero-effects {
+  display: none;
+}
+.combat-number.trigger {
+  display: none;
+}
+#adventure-screen .battle-panel.trial-combat:before,
+#adventure-screen .battle-panel.awakened:before {
+  filter: hue-rotate(35deg) brightness(0.65);
+}
+#adventure-screen .battle-panel.trial-combat:after,
+#adventure-screen .battle-panel.awakened:after {
+  background:
+    radial-gradient(ellipse at 50% 80%, #c8a85688, transparent 55%),
+    linear-gradient(#201b3c88, transparent 55%, #192c35);
+}
+.scene-ground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 285px;
+  height: 41px;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(transparent, #192c35),
+    repeating-linear-gradient(90deg, transparent 0 35px, #b5ad6c33 35px 44px, transparent 44px 83px);
+  background-size:
+    auto,
+    166px 12px;
+  background-position:
+    0 0,
+    0 8px;
+  background-repeat: no-repeat, repeat-x;
+  animation: ground-travel 3s linear infinite;
+  animation-play-state: paused;
+}
+.exploring .scene-ground {
+  animation-play-state: running;
+  animation-duration: calc(var(--explore-duration, 6s) * 0.5);
+}
+@keyframes ground-travel {
+  to {
+    background-position:
+      0 0,
+      -166px 8px;
+  }
+}
+.trial-altar {
+  display: none;
+  position: absolute;
+  left: -12px;
+  right: -12px;
+  bottom: 1px;
+  height: 27px;
+  border: 2px solid #ab9373;
+  box-shadow:
+    0 6px 0 #4e4650,
+    0 8px 0 #938074,
+    inset 0 0 18px #d2be7766;
+  background: repeating-linear-gradient(90deg, #71666e 0 38px, #aa9583 39px 40px);
+  transform: skewX(-12deg);
+  pointer-events: none;
+}
+.trial-altar:before {
+  content: '✧   ◇   ✧';
+  position: absolute;
+  left: 25%;
+  right: 25%;
+  top: 1px;
+  text-align: center;
+  color: #e7ce89;
+  font-size: 13px;
+  letter-spacing: 13px;
+  text-shadow: 0 0 8px #e7ce89;
+}
+.trial-combat .trial-altar,
+.awakened .trial-altar {
+  display: block;
+}
+.trial-impact {
+  position: absolute;
+  top: -25px;
+  bottom: 0;
+  left: 4px;
+  right: 4px;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 45%, #f2deae 48% 51%, transparent 54%);
+  filter: drop-shadow(0 0 9px #cab0f1);
+  animation: trial-shock 0.48s ease-out forwards;
+}
+@keyframes trial-shock {
+  0% {
+    opacity: 0;
+    scale: 1 0.4;
+  }
+  25% {
+    opacity: 1;
+    scale: 1 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.2 1;
+  }
+}
+#adventure-screen .awakened .battle-scene {
+  justify-content: center;
+}
+#adventure-screen .awakened .hero-fighter {
+  filter: drop-shadow(0 0 15px #e2c58a);
+}
+#adventure-screen .awakened .hero-fighter:before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  bottom: 0;
+  height: 180px;
+  background: linear-gradient(transparent, #ddc78144);
+  border-bottom: 3px solid #d4b87c;
+  animation: awakening-light 1.8s ease-out infinite;
+  z-index: -1;
+}
+#adventure-screen .awakened .enemy-fighter,
+#adventure-screen .awakened .fighter-health,
+#adventure-screen .awakened .field-items {
+  display: none;
+}
+@keyframes awakening-light {
+  0% {
+    opacity: 0.3;
+    scale: 0.85 1;
+  }
+  60% {
+    opacity: 1;
+    scale: 1 1;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+#awakening-result {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 112px;
+  height: 299px;
+  text-align: center;
+  background: radial-gradient(ellipse, #78624355, #172d34 72%);
+  padding: 20px 16px;
+  color: #ead4a6;
+  z-index: 8;
+}
+#awakening-result h2 {
+  font-size: 23px;
+  margin: 8px 0 16px;
+  color: #e6d29f;
+}
+.awakening-seal {
+  display: block;
+  font-size: 42px;
+  color: #edce87;
+}
+.awakening-gains {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  font-size: 12px;
+  color: #caddb4;
+}
+.summary-screen {
+  padding: 16px;
+}
+.graduation-spotlight {
+  width: min(390px, 100%);
+  margin: auto;
+  text-align: center;
+  padding: 12px 10px;
+  background: radial-gradient(ellipse at 50% 30%, #52616a55, transparent 65%);
+}
+.graduation-spotlight h1 {
+  font-size: 21px;
+  margin: 8px;
+}
+.graduation-spotlight > .hero-portrait {
+  display: block;
+  width: 130px;
+  height: 180px;
+  margin: 10px auto;
+  filter: drop-shadow(0 0 16px #cfb48044);
+}
+.graduation-spotlight > .hero-rating {
+  display: inline-block;
+  font-size: 32px;
+  width: 58px;
+}
+.final-power {
+  display: block;
+  font-size: 24px;
+  color: #ead2a0;
+  margin: 8px;
+}
+.graduation-spotlight > button {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  min-height: 43px;
+}
+.graduation-spotlight .graduate-resonances {
+  margin: 18px 0;
+}
+.graduation-spotlight p {
+  font-size: 11px;
+  color: #b9c7b5;
+}
+@media (prefers-reduced-motion: reduce) {
+  #adventure-screen .battle-panel:before,
+  .scene-ground,
+  .trial-impact,
+  .actor-sprite,
+  #adventure-screen .exploring .actor-sprite,
+  #adventure-screen .fighter.acting .actor-sprite,
+  #adventure-screen .fighter.hurt .actor-sprite,
+  #adventure-screen .awakened .hero-fighter:before,
+  .pack-cell.just-opened,
+  .resonance-fired,
+  #adventure-screen .journey-entry.journey-new {
+    animation: none !important;
+  }
+}

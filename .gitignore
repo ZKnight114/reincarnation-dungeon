@@ -1,0 +1,23 @@
+node_modules/
+dist/
+qa/
+*.log
+
+# Local references, generated previews and recoverable art history stay on disk.
+archive/
+art-direction/
+output/
+samples/
+tmp/
+public/
+.venv*/
+后续改版设计记录.md
+
+# Local credentials and machine-specific files must never be published.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+Thumbs.db
+.DS_Store

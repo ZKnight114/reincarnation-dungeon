@@ -1,0 +1,142 @@
+.resonance-levels {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 5px 0;
+}
+.resonance-levels span {
+  font-size: 10px;
+  line-height: 1.5;
+  color: #51472e;
+  display: flex;
+  gap: 7px;
+}
+.resonance-levels b {
+  color: #806132;
+  min-width: 24px;
+}
+.resonance-levels .reached {
+  color: #315638;
+}
+.resonance-kind {
+  color: #76582d !important;
+}
+.dig-status {
+  text-align: center;
+  font-size: 12px;
+  margin: 10px;
+}
+.dig-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  position: relative;
+  aspect-ratio: 1;
+  width: min(280px, 100%);
+  margin: 12px auto;
+  background: #263a30;
+  border: 3px double #95856c;
+}
+.dig-cell {
+  border-radius: 0;
+  border: 1px solid #807353;
+  background: linear-gradient(145deg, #64563e, #3b4030);
+  padding: 0;
+  min-height: 0;
+  font-size: 20px;
+  color: #a99868;
+  z-index: 1;
+}
+.dig-cell.revealed {
+  background: transparent;
+  opacity: 1;
+}
+.dig-piece {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+.dig-piece .item-outline {
+  fill: var(--item-fill);
+  stroke: var(--item-color);
+  stroke-width: 3;
+}
+.dig-piece .item-painting {
+  width: 100%;
+  height: 100%;
+}
+.adventure-footer {
+  flex-wrap: wrap;
+}
+.adventure-footer [data-action='skip-combat'] {
+  font-size: 10px;
+  padding: 8px;
+}
+.adventure-footer [data-action='fast-explore'] {
+  padding: 8px;
+  font-size: 11px;
+}
+.journey-decision .resonance-choice {
+  align-items: start;
+}
+.resonance-info {
+  line-height: 1.7;
+}
+.stage-route {
+  align-items: center;
+}
+.journey-panel.has-decision .journey-history {
+  max-height: 86px;
+}
+.resonance-screen .journey-history {
+  max-height: 65px;
+}
+.resonance-screen .field-shapes {
+  --field-cell: 28px;
+  max-height: 96px;
+  padding: 5px 3px;
+}
+.resonance-screen .point-control button {
+  min-height: 26px;
+  padding: 5px 8px;
+}
+.resonance-screen .resonance-choice {
+  padding: 8px;
+}
+.resonance-screen .journey-decision {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.resonance-screen .resonance-choice strong {
+  font-size: 12px;
+}
+.resonance-screen .journey-decision h2 {
+  font-size: 16px;
+}
+.resonance-screen .resonance-kind {
+  margin: 2px 0 !important;
+}
+.resonance-screen .resonance-choice > small:last-child {
+  margin: 2px 0 0;
+  font-size: 9px;
+}
+.resonance-screen .choice-grid {
+  gap: 6px;
+}
+@media (max-width: 380px) {
+  .journey-decision .resonance-choice {
+    padding: 8px;
+  }
+  .resonance-levels span {
+    font-size: 9px;
+  }
+  .adventure-footer button {
+    font-size: 11px;
+  }
+  .dig-board {
+    width: 240px;
+  }
+  .resonance-screen .journey-history {
+    max-height: 50px;
+  }
+}

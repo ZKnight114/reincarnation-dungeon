@@ -1,0 +1,1893 @@
+/* Approved v17 pixel pages. All main screens share a 390 × 844 canvas. */
+:root {
+  --guild-scene: url('./assets/guild-home.png');
+  --dungeon-scene: url('./assets/ruins-ui.png');
+  --gold: #d5b672;
+  --panel: #213437;
+  --line: #776849;
+  --muted: #b5b6a0;
+  --ink: #e8dfc2;
+  --rank-low: #81b5e4;
+  --rank-advanced: #c39ae1;
+  --rank-high: #e4be64;
+  background: #08171c;
+  color: var(--ink);
+}
+body,
+body.playing {
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1c3035, #08171c 72%);
+}
+#app,
+body.playing #app {
+  width: var(--game-width);
+  height: var(--game-height);
+  overflow: hidden;
+  flex: none;
+}
+.app-shell,
+body.playing .app-shell {
+  position: relative;
+  width: 390px;
+  height: 844px;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+  transform: scale(var(--game-scale));
+  transform-origin: top left;
+  overflow: hidden;
+  background: #102329;
+}
+#home-screen,
+#roster-screen,
+#selection-screen,
+#summary-screen,
+#adventure-screen.adventure-screen.compact {
+  position: absolute;
+  inset: 0;
+  width: 390px;
+  height: 844px;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  transform: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #102329;
+}
+button {
+  border-radius: 0;
+  font-size: 13px;
+  border-color: var(--line);
+  background: #213437;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 3px #10232955;
+  touch-action: manipulation;
+}
+button:hover {
+  background: #354845;
+}
+button:focus-visible {
+  outline: 2px solid #f2dfad;
+  outline-offset: -3px;
+}
+.primary-button {
+  border: 2px solid #a28a55;
+  border-image: none;
+  background: #dfd0a7;
+  color: #3b3524;
+  box-shadow: inset 0 0 0 3px #beaa77;
+  font-weight: 700;
+}
+.primary-button:hover {
+  background: #eddcb2;
+}
+h1,
+h2 {
+  font-family: inherit;
+  font-weight: 700;
+  color: var(--gold);
+}
+.guild-home .guild-scene {
+  position: absolute;
+  inset: 0;
+  height: 756px;
+  overflow: hidden;
+  background: var(--guild-scene) center top/cover no-repeat;
+}
+.guild-home .guild-scene:after {
+  content: '';
+  position: absolute;
+  inset: 560px 0 0;
+  background: linear-gradient(transparent, #102329);
+}
+.guild-home .guild-title {
+  position: absolute;
+  left: 22px;
+  top: 27px;
+  bottom: auto;
+  transform: none;
+  text-align: left;
+  padding: 0;
+  text-shadow: 0 2px #102329;
+}
+.guild-home .guild-title h1 {
+  font-size: 27px;
+  letter-spacing: 0;
+  margin-bottom: 10px;
+}
+.guild-home .guild-title small {
+  color: var(--ink);
+  font-size: 13px;
+}
+.home-settings {
+  position: absolute;
+  right: 15px;
+  top: 27px;
+  width: 53px;
+  height: 34px;
+  padding: 0;
+  font-size: 12px;
+  border: 2px solid var(--line);
+}
+#guild-wallet {
+  position: absolute;
+  left: 16px;
+  top: 102px;
+  width: 358px;
+  height: 54px;
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  padding: 10px 12px;
+  background: #213437ef;
+  border: 2px solid var(--line);
+  box-shadow: inset 0 0 0 3px #405047;
+  font-size: 13px;
+  color: var(--gold);
+}
+#guild-wallet div strong {
+  color: var(--ink);
+}
+#guild-wallet small {
+  display: block;
+  font-size: 9px;
+  margin-top: 4px;
+}
+#guild-wallet > strong {
+  padding-top: 1px;
+}
+.home-chapter {
+  position: absolute;
+  top: 633px;
+  width: 100%;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink);
+}
+.guild-home .guild-expedition {
+  position: absolute;
+  left: 42px;
+  top: 672px;
+  width: 306px;
+  height: 56px;
+  margin: 0;
+  border: 2px solid #a28a55;
+  border-image: none;
+  padding: 0;
+  font-size: 18px;
+  letter-spacing: 2px;
+}
+.guild-nav {
+  position: absolute;
+  left: 10px;
+  top: 758px;
+  width: 370px;
+  height: 73px;
+  z-index: 8;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 5px 10px;
+  background: #213437;
+  border: 2px solid var(--line);
+  box-shadow: inset 0 0 0 3px #405047;
+}
+.guild-nav button {
+  width: 164px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  border-color: transparent;
+  background: transparent;
+  font-size: 14px;
+  box-shadow: none;
+}
+.guild-nav button.selected {
+  border-color: var(--gold);
+  background: #374341;
+  color: var(--gold);
+}
+.guild-nav img {
+  width: 35px;
+  height: 43px;
+  object-fit: contain;
+  object-position: center;
+}
+.guild-nav-icon {
+  width: 33px;
+  height: 34px;
+  background: var(--guild-scene) center 60%/90px auto;
+  flex: none;
+}
+#roster-screen > header {
+  margin: 22px 20px 0;
+  text-align: center;
+  height: 44px;
+  border-bottom: 1px solid var(--line);
+}
+#roster-screen h1 {
+  font-size: 23px;
+  margin: 0;
+}
+.roster-toolbar {
+  position: absolute;
+  left: 20px;
+  right: 18px;
+  top: 75px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.roster-toolbar button {
+  width: 117px;
+  height: 35px;
+  padding: 0;
+  font-size: 12px;
+}
+#guild-roster {
+  position: absolute;
+  left: 21px;
+  top: 132px;
+  width: 348px;
+  height: 494px;
+  display: grid;
+  grid-template-columns: repeat(3, 110px);
+  grid-template-rows: repeat(2, 239px);
+  column-gap: 9px;
+  row-gap: 16px;
+}
+#guild-roster .hero-card {
+  position: relative;
+  display: block;
+  width: 110px;
+  height: 239px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 2px solid var(--rating-color);
+  background: linear-gradient(#273d3c, #253b3a);
+  box-shadow: inset 0 0 0 3px #4b5850;
+  color: var(--ink);
+}
+.rating-S {
+  --rating-color: #c4a559;
+}
+.rating-A {
+  --rating-color: #a889bd;
+}
+.rating-B {
+  --rating-color: #779eb9;
+}
+.rating-C {
+  --rating-color: #78a17f;
+}
+.rating-D {
+  --rating-color: #7e8b88;
+}
+#guild-roster .hero-card .hero-portrait {
+  position: absolute;
+  left: 24px;
+  top: 37px;
+  width: 79px;
+  height: 151px;
+  object-fit: contain;
+  object-position: center bottom;
+}
+.card-job {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  color: var(--gold);
+  font-size: 12px;
+}
+.card-rating {
+  position: absolute;
+  right: 10px;
+  top: 6px;
+  font-size: 19px;
+  font-weight: bold;
+  color: var(--rating-color);
+}
+#guild-roster .card-name {
+  position: absolute;
+  left: 10px;
+  top: 40px;
+  writing-mode: vertical-rl;
+  font-size: 12px;
+  letter-spacing: 6px;
+  color: var(--ink);
+  max-height: 146px;
+  overflow: hidden;
+}
+#guild-roster .card-power {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 8px;
+  height: 31px;
+  margin: 0;
+  padding: 5px 0 0;
+  text-align: center;
+  font-size: 15px;
+  background: #172b2d;
+  color: var(--gold);
+  border-top: 3px solid var(--rating-color);
+}
+.roster-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+}
+.roster-pagination {
+  position: absolute;
+  top: 644px;
+  left: 123px;
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  height: 31px;
+}
+.roster-pagination button {
+  height: 30px;
+  width: 34px;
+  padding: 0;
+}
+.roster-pagination small {
+  min-width: 18px;
+  text-align: center;
+  font-size: 12px;
+}
+.roster-filters {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: 699px;
+  display: flex;
+  justify-content: space-between;
+}
+.roster-filters button {
+  width: 78px;
+  height: 38px;
+  padding: 0;
+  font-size: 12px;
+}
+.roster-filters .selected {
+  background: #dfd0a7;
+  color: #3b3524;
+  border-color: #a28a55;
+}
+#selection-screen > header {
+  position: absolute;
+  top: 18px;
+  left: 14px;
+  width: 362px;
+  height: 47px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--line);
+  font-size: 23px;
+  font-weight: 700;
+  color: var(--gold);
+}
+#selection-screen > header button {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 65px;
+  height: 32px;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 400;
+}
+#selection-screen.dungeon-select .dungeon-carousel {
+  position: absolute;
+  top: 107px;
+  left: 16px;
+  width: 358px;
+  height: 277px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  min-height: 0;
+  background: none;
+  overflow: visible;
+}
+.dungeon-carousel .dungeon-view {
+  position: absolute;
+  inset: 0;
+  height: 252px;
+  min-height: 0;
+}
+.dungeon-pixel-scene {
+  position: absolute;
+  inset: 0;
+  background: var(--dungeon-scene) center/auto 252px;
+  image-rendering: pixelated;
+}
+.dungeon-carousel .dungeon-caption {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 60%, #102329);
+  text-align: center;
+  padding: 0;
+  display: block;
+  color: var(--ink);
+}
+.dungeon-caption h1 {
+  position: absolute;
+  top: 15px;
+  width: 100%;
+  font-size: 17px;
+  color: var(--gold);
+  margin: 0;
+}
+.dungeon-caption h2 {
+  position: absolute;
+  top: 215px;
+  width: 100%;
+  font-size: 23px;
+  color: var(--ink);
+  margin: 0;
+}
+.dungeon-caption p {
+  position: absolute;
+  top: 272px;
+  width: 100%;
+  font-size: 13px;
+}
+.dungeon-caption small {
+  display: none;
+}
+.dungeon-carousel .chapter-arrow {
+  top: 108px;
+  width: 39px;
+  height: 40px;
+  min-height: 0;
+  padding: 0;
+  font-size: 23px;
+  border-radius: 0;
+}
+.dungeon-carousel .chapter-arrow.previous {
+  left: 7px;
+}
+.dungeon-carousel .chapter-arrow.next {
+  right: 7px;
+}
+#selection-screen .swipe-hint {
+  position: absolute;
+  top: 413px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 11px;
+  margin: 0;
+}
+#selection-screen .recruit-panel {
+  position: absolute;
+  top: 449px;
+  left: 23px;
+  width: 344px;
+  height: 270px;
+  border: 2px solid var(--line);
+  background: #213437;
+  margin: 0;
+  padding: 16px 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  box-shadow: inset 0 0 0 3px #405047;
+}
+.recruit-panel .recruit-energy {
+  text-align: center;
+  font-size: 12px;
+  min-height: 15px;
+}
+.recruit-tabs {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+}
+.recruit-tabs button {
+  flex: 1;
+  min-height: 57px;
+  padding: 6px;
+  font-size: 13px;
+}
+.recruit-tabs small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+}
+.recruit-tabs .selected {
+  border-color: var(--gold);
+  background: #374341;
+}
+.recruit-panel > .primary-button {
+  margin: auto 0 0;
+  height: 43px;
+  min-height: 43px;
+  width: 100%;
+  padding: 0;
+  font-size: 14px;
+}
+.recruit-panel > small {
+  text-align: center;
+  font-size: 9px;
+}
+.profession-targets {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 0;
+  height: 82px;
+}
+.profession-targets button {
+  width: 88px;
+  min-height: 0;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+}
+.profession-targets img {
+  width: 35px;
+  height: 66px;
+  margin: 0;
+}
+.profession-targets .selected {
+  border-color: var(--gold);
+  background: #374341;
+}
+#selection-screen .admission-file {
+  position: absolute;
+  left: 16px;
+  top: 80px;
+  width: 358px;
+  height: 748px;
+  padding: 0;
+  border: none;
+  background: none;
+  margin: 0;
+  overflow: hidden;
+  box-shadow: none;
+}
+.admission-file .file-heading {
+  height: 20px;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.file-heading h1 {
+  display: none;
+}
+.file-heading .file-stamp {
+  border: 0;
+  rotate: 0;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 0;
+  position: static;
+}
+.admission-file .admission-identity {
+  position: absolute;
+  left: 0;
+  top: 22px;
+  width: 358px;
+  height: 251px;
+  display: block;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  background: none;
+}
+.admission-identity:before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 358px;
+  height: 181px;
+  background: var(--dungeon-scene) center/auto 181px;
+  image-rendering: pixelated;
+}
+.admission-identity img {
+  position: relative;
+  display: block;
+  margin: 8px auto 18px !important;
+  height: 160px;
+  width: 128px !important;
+  object-fit: contain;
+}
+.admission-identity > div {
+  position: relative;
+}
+.admission-identity h2 {
+  font-size: 22px;
+  margin-bottom: 8px;
+  color: var(--gold);
+}
+.admission-identity h2 span {
+  font-size: 12px;
+  color: var(--muted);
+  display: block;
+  margin-top: 8px;
+  border: 0;
+  padding: 0;
+}
+.admission-identity small:first-child,
+.admission-identity p {
+  display: none;
+}
+.admission-identity small:last-child {
+  font-size: 10px;
+}
+.admission-file .talent-heading {
+  position: absolute;
+  left: 0;
+  top: 284px;
+  width: 358px;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  padding: 9px 15px;
+  background: #213437;
+  font-size: 12px;
+  margin: 0;
+  color: var(--gold);
+}
+.admission-file .talent-grid {
+  position: absolute;
+  left: 0;
+  top: 308px;
+  width: 358px;
+  height: 82px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  padding: 11px 15px;
+  background: #213437;
+  border: 1px solid var(--line);
+  border-top: 0;
+  margin: 0;
+}
+.talent-grid .talent-badge {
+  padding: 0;
+  border: none;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  min-width: 0;
+  border-radius: 0;
+}
+.talent-badge strong {
+  font-size: 11px;
+  color: var(--ink);
+}
+.talent-badge small {
+  font-size: 9px;
+  color: var(--muted);
+}
+.admission-file .allocation-heading {
+  position: absolute;
+  top: 408px;
+  left: 6px;
+  right: 6px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0;
+}
+.allocation-heading strong {
+  font-size: 12px;
+  color: var(--gold);
+}
+.allocation-heading button {
+  font-size: 9px;
+  min-height: 25px;
+  padding: 3px 5px;
+}
+.allocation-heading > div {
+  display: flex;
+  gap: 5px;
+}
+.admission-file .attribute-rows {
+  position: absolute;
+  top: 445px;
+  left: 12px;
+  right: 12px;
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+.attribute-row {
+  height: 37px;
+  min-height: 0;
+  border: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+}
+.attribute-name strong {
+  font-size: 13px;
+}
+.attribute-name small {
+  display: none;
+}
+.attribute-value span,
+.attribute-value i {
+  display: none;
+}
+.attribute-value b {
+  font-size: 16px;
+  color: var(--ink);
+}
+.attribute-controls {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+.attribute-controls button {
+  height: 33px;
+  width: 35px;
+  min-height: 0;
+  padding: 0;
+  font-size: 16px;
+}
+.attribute-controls span {
+  min-width: 14px;
+  font-size: 13px;
+  color: var(--gold);
+  text-align: center;
+}
+.admission-file .admission-submit {
+  position: absolute;
+  top: 666px;
+  left: 26px;
+  width: 306px;
+  height: 56px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  font-size: 16px;
+}
+/* Compact adventure canvas matches the approved screens, retaining the real pack drag system. */
+#adventure-screen .adventure-header {
+  top: 18px;
+  left: 16px;
+  width: 358px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+}
+#adventure-screen .adventure-header #chapter-label {
+  font-size: 13px;
+  color: var(--gold);
+  font-weight: 700;
+}
+#adventure-screen .adventure-header #event-label {
+  position: absolute;
+  left: 0;
+  top: 55px;
+  width: 358px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 400;
+}
+#adventure-screen .header-actions {
+  gap: 8px;
+}
+#adventure-screen .header-actions #hero-power {
+  font-size: 10px;
+}
+#adventure-screen .header-actions button {
+  height: 25px;
+  width: 25px;
+  padding: 0;
+  font-size: 13px;
+}
+#adventure-screen .stage-route {
+  top: 49px;
+  left: 16px;
+  width: 358px;
+  height: 15px;
+  padding: 0;
+  gap: 2px;
+  background: none;
+  border: 0;
+}
+#adventure-screen .route-step {
+  height: 12px;
+  border: 1px solid #617269;
+  background: #263a38;
+  font-size: 8px;
+  line-height: 10px;
+  color: #b8c8bb;
+}
+#adventure-screen .route-step.complete {
+  background: #88764b;
+  color: #f0e1bd;
+}
+#adventure-screen .route-step.current {
+  background: #f1d999;
+  color: #243332;
+  border-color: #ffe9ad;
+}
+#adventure-screen .route-step.milestone {
+  height: 15px;
+  border-top: 3px solid #a88ad2;
+}
+#adventure-screen .route-step:before {
+  display: none;
+}
+#adventure-screen .battle-panel {
+  position: absolute;
+  left: 0;
+  top: 98px;
+  width: 390px;
+  height: 188px;
+  min-height: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: none;
+  overflow: hidden;
+}
+#adventure-screen .battle-panel:before {
+  background-size: 780px auto;
+  background-position: 0 45%;
+}
+#adventure-screen .battle-panel:after {
+  background: linear-gradient(transparent 55%, #102329);
+}
+#adventure-screen .battle-scene,
+#adventure-screen .exploring .battle-scene,
+#adventure-screen .has-offers:not(.exploring) .battle-scene {
+  position: absolute;
+  left: 48px;
+  right: 48px;
+  top: 30px;
+  height: 150px;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+}
+#adventure-screen .hero-fighter,
+#adventure-screen .exploring .hero-fighter,
+#adventure-screen .has-offers:not(.exploring) .hero-fighter {
+  height: 150px;
+  width: 100px;
+  margin: 0;
+  animation: none;
+  transform: none;
+}
+#adventure-screen .enemy-fighter {
+  height: 144px;
+  width: 100px;
+  margin: 0;
+}
+#adventure-screen .exploring .hero-fighter {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  width: 100px;
+  height: 150px;
+  animation: none;
+  transform: none;
+}
+#adventure-screen .exploring .battle-scene {
+  left: 48px;
+  right: 48px;
+  top: 30px;
+  height: 150px;
+}
+#adventure-screen .has-offers:not(.exploring) .hero-fighter {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  width: 100px;
+  height: 150px;
+  animation: none;
+  transform: none;
+}
+#adventure-screen .has-offers:not(.exploring) .battle-scene {
+  left: 48px;
+  right: 48px;
+  top: 30px;
+  height: 150px;
+}
+#adventure-screen .fighter img,
+#adventure-screen .exploring .hero-fighter img {
+  height: 137px;
+  width: 92px;
+  margin: 0;
+  object-fit: contain;
+}
+#adventure-screen .hero-fighter > img {
+  display: none;
+}
+#adventure-screen .actor-sprite {
+  bottom: 5px;
+}
+#adventure-screen .fighter > span:last-child,
+#adventure-screen .versus {
+  display: none;
+}
+#adventure-screen .scene-ground {
+  display: block;
+  top: 163px;
+  height: 25px;
+}
+#adventure-screen .trial-combat .trial-altar,
+#adventure-screen .awakened .trial-altar {
+  display: block;
+  bottom: 0;
+  height: 22px;
+}
+#adventure-screen .awakened .battle-scene {
+  justify-content: center;
+}
+#adventure-screen .has-offers .hero-fighter {
+  opacity: 0.9;
+  filter: brightness(1);
+}
+#adventure-screen .fighter-health {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  top: 9px;
+  height: 18px;
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 36px;
+  padding: 0;
+  z-index: 3;
+}
+#adventure-screen .fighter-health > div {
+  position: relative;
+  width: 154px;
+  flex: none;
+}
+#adventure-screen .fighter-health span {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 9px;
+  z-index: 2;
+  color: var(--ink);
+}
+#adventure-screen .fighter-health .bar {
+  height: 14px;
+  border: 1px solid var(--line);
+  margin: 0;
+  background: #1b2527;
+}
+#adventure-screen .turn-order {
+  top: 168px;
+  left: 0;
+  right: 0;
+  width: 390px;
+  font-size: 10px;
+  text-align: center;
+}
+#adventure-screen .enemy-effects {
+  top: 142px;
+  right: 14px;
+}
+#adventure-screen .hero-effects {
+  position: absolute;
+  top: 142px;
+  left: 14px;
+  font-size: 8px;
+}
+#adventure-screen .field-items {
+  top: 38px;
+  left: 22px;
+  width: 346px;
+  height: 146px;
+  overflow: auto;
+}
+#adventure-screen .field-shapes {
+  --field-cell: 31px;
+  min-height: 0;
+  padding: 6px 0;
+  gap: 16px;
+  align-items: start;
+}
+#adventure-screen .field-piece {
+  width: calc(var(--shape-w) * var(--field-cell));
+  height: calc(var(--shape-h) * var(--field-cell));
+  max-height: none;
+  max-width: none;
+}
+#shared-board {
+  position: absolute;
+  left: 16px;
+  top: 292px;
+  width: 358px;
+  height: 462px;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: none;
+}
+#adventure-screen .combat-hud {
+  top: 0;
+  left: 0;
+  width: 358px;
+  height: 50px;
+  min-height: 0;
+  padding: 4px 10px;
+  border: 2px solid var(--line);
+  background: #213437;
+  box-shadow: inset 0 0 0 3px #405047;
+  font-size: 11px;
+  gap: 8px;
+}
+#adventure-screen .combat-hud strong {
+  font-size: 12px;
+  max-width: 112px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#adventure-screen .combat-hud strong small {
+  font-size: 9px;
+  color: var(--muted);
+}
+#adventure-screen .combat-hud > small {
+  font-size: 9px;
+  max-width: 65px;
+}
+#adventure-screen .combat-hud .hud-portrait {
+  width: 27px;
+  height: 36px;
+  object-fit: cover;
+  object-position: center 10%;
+  image-rendering: pixelated;
+  flex: none;
+}
+#adventure-screen .combat-hud strong {
+  max-width: 90px;
+  font-size: 11px;
+}
+#adventure-screen .combat-hud {
+  gap: 5px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+#adventure-screen .resonance-strip {
+  left: 0;
+  top: 62px;
+  width: 358px;
+  gap: 6px;
+  padding: 0;
+}
+#adventure-screen .resonance-slot {
+  height: 65px;
+  padding: 6px 3px 4px 18px;
+  background: #213437;
+  border: 2px solid var(--rank-color, var(--line));
+  box-shadow: inset 0 0 0 3px #405047;
+  gap: 3px;
+}
+#adventure-screen .resonance-slot b {
+  font-size: 9px;
+  line-height: 13px;
+  color: var(--rank-color, var(--ink));
+  font-weight: 600;
+}
+#adventure-screen .resonance-slot svg {
+  color: var(--rank-color, var(--gold));
+  top: 11px;
+}
+#adventure-screen .resonance-slot small {
+  font-size: 8px;
+  color: var(--muted);
+}
+#adventure-screen .resonance-slot.empty {
+  border-color: var(--line);
+  opacity: 0.65;
+}
+.resonance-meter i {
+  background: var(--rank-color, var(--gold));
+}
+.tier-marks i.on {
+  background: var(--rank-color, var(--gold));
+  border-color: var(--rank-color, var(--gold));
+}
+#adventure-screen #view-pack {
+  left: 4px;
+  top: 134px;
+  width: 350px;
+  height: 300px;
+}
+#adventure-screen .pack-grid {
+  width: 350px;
+  height: 300px;
+  background: #102329;
+  gap: 0;
+}
+#adventure-screen .pack-cell {
+  background: #465651;
+  border: 1px solid #aaa17b;
+  box-shadow: inset 0 0 0 1px #243736;
+}
+#adventure-screen .pack-cell.closed {
+  background: #142326;
+  border-color: #2a3735;
+  box-shadow: none;
+}
+#adventure-screen .pack-cell.closed:after {
+  color: #33443f;
+  font-size: 14px;
+}
+#adventure-screen .pack-cell.edge-top {
+  border-top: 2px solid #dfc994;
+}
+#adventure-screen .pack-cell.edge-bottom {
+  border-bottom: 2px solid #dfc994;
+}
+#adventure-screen .pack-cell.edge-left {
+  border-left: 2px solid #dfc994;
+}
+#adventure-screen .pack-cell.edge-right {
+  border-right: 2px solid #dfc994;
+}
+#adventure-screen .journey-panel {
+  left: 0;
+  top: 134px;
+  width: 358px;
+  height: 328px;
+  padding: 7px 15px 16px;
+  background: #172b2d;
+}
+.journey-paper strong {
+  font-size: 12px;
+}
+#adventure-screen .journey-paper strong {
+  font-size: 12px;
+  color: var(--ink);
+}
+#adventure-screen .journey-paper p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--muted);
+  margin: 5px 0;
+}
+#adventure-screen .journey-time {
+  font-size: 11px;
+  margin-bottom: 13px;
+  color: var(--gold);
+}
+#adventure-screen .journey-entry {
+  margin-bottom: 6px;
+  padding: 0;
+}
+#adventure-screen .journey-entry .journey-paper {
+  background: none;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+}
+#adventure-screen .adventure-footer {
+  left: 16px;
+  top: 763px;
+  width: 358px;
+  height: 54px;
+  padding: 0;
+  gap: 12px;
+  background: none;
+}
+#adventure-screen .adventure-footer button {
+  height: 54px;
+  min-height: 54px;
+}
+#adventure-screen .adventure-footer .reforge-button {
+  width: 64px;
+  flex-basis: 64px;
+  border: 2px solid var(--line);
+  background: #213437;
+}
+#adventure-screen .adventure-footer .speed-button {
+  width: 64px;
+  flex-basis: 64px;
+  border: 2px solid var(--line);
+  background: #213437;
+}
+#adventure-screen .footer-main {
+  flex: 1;
+  min-width: 0;
+  gap: 5px;
+}
+#adventure-screen .adventure-footer .primary-button {
+  width: 206px;
+  flex: 1;
+  min-width: 0;
+  border: 2px solid #a28a55;
+  border-image: none;
+  background: #dfd0a7;
+  padding: 0;
+  font-size: 16px;
+  letter-spacing: 0;
+  box-shadow: inset 0 0 0 3px #beaa77;
+}
+#adventure-screen .board-view-toggle {
+  right: 0;
+  bottom: 1px;
+}
+#adventure-screen .board-view-toggle button {
+  min-height: 24px;
+}
+#awakening-result {
+  position: absolute;
+  inset: 134px 0 0 !important;
+  height: 328px;
+  max-height: 328px;
+  padding: 18px 16px !important;
+  background: #172b2d !important;
+  border: 0 !important;
+}
+#awakening-result h2 {
+  font-size: 22px;
+  margin: 15px 0;
+}
+.awakening-gains {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  font-size: 13px;
+}
+/* Blue/purple/gold identify rank everywhere; effect stages still use three progress marks. */
+.resonance-rank-1 {
+  --rank-color: var(--rank-low);
+}
+.resonance-rank-2 {
+  --rank-color: var(--rank-advanced);
+}
+.resonance-rank-3 {
+  --rank-color: var(--rank-high);
+}
+dialog.event-dialog {
+  width: 350px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 28px);
+  border: 2px solid #a58b58;
+  border-image: none;
+  padding: 20px 16px;
+  background: #e0d0a7;
+  box-shadow:
+    inset 0 0 0 3px #b59a66,
+    0 15px 65px #000b;
+  border-radius: 0;
+}
+.event-dialog h2 {
+  font-size: 22px;
+  color: #3b3524;
+  margin: 0 0 20px;
+}
+.event-dialog .resonance-choice {
+  border: 2px solid var(--rank-color);
+  background: #213437;
+  box-shadow: inset 0 0 0 3px #405047;
+  padding: 11px;
+  gap: 3px 7px;
+  color: var(--ink);
+}
+.event-dialog .resonance-choice strong,
+.event-dialog .resonance-choice > svg {
+  color: var(--rank-color);
+}
+.event-dialog .resonance-choice strong {
+  font-size: 14px;
+}
+.event-dialog .resonance-choice > small,
+.event-dialog .resonance-kind {
+  color: var(--rank-color) !important;
+  font-size: 9px;
+}
+.event-dialog .resonance-choice > small:last-child {
+  color: var(--muted) !important;
+}
+.event-dialog .resonance-levels {
+  margin: 6px 0;
+}
+.event-dialog .resonance-levels span {
+  font-size: 10px;
+  line-height: 1.55;
+  color: #b5b6a0;
+}
+.event-dialog .resonance-levels b {
+  color: var(--rank-color);
+  min-width: 23px;
+}
+.event-dialog .resonance-levels .reached {
+  color: #e8dfc2;
+}
+.event-dialog .reward-card,
+.event-dialog .trial-choice {
+  border: 2px solid #ac9562;
+  border-radius: 0;
+  background: #ddcba1;
+  padding: 13px;
+}
+.event-dialog .trial-choice strong {
+  font-size: 16px;
+}
+.event-dialog .trial-choice b {
+  font-size: 11px;
+}
+.event-dialog .trial-subtitle {
+  margin-bottom: 16px;
+}
+.event-dialog .primary-button {
+  min-height: 48px;
+  font-size: 15px;
+}
+.event-dialog .event-actions {
+  display: flex;
+  gap: 9px;
+  margin-top: 15px;
+}
+.fate-wheel-art {
+  display: block;
+  margin: 8px auto 10px;
+  width: min(280px, 100%);
+  height: auto;
+}
+.wheel-rotor {
+  transform-origin: 150px 150px;
+  transform-box: view-box;
+}
+.wheel-dialog .wheel-rotor {
+  animation: spin-fate 3.6s cubic-bezier(0.12, 0.75, 0.16, 1) forwards;
+}
+.wheel-dialog:has([data-action='wheel-confirm']:not(:disabled)) .wheel-rotor {
+  animation: none;
+  transform: rotate(var(--wheel-angle));
+}
+@keyframes spin-fate {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(var(--wheel-angle));
+  }
+}
+.event-dialog .wheel-result {
+  text-align: center;
+  font-size: 14px;
+  min-height: 24px;
+  color: #3b3524;
+}
+.detail-effect {
+  border-left: 3px solid var(--rank-color);
+  padding-left: 9px;
+}
+.detail-effect b,
+.resonance-inspection h2 {
+  color: var(--rank-color);
+}
+.resonance-inspection {
+  background: #213437;
+  border: 2px solid var(--rank-color);
+  padding: 14px;
+  color: var(--ink);
+}
+#modal .resonance-inspection p {
+  color: var(--ink);
+}
+#modal .resonance-inspection small {
+  color: var(--rank-color);
+}
+.equipment-detail .detail-effect {
+  background: #213437;
+  padding: 8px 10px;
+  color: var(--ink);
+  border: 1px solid var(--rank-color);
+  border-left: 3px solid var(--rank-color);
+}
+.equipment-detail .detail-effect small {
+  color: var(--muted);
+}
+.admission-file {
+  color: var(--ink);
+  color-scheme: dark;
+}
+.admission-file .file-stamp {
+  transform: none;
+}
+.admission-file .admission-identity small {
+  color: var(--muted);
+}
+.admission-file .attribute-name strong {
+  color: var(--ink);
+}
+#adventure-screen .battle-scene:not(:has(.enemy-pixel)) .enemy-fighter {
+  display: none;
+}
+#summary-screen .graduation-spotlight {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  margin: 0;
+  display: block;
+  text-align: center;
+  background: none;
+  border: none;
+}
+.graduation-spotlight h1 {
+  position: absolute;
+  top: 22px;
+  left: 20px;
+  right: 20px;
+  height: 44px;
+  font-size: 23px;
+  border-bottom: 1px solid var(--line);
+  margin: 0;
+}
+.graduation-spotlight .summary-scene {
+  position: absolute;
+  top: 82px;
+  left: 16px;
+  width: 358px;
+  height: 256px;
+  background: var(--dungeon-scene) center/auto 256px;
+  image-rendering: pixelated;
+}
+.summary-scene .hero-portrait {
+  height: 218px;
+  width: 130px;
+  object-fit: contain;
+  margin: 16px auto 0 !important;
+  display: block;
+}
+.graduation-spotlight h2 {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 352px;
+  font-size: 24px;
+  margin: 0;
+}
+.graduation-spotlight > .hero-rating {
+  position: absolute;
+  top: 394px;
+  left: 150px;
+  width: 90px;
+  height: 80px;
+  font-size: 64px;
+  background: none;
+  border: 0;
+  clip-path: none;
+  display: block;
+  margin: 0;
+}
+.graduation-spotlight > .final-power {
+  position: absolute;
+  top: 477px;
+  left: 0;
+  right: 0;
+  font-size: 20px;
+  color: var(--ink);
+  margin: 0;
+}
+.graduation-spotlight .graduate-resonances {
+  position: absolute;
+  top: 512px;
+  left: 16px;
+  width: 358px;
+  height: 70px;
+  margin: 0;
+  gap: 6px;
+}
+.graduation-spotlight .graduate-resonances > div {
+  padding: 8px 3px;
+  border: 2px solid var(--rank-color, var(--line));
+  border-radius: 0;
+  background: #213437;
+  color: var(--rank-color, var(--gold));
+  gap: 4px;
+  min-width: 0;
+}
+.graduation-spotlight .graduate-resonances b {
+  font-size: 10px;
+  line-height: 14px;
+  white-space: nowrap;
+}
+.graduation-spotlight .graduate-resonances small {
+  font-size: 9px;
+  color: var(--rank-color, var(--muted));
+}
+.graduation-spotlight .graduate-resonances .empty {
+  opacity: 0.6;
+}
+.summary-record {
+  position: absolute;
+  top: 597px;
+  left: 26px;
+  width: 338px;
+  height: 60px;
+  border: 2px solid var(--line);
+  background: #213437;
+  padding: 6px 10px;
+  color: var(--gold);
+}
+.summary-record strong {
+  font-size: 11px;
+}
+.summary-record p {
+  font-size: 10px;
+  color: var(--ink);
+  margin: 3px 0;
+}
+.summary-record > b {
+  font-size: 11px;
+  color: var(--muted);
+}
+.graduation-spotlight > [data-action='hero-details'] {
+  position: absolute;
+  left: 41px;
+  top: 668px;
+  width: 308px;
+  height: 46px;
+  margin: 0;
+  font-size: 13px;
+}
+.graduation-spotlight > [data-action='selection'] {
+  position: absolute;
+  left: 41px;
+  top: 735px;
+  width: 308px;
+  height: 57px;
+  margin: 0;
+  font-size: 16px;
+}
+/* Fixed-height archive tabs replace the long scrolling graduate modal. */
+#modal.archive-modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 390px;
+  height: 844px;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  transform: translate(-50%, -50%) scale(var(--game-scale));
+  transform-origin: center;
+  overflow: hidden;
+  padding: 0;
+  background: #102329;
+  color: var(--ink);
+  border: 0;
+  border-image: none;
+  box-shadow: 0 15px 65px #000b;
+  color-scheme: dark;
+}
+.archive-modal .modal-close {
+  position: absolute;
+  left: 14px;
+  top: 18px;
+  width: 53px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  background: #213437 !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  z-index: 5;
+}
+.archive-frame {
+  height: 844px;
+  width: 390px;
+  position: relative;
+}
+.archive-heading {
+  position: absolute;
+  top: 22px;
+  left: 20px;
+  right: 20px;
+  height: 44px;
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+}
+.archive-heading h2 {
+  font-size: 23px;
+  margin: 0;
+  color: var(--gold);
+}
+.archive-identity {
+  position: absolute;
+  top: 80px;
+  left: 16px;
+  width: 358px;
+  height: 161px;
+  background: var(--dungeon-scene) center/auto 161px;
+}
+.archive-identity .hero-portrait {
+  display: block;
+  width: 100px !important;
+  height: 138px !important;
+  margin: 16px auto 0;
+  object-fit: contain;
+}
+.archive-name {
+  position: absolute;
+  top: 251px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  font-size: 21px;
+  color: var(--gold);
+}
+#modal .archive-power {
+  position: absolute;
+  top: 282px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink);
+  margin: 0;
+}
+.archive-tabs {
+  position: absolute;
+  left: 20px;
+  top: 316px;
+  width: 350px;
+  display: flex;
+  gap: 10px;
+}
+.archive-tabs button {
+  width: 110px;
+  height: 39px;
+  padding: 0;
+  font-size: 12px;
+  background: #213437 !important;
+  color: var(--ink) !important;
+}
+.archive-tabs button.selected {
+  background: #dfd0a7 !important;
+  color: #3b3524 !important;
+  border-color: #a28a55 !important;
+}
+.archive-content {
+  position: absolute;
+  left: 20px;
+  top: 378px;
+  width: 350px;
+  height: 362px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+.archive-content h3 {
+  font-size: 13px;
+  color: var(--gold);
+  margin: 0 0 15px;
+}
+.archive-attributes,
+.archive-talents {
+  border: 1px solid var(--line);
+  padding: 13px 15px;
+  background: #213437;
+  margin-bottom: 16px;
+}
+.archive-attributes .hero-stats {
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: 0;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.archive-attributes .hero-stats span {
+  font-size: 13px;
+}
+.archive-attributes > small {
+  display: block;
+  margin-top: 7px;
+  font-size: 9px;
+}
+.archive-talents .talent-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0;
+}
+.archive-talents .talent-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 3px;
+}
+.archive-talents p {
+  font-size: 9px !important;
+  color: var(--muted) !important;
+  margin: 10px 0 0;
+}
+.archive-score {
+  font-size: 10px !important;
+  color: var(--muted) !important;
+  text-align: center;
+  margin-top: 10px !important;
+}
+.archive-content .graduate-trials {
+  padding: 0;
+  gap: 8px;
+  margin: 4px 0;
+}
+.graduate-trials span {
+  font-size: 11px;
+  padding: 8px 5px;
+  background: #213437;
+  border: 1px solid var(--line);
+}
+.graduate-trials small {
+  display: block;
+  font-size: 9px;
+}
+.archive-frame > footer {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: 786px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+.archive-resonances {
+  display: grid;
+  gap: 9px;
+}
+.archive-resonance {
+  min-height: 82px;
+  border: 1px solid var(--rank-color);
+  background: #213437;
+  padding: 6px 10px;
+}
+.archive-resonance header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--rank-color);
+}
+#modal .archive-resonance header small {
+  font-size: 9px;
+  color: var(--rank-color);
+}
+.archive-resonance > small {
+  display: block;
+  font-size: 8px;
+  color: var(--muted) !important;
+  margin: 2px 0;
+}
+#modal .archive-resonance p {
+  font-size: 9px;
+  line-height: 1.4;
+  margin: 0;
+  color: var(--muted);
+}
+#modal .archive-resonance p.reached {
+  color: var(--ink);
+}
+.archive-empty {
+  text-align: center;
+  margin-top: 100px !important;
+  color: var(--muted) !important;
+}
+.archive-content .hero-equipment-section {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+}
+.hero-equipment-section h3 {
+  text-align: center;
+}
+.archive-content .graduate-pack {
+  width: 259px !important;
+  height: 222px !important;
+  max-width: none;
+  aspect-ratio: 7/6;
+  margin: 15px auto !important;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  gap: 0;
+  background: #102329;
+}
+.archive-content .bound-item-detail {
+  position: absolute;
+  top: 298px;
+  left: 0;
+  width: 350px;
+  height: 64px;
+  min-height: 0;
+  max-height: 64px;
+  overflow: auto;
+  padding: 8px 12px;
+  background: #213437;
+  border: 1px solid var(--line);
+  margin: 0;
+}
+.bound-item-detail strong {
+  font-size: 12px;
+  color: var(--gold);
+}
+#modal .bound-item-detail p {
+  font-size: 10px;
+  line-height: 1.5;
+  margin: 3px 0;
+  color: var(--muted);
+}
+.archive-content .equipment-binding {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wheel-dialog .wheel-rotor {
+    animation-duration: 0.01ms;
+  }
+  #adventure-screen .battle-panel:before {
+    animation: none;
+  }
+}

@@ -1,0 +1,321 @@
+export type EquipmentSlot = 'weapon' | 'armor' | 'accessory';
+export type Quality = 'white' | 'green' | 'blue' | 'purple' | 'orange';
+export type DamageType = 'physical' | 'magic' | 'true';
+export type Profession = 'warrior' | 'mage' | 'rogue';
+export type Branch =
+  | 'neutral'
+  | 'blade'
+  | 'pole'
+  | 'guard'
+  | 'flame'
+  | 'ice'
+  | 'ward'
+  | 'assassin'
+  | 'archer'
+  | 'leather';
+export type ResonanceKey =
+  | 'cleave'
+  | 'iron_guard'
+  | 'flurry'
+  | 'second_wind'
+  | 'bulwark'
+  | 'warrior_mix'
+  | 'ignite'
+  | 'eruption'
+  | 'frost'
+  | 'mana_flow'
+  | 'arcane_ward'
+  | 'mage_mix'
+  | 'venom'
+  | 'ambush'
+  | 'volley'
+  | 'leech'
+  | 'shadow_guard'
+  | 'rogue_mix'
+  | 'execution'
+  | 'spear_storm'
+  | 'fortress'
+  | 'inferno'
+  | 'blizzard'
+  | 'archmage'
+  | 'toxic_master'
+  | 'rain_arrows'
+  | 'shadow_master'
+  | 'warrior_sword_base'
+  | 'warrior_sword_edge'
+  | 'warrior_sword_master'
+  | 'warrior_spear_base'
+  | 'warrior_spear_edge'
+  | 'warrior_spear_master'
+  | 'warrior_shield_base'
+  | 'warrior_shield_edge'
+  | 'warrior_shield_master'
+  | 'mage_staff_base'
+  | 'mage_staff_edge'
+  | 'mage_staff_master'
+  | 'mage_focus_base'
+  | 'mage_focus_edge'
+  | 'mage_focus_master'
+  | 'mage_robe_base'
+  | 'mage_robe_edge'
+  | 'mage_robe_master'
+  | 'rogue_knife_base'
+  | 'rogue_knife_edge'
+  | 'rogue_knife_master'
+  | 'rogue_ranged_base'
+  | 'rogue_ranged_edge'
+  | 'rogue_ranged_master'
+  | 'rogue_leather_base'
+  | 'rogue_leather_edge'
+  | 'rogue_leather_master';
+export type Shape = 'dot' | 'domino' | 'I3' | 'L3' | 'L4' | 'O4' | 'I4' | 'Z5';
+export interface Equipment {
+  id: string;
+  templateId: string;
+  profession: Profession;
+  name: string;
+  artKind: string;
+  slot: EquipmentSlot;
+  quality: Quality;
+  level: number;
+  attack: number;
+  hp: number;
+  defense: number;
+  damageType: DamageType;
+  branch: Branch;
+  potency: number;
+}
+export interface Placement {
+  id: string;
+  x: number;
+  y: number;
+  rotation: number;
+}
+export interface Contribution {
+  name: string;
+  damage: number;
+  healing: number;
+  shield: number;
+  triggers: number;
+}
+export interface CombatReport {
+  event: number;
+  seconds: number;
+  rounds: number;
+  won: boolean;
+  reason: string;
+  items: Record<string, Contribution>;
+}
+export interface Effect {
+  kind: 'poison' | 'burn' | 'chill';
+  damage: number;
+  remaining: number;
+  timer: number;
+  sourceId: string;
+}
+export interface Enemy {
+  name: string;
+  species: number;
+  hp: number;
+  maxHp: number;
+  attack: number;
+  defense: number;
+  speed: number;
+  isBoss: boolean;
+  isElite: boolean;
+  effects: Effect[];
+}
+export type EventKind =
+  | 'battle'
+  | 'elite'
+  | 'boss'
+  | 'treasure'
+  | 'supply'
+  | 'rest'
+  | 'chance'
+  | 'choice'
+  | 'dig'
+  | 'graduation'
+  | 'mentor'
+  | 'ending';
+export interface AdventureEvent {
+  kind: EventKind;
+  completed: boolean;
+  variant: number;
+}
+export type TrialTier = 0 | 1 | 2;
+export interface JourneyEntry {
+  event: number;
+  title: string;
+  text: string;
+  kind: 'story' | 'loot' | 'growth' | 'danger' | 'rest';
+}
+export interface HeroLoadout {
+  equipment: Equipment[];
+  placements: Placement[];
+  capacity: number;
+}
+export type BuffKey = 'power' | 'tempo' | 'vitality' | 'defense';
+export interface Reward {
+  kind: 'buff' | 'resonance';
+  title: string;
+  buffs: BuffKey[];
+  resonances: ResonanceKey[];
+}
+export type Outcome = 'win' | 'death' | 'retreat';
+export type Rating = 'D' | 'C' | 'B' | 'A' | 'S';
+export type Attribute = 'attack' | 'hp' | 'defense' | 'speed';
+export type Attributes = Record<Attribute, number>;
+export type TalentKey =
+  | 'born_fighter'
+  | 'keen_focus'
+  | 'battle_instinct'
+  | 'hardy'
+  | 'enduring'
+  | 'robust'
+  | 'iron_skin'
+  | 'steady_guard'
+  | 'tough_hide'
+  | 'swift'
+  | 'alert'
+  | 'light_step';
+export type Actor = 'hero' | 'enemy';
+export interface Trainee {
+  id: string;
+  name: string;
+  createdAt: number;
+  profession: Profession;
+  recruitment: 'random' | 'targeted';
+  talents: TalentKey[];
+  allocation: Attributes;
+}
+export interface HeroRecord extends Trainee {
+  chapter: number;
+  outcome: Outcome;
+  completed: number;
+  stages: number;
+  power: number;
+  rating: Rating;
+  resonances: ResonanceKey[];
+  resonanceTiers: Partial<Record<ResonanceKey, number>>;
+  stats: { attack: number; hp: number; defense: number; speed: number; sustain: number };
+  score: { growth: number; build: number; performance: number };
+  graduatedAt: number;
+  loadout: HeroLoadout | null;
+  trials: (TrialTier | null)[];
+}
+export interface RunSummary {
+  outcome: Outcome;
+  chapter: number;
+  profession: Profession;
+  completed: number;
+  gold: number;
+  kills: number;
+  seconds: number;
+  rounds: number;
+  highestItem: number;
+  links: number;
+  reason: string;
+  heroId: string;
+}
+export interface DigState {
+  shovels: number;
+  revealed: number[];
+  equipment: Equipment[];
+  placements: Placement[];
+  claimed: string[];
+}
+export interface GameState {
+  version: 14;
+  phase:
+    | 'home'
+    | 'chapter'
+    | 'configure'
+    | 'opening'
+    | 'initial'
+    | 'camp'
+    | 'journey'
+    | 'combat'
+    | 'event'
+    | 'awakening'
+    | 'reward'
+    | 'summary';
+  meta: {
+    gold: number;
+    energy: { value: number; updatedAt: number };
+    heroes: HeroRecord[];
+    heroSerial: number;
+    highestChapter: number;
+    wins: number;
+    runs: number;
+    totalKills: number;
+  };
+  run: {
+    profession: Profession;
+    chapter: number;
+    index: number;
+    events: AdventureEvent[];
+    points: number;
+    buffs: Record<BuffKey, number>;
+    rewards: Reward[];
+    kills: number;
+    seconds: number;
+    rounds: number;
+    highestItem: number;
+    summary: RunSummary | null;
+    starterRound: number;
+    starterOffers: Equipment[];
+    resonances: ResonanceKey[];
+    trainee: Trainee | null;
+    stages: number;
+    growth: { attack: number; hp: number; defense: number };
+    lastLootIds: string[];
+    trials: (TrialTier | null)[];
+    journey: JourneyEntry[];
+    eventGrowth: { attack: number; hp: number; defense: number; speed: number };
+    extreme: boolean;
+    storyElapsed: number;
+    autoExplore: boolean;
+    dig: DigState | null;
+  };
+  awakening: {
+    stage: number;
+    tier: TrialTier;
+    attack: number;
+    hp: number;
+    defense: number;
+    healed: number;
+  } | null;
+  player: { hp: number; maxHp: number; defense: number; shield: number };
+  inventory: Equipment[];
+  placements: Placement[];
+  draft: Placement[];
+  itemSerial: number;
+  revision: number;
+  combat: {
+    stamina: number;
+    mana: number;
+    timers: Record<string, number>;
+    heals: Record<string, number>;
+    seconds: number;
+    round: number;
+    elapsed: number;
+    order: Actor[];
+    actionIndex: number;
+    lastActor: Actor | null;
+    bossTimer: number;
+    minions: number;
+    minionHp: number;
+    hits: Record<string, number>;
+    contributions: Record<string, Contribution>;
+    counters: Record<string, number>;
+  };
+  skipCombat: boolean;
+  enemy: Enemy | null;
+  lastReport: CombatReport | null;
+  log: { id: number; text: string; kind: 'system' | 'battle' | 'reward' }[];
+  logSerial: number;
+  isRunning: boolean;
+  speed: 1 | 2 | 4;
+  lastSaveTime: number;
+}

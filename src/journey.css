@@ -1,0 +1,444 @@
+.pack-hint:empty {
+  display: none;
+}
+.stage-route {
+  display: flex;
+  gap: 0;
+  overflow: visible;
+  padding: 6px 0 10px;
+}
+.stage-node {
+  display: flex !important;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 26%;
+  font-size: 10px;
+  color: #81917b;
+}
+.stage-node b {
+  display: grid;
+  place-items: center;
+  border: 1px solid #7f825d;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  color: inherit;
+}
+.stage-node small {
+  width: 100%;
+  text-align: center;
+  font-size: 8px;
+}
+.stage-node.current {
+  color: #e0cea2;
+}
+.stage-node.complete {
+  color: #bdd09e;
+}
+.stage-node.current b {
+  background: #81703d;
+  color: #f4dfac;
+}
+.stage-node.complete b {
+  background: #4c6243;
+}
+.stage-route .stage-line {
+  height: 1px;
+  background: #73826066;
+  flex: 1;
+}
+.stage-route span + span:before {
+  display: none;
+}
+.view-toggle {
+  font-size: 11px !important;
+}
+.adventure-footer [data-action='cycle-speed'] {
+  margin-left: auto;
+  min-width: 48px;
+}
+.journey-panel {
+  margin: 8px 0;
+  background: #202e23;
+  border: 1px solid #7a7751;
+  border-radius: 11px;
+  padding: 12px;
+  min-height: 330px;
+}
+.journey-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #dbc895;
+  margin-bottom: 8px;
+}
+.journey-heading span {
+  font-size: 9px;
+  color: #a7b098;
+}
+.journey-history {
+  max-height: 335px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding-right: 4px;
+}
+.journey-entry {
+  margin-bottom: 9px;
+}
+.journey-time {
+  font-size: 9px;
+  color: #e0c991;
+  padding: 3px 8px;
+  background: #76683c;
+  border-radius: 7px 7px 0 0;
+  display: inline-block;
+  margin-left: 3px;
+}
+.journey-paper {
+  padding: 10px 12px 21px;
+  border: 2px solid #9f9674;
+  border-radius: 3px;
+  background: linear-gradient(125deg, #e8dfbd, #d5c99f);
+  color: #62523b;
+  position: relative;
+  box-shadow: inset 0 0 0 2px #e9dfb666;
+}
+.journey-paper strong {
+  font-size: 11px;
+  color: #977340;
+}
+.journey-paper p {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #5d503a;
+  margin: 4px 0 0;
+}
+.journey-paper > span {
+  position: absolute;
+  right: 9px;
+  bottom: 5px;
+  font-size: 9px;
+  color: #9b8560;
+}
+.journey-loot .journey-paper {
+  border-color: #c3a267;
+}
+.journey-growth .journey-paper {
+  border-color: #819667;
+}
+.journey-growth p {
+  color: #527142;
+}
+.journey-rest p {
+  color: #557452;
+}
+.journey-danger .journey-paper {
+  border-color: #ab7664;
+}
+.journey-panel.has-decision .journey-history {
+  max-height: 155px;
+}
+.journey-decision {
+  border: 3px double #988051;
+  border-radius: 8px;
+  padding: 14px 10px;
+  margin-top: 12px;
+  background: linear-gradient(135deg, #e2d5b0, #c6b286);
+  color: #4b3a25;
+}
+.journey-decision h2 {
+  font-size: 18px;
+  color: #5b452a;
+  text-align: center;
+  margin: 0 0 8px;
+}
+.journey-decision p,
+.journey-decision small {
+  color: #76603c;
+}
+.journey-decision .choice-grid {
+  grid-template-columns: 1fr;
+  margin: 10px 0 0;
+  gap: 8px;
+}
+.journey-decision .resonance-choice {
+  min-height: 0;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  column-gap: 8px;
+  align-items: center;
+}
+.journey-decision .resonance-choice strong {
+  margin: 0;
+  font-size: 12px;
+}
+.journey-decision .resonance-choice p,
+.journey-decision .resonance-choice small {
+  grid-column: 2;
+  font-size: 10px;
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+.journey-decision .reward-card {
+  padding: 12px;
+}
+.journey-decision .reward-card strong {
+  margin: 0;
+  font-size: 12px;
+}
+.journey-decision .reward-card p {
+  margin: 5px 0 0;
+}
+.journey-decision > .primary-button,
+.journey-decision #decision > .primary-button {
+  width: 100%;
+  min-height: 44px;
+}
+.journey-decision .text-button {
+  font-size: 10px;
+  padding: 8px;
+  margin-top: 8px;
+  background: transparent;
+  color: #6c5535;
+}
+.event-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.event-actions .primary-button,
+.event-actions .danger-button {
+  flex: 1;
+}
+.trial-crest {
+  text-align: center;
+  font-size: 42px;
+  line-height: 1;
+  color: #b38c42;
+  text-shadow: 0 0 12px #e5ce8a;
+}
+.trial-subtitle {
+  text-align: center;
+  font-size: 10px;
+  margin: 6px 0;
+}
+.journey-decision .trial-choices {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+.trial-choice {
+  min-width: 0;
+  padding: 10px 6px;
+  text-align: center;
+  border: 2px solid #9b8763;
+  background: #d5c69f;
+  color: #624a2c;
+  min-height: 190px;
+}
+.trial-choice strong {
+  font-family: Georgia, 'SimSun', serif;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 10px;
+}
+.trial-choice p {
+  font-size: 10px;
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+.trial-choice small {
+  font-size: 8px;
+  line-height: 1.6;
+  display: block;
+}
+.trial-choice b {
+  font-size: 9px;
+  line-height: 1.7;
+  margin-top: 10px;
+  display: block;
+  color: #64714c;
+}
+.trial-1 {
+  border-color: #a88946;
+  background: #dfcca0;
+}
+.trial-2 {
+  border-color: #a56b54;
+  background: #d4b893;
+}
+.fate-wheel {
+  margin: 10px auto;
+  text-align: center;
+  width: 80px;
+  height: 80px;
+  line-height: 76px;
+  border-radius: 50%;
+  border: 3px double #96703c;
+  background: conic-gradient(#ac874c, #e5d0a1, #ac874c, #e5d0a1, #ac874c);
+  font-size: 45px;
+  color: #73532f;
+}
+.battle-panel.exploring {
+  background:
+    radial-gradient(ellipse at 50% 80%, #59785255, transparent 70%),
+    linear-gradient(#2a3a2f, #1f3025);
+}
+.graduate-trials {
+  display: flex;
+  gap: 7px;
+  margin: 12px 0;
+}
+.graduate-trials span {
+  flex: 1;
+  padding: 8px 3px;
+  background: #293d2d;
+  border: 1px solid #687450;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 11px;
+  color: #97a788;
+}
+.graduate-trials .passed {
+  border-color: #baa86d;
+  color: #e0c98e;
+}
+.graduate-trials small {
+  display: block;
+  font-size: 8px;
+  margin-top: 4px;
+}
+.hero-training {
+  font-size: 11px;
+  padding: 10px;
+  border: 1px solid #64744e;
+  border-radius: 7px;
+}
+.hero-training summary {
+  cursor: pointer;
+  color: #d3c295;
+}
+.graduate-resonances {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 9px;
+}
+.graduate-resonances > div {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px 2px;
+  border: 1px solid #827e54;
+  border-radius: 6px;
+  background: #3b452d;
+  font-size: 10px;
+}
+.graduate-resonances b {
+  font-size: 9px;
+}
+.graduate-resonances small {
+  font-size: 9px;
+  color: #cebd88;
+}
+.hero-equipment-section {
+  margin: 14px 0;
+  text-align: center;
+}
+.hero-equipment-section h3 {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.hero-equipment-section h3 small {
+  font-size: 10px;
+  color: #a3b08f;
+}
+.graduate-pack {
+  width: min(300px, 100%) !important;
+  margin: 0 auto;
+  touch-action: pan-y;
+  user-select: auto;
+}
+.graduate-pack .bound-piece {
+  touch-action: pan-y;
+  filter: none;
+}
+.graduate-pack .bound-piece .item-outline {
+  cursor: pointer;
+}
+.bound-piece.selected .item-outline {
+  stroke: #f4d69b;
+  stroke-width: 4;
+}
+.bound-item-detail {
+  font-size: 11px;
+  text-align: left;
+  border: 1px solid #7d8258;
+  background: #2d412d;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 10px;
+}
+.bound-item-detail:empty {
+  display: none;
+}
+.bound-item-detail p {
+  font-size: 10px;
+  margin: 6px 0 0;
+}
+.equipment-binding {
+  display: block;
+  font-size: 9px;
+  color: #b8b594;
+  margin-top: 9px;
+}
+@media (max-width: 380px) {
+  .journey-panel {
+    padding: 10px;
+  }
+  .journey-decision {
+    padding: 11px 7px;
+  }
+  .trial-choice {
+    padding: 9px 4px;
+  }
+  .trial-choice strong {
+    font-size: 12px;
+  }
+  .journey-paper p {
+    font-size: 10px;
+  }
+}
+
+.battle-panel:not(.in-combat) .fighter-health {
+  grid-template-columns: 1fr;
+}
+.battle-panel:not(.in-combat) .fighter-health > div:last-child {
+  display: none;
+}
+.journey-panel.has-trial .journey-history {
+  max-height: 110px;
+}
+.has-trial .trial-crest {
+  font-size: 30px;
+}
+.has-trial .trial-choice {
+  min-height: 160px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.has-trial .trial-choice strong {
+  margin-bottom: 6px;
+}
+.has-trial .trial-choice p {
+  font-size: 9px;
+  margin-bottom: 6px;
+}
+.has-trial .trial-choice b {
+  margin-top: 6px;
+}

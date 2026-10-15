@@ -1,0 +1,25 @@
+{
+  "name": "reincarnation-dungeon",
+  "version": "14.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build && node scripts/standalone.mjs && node scripts/verify-build.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "tsx --test --test-concurrency=2 tests/*.test.ts",
+    "format": "prettier --write src scripts tests vite.config.ts package.json tsconfig.json",
+    "format:check": "prettier --check src scripts tests vite.config.ts package.json tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "happy-dom": "^21.0.1",
+    "prettier": "^3.9.10",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.7"
+  },
+  "dependencies": {
+    "break_infinity.js": "^2.2.0"
+  }
+}
