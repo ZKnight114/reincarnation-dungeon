@@ -1,0 +1,1316 @@
+{
+  "policy": "先检索素材库，优先复用；无合适资源再绘制",
+  "style": "精细像素西幻，暗青／古铜／羊皮纸，左上光照",
+  "uiSource": "art-direction/pixel-v19-tomes-ui",
+  "uiSourceRequests": 2,
+  "entries": [
+    {
+      "id": "M-0",
+      "path": "src/assets/M-0.png",
+      "group": "三职业物品",
+      "size": [
+        64,
+        64
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "3c8e61397c6f9118de4cbb5ca8141abaade4c4f9a5135d26ceb5180a5ebac177"
+    },
+    {
+      "id": "M-A2",
+      "path": "src/assets/M-A2.png",
+      "group": "三职业物品",
+      "size": [
+        64,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "85e819b7e7fa6edf8e33aa86724a6f3484caa1ee221dd285cd2256be91ce0039"
+    },
+    {
+      "id": "M-A3",
+      "path": "src/assets/M-A3.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "54fadb97811bc948358b659341f77e5235b41726ab14933381d7ac690816beb5"
+    },
+    {
+      "id": "M-A4",
+      "path": "src/assets/M-A4.png",
+      "group": "三职业物品",
+      "size": [
+        64,
+        256
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "e17b859c359cd760005694d86a31f7ae37a35ec1bd329f86c2a0c2a8350fbf32"
+    },
+    {
+      "id": "M-B2",
+      "path": "src/assets/M-B2.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        64
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "ee335388c28709df59793b6f2556512367356bb2bf288bd46c9b54830e0250d1"
+    },
+    {
+      "id": "M-B3",
+      "path": "src/assets/M-B3.png",
+      "group": "三职业物品",
+      "size": [
+        192,
+        64
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "b969cd82cdbb90edb615efe519b5921dfe60250455e9a04662fca6f177734570"
+    },
+    {
+      "id": "M-B4",
+      "path": "src/assets/M-B4.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "b863f0481a0ec4f2cdd4b3c5a842890da8dd40e6543696df2afd88b751372d71"
+    },
+    {
+      "id": "M-F2",
+      "path": "src/assets/M-F2.png",
+      "group": "三职业物品",
+      "size": [
+        64,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "1aa77a67d538a5cf44bfc22e20e2545a33c238fb42fcebfebf93222931ca0b7c"
+    },
+    {
+      "id": "M-F3",
+      "path": "src/assets/M-F3.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "07ba27da027f8125f09ed54748928064c8cc3b81999c8be02d3dc57bab50947b"
+    },
+    {
+      "id": "M-F4",
+      "path": "src/assets/M-F4.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "e04abe1c42260f684f346ea5afb9a6daf4fab1112314302b2bfaf3fc3338c9dd"
+    },
+    {
+      "id": "R-0",
+      "path": "src/assets/R-0.png",
+      "group": "三职业物品",
+      "size": [
+        64,
+        64
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "e94fc430cb98c75cdad3ed17eb3e6ddaeee0c0efd3600c712f7526849ebf34da"
+    },
+    {
+      "id": "R-A2",
+      "path": "src/assets/R-A2.png",
+      "group": "三职业物品",
+      "size": [
+        64,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "ef13e83c78ebdf076dc6da33df3ba28970cfe50df5a06db298c51076bdbe923b"
+    },
+    {
+      "id": "R-A3",
+      "path": "src/assets/R-A3.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "2c81da7c0e3699048f3f0d04e961ef8d83dd75c386fa6b7a6c6680f30f8ad9bf"
+    },
+    {
+      "id": "R-A4",
+      "path": "src/assets/R-A4.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "dffddf8159ec3fdbbd73290afd0cc1812bea1bf0deb88abfe8c31359aeca9353"
+    },
+    {
+      "id": "R-B2",
+      "path": "src/assets/R-B2.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        64
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "0eb7a7f1e60905297993e39bf234ddb627aa33f70358380bb3866853d358500e"
+    },
+    {
+      "id": "R-B3",
+      "path": "src/assets/R-B3.png",
+      "group": "三职业物品",
+      "size": [
+        64,
+        192
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "9825d353acfc3a9dfceb39899ed70a0f9d600dd309f95ce38056c527cd1bb2e2"
+    },
+    {
+      "id": "R-B4",
+      "path": "src/assets/R-B4.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "b413ced927fc1e68fab1dfad73732bd84016833fa2ee5a61bdfc6f91ba34837e"
+    },
+    {
+      "id": "R-F2",
+      "path": "src/assets/R-F2.png",
+      "group": "三职业物品",
+      "size": [
+        64,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "3a6e6da15cb9039e6626195a9667beb00dbac76c403fb28609dc3054e858c80b"
+    },
+    {
+      "id": "R-F3",
+      "path": "src/assets/R-F3.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "eb69579a90fa8d35d5ff34a0d91134909c7f90a31686f801362360dd86389a0a"
+    },
+    {
+      "id": "R-F4",
+      "path": "src/assets/R-F4.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "ebb24c70ae967d934d5911773c5d006d63a75a1a6247f7c1c15bb5a23b78ebce"
+    },
+    {
+      "id": "W-0",
+      "path": "src/assets/W-0.png",
+      "group": "三职业物品",
+      "size": [
+        64,
+        64
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "c10319452d4b863219c5319f3fe1de496215d7a2903818cf1267ae705f5f6c79"
+    },
+    {
+      "id": "W-A2",
+      "path": "src/assets/W-A2.png",
+      "group": "三职业物品",
+      "size": [
+        64,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "7543a1760080490cff7b8ee9d0b945a8f635ddbf39ab7e8e53d19d698c87dfb7"
+    },
+    {
+      "id": "W-A3",
+      "path": "src/assets/W-A3.png",
+      "group": "三职业物品",
+      "size": [
+        64,
+        192
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "376a83299b2ee3087d005bc33db365ccaf99fec7ffd2d4facf37c218cf7730bd"
+    },
+    {
+      "id": "W-A4",
+      "path": "src/assets/W-A4.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "0abfd9ea2736c3685e1a792e647ca10f8c8e42b236e0125f33e241d2e2584e7b"
+    },
+    {
+      "id": "W-B2",
+      "path": "src/assets/W-B2.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        64
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "1593b160de4a5cfb336f01ee08dc9dd4697c35009f09de2d9e49c927721fd118"
+    },
+    {
+      "id": "W-B3",
+      "path": "src/assets/W-B3.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "2a34133469e819d3d1e9e420f61cb2cc0797cdd30e872a1e382f78c92cfa3063"
+    },
+    {
+      "id": "W-B4",
+      "path": "src/assets/W-B4.png",
+      "group": "三职业物品",
+      "size": [
+        256,
+        64
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "4646bf4ce8e0f43d9fe83b9bb720e344481f414aa5168f56e1b0e19013cec650"
+    },
+    {
+      "id": "W-F2",
+      "path": "src/assets/W-F2.png",
+      "group": "三职业物品",
+      "size": [
+        64,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "ee56ae511b05c070360211d4c3ae0aa7215223dfa0f9f3b63f6fb7dc264b1da1"
+    },
+    {
+      "id": "W-F3",
+      "path": "src/assets/W-F3.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "0b051153a769302ee107a1d980f2595f02e2840740e571c44485fcfbccd8d557"
+    },
+    {
+      "id": "W-F4",
+      "path": "src/assets/W-F4.png",
+      "group": "三职业物品",
+      "size": [
+        128,
+        128
+      ],
+      "alpha": true,
+      "source": "项目既有定稿物品；详见设计记录",
+      "sha256": "01f019312ed67f7212044ee4948c97cfe038c1514408158c68b2820041f85b49"
+    },
+    {
+      "id": "buttonLong_beige",
+      "path": "src/assets/buttonLong_beige.png",
+      "group": "场景与旧界面",
+      "size": [
+        190,
+        49
+      ],
+      "alpha": true,
+      "source": "项目既有素材",
+      "sha256": "3249a67147a4d4d8374957af77a27b7f2256130fd9edca73f2bafaf5c5bbd4db"
+    },
+    {
+      "id": "enemy-bat-full",
+      "path": "src/assets/enemy-bat-full.png",
+      "group": "人物与怪物",
+      "size": [
+        256,
+        256
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "7079fc1a8ae811c32a466796d563f6cbe63867a8afce6b2981b837cbbff424b6"
+    },
+    {
+      "id": "enemy-dragon-full",
+      "path": "src/assets/enemy-dragon-full.png",
+      "group": "人物与怪物",
+      "size": [
+        256,
+        256
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "ca15db9f41c15bb4e4207dd096352c4064ea2ec08c1cc6ad9ca28d40f0b139a5"
+    },
+    {
+      "id": "enemy-golem-full",
+      "path": "src/assets/enemy-golem-full.png",
+      "group": "人物与怪物",
+      "size": [
+        256,
+        256
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "36fd2ace74a9d1704f1915bf54f0728b16a74ee2d275310ddb448e54e6470a79"
+    },
+    {
+      "id": "enemy-ogre-full",
+      "path": "src/assets/enemy-ogre-full.png",
+      "group": "人物与怪物",
+      "size": [
+        256,
+        256
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "03d697567905ee3b72c3c28f94a820b8fd3d4141e0a28a0dede08bcf41e11a04"
+    },
+    {
+      "id": "enemy-queen-full",
+      "path": "src/assets/enemy-queen-full.png",
+      "group": "人物与怪物",
+      "size": [
+        256,
+        256
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "ed935fb7775215d36946cfe8a4b9a15b16c55420c9a96a90683ab0edc0a3786f"
+    },
+    {
+      "id": "enemy-slime-full",
+      "path": "src/assets/enemy-slime-full.png",
+      "group": "人物与怪物",
+      "size": [
+        256,
+        256
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "33a3eb4d0cd69ab4c7bffa9da2d63f14341b193f274c554b8eb7278b5dce5b00"
+    },
+    {
+      "id": "enemy-spider-full",
+      "path": "src/assets/enemy-spider-full.png",
+      "group": "人物与怪物",
+      "size": [
+        256,
+        256
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "92b4b9ecdfee5dc5cb17caae01c9d98fd77edf55f2c505d4ca40715fb1c4ba9a"
+    },
+    {
+      "id": "enemy-wolf-full",
+      "path": "src/assets/enemy-wolf-full.png",
+      "group": "人物与怪物",
+      "size": [
+        256,
+        256
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "9b21f4fdfa43039e5cafcc233a8a5dba99370cb957bd841d1f9c12d6a060d429"
+    },
+    {
+      "id": "enemy-wraith-full",
+      "path": "src/assets/enemy-wraith-full.png",
+      "group": "人物与怪物",
+      "size": [
+        256,
+        256
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "dfebace0f12428b6e09b287610f9dcfd8f8ef10b6b918220dac23529dde4f6a7"
+    },
+    {
+      "id": "guild-home",
+      "path": "src/assets/guild-home.png",
+      "group": "场景与旧界面",
+      "size": [
+        520,
+        780
+      ],
+      "alpha": false,
+      "source": "项目既有素材",
+      "sha256": "c87ce0f8bc87fb2aebc88377e7fbe583d0b4ff1266a133beefd926ad7fff5372"
+    },
+    {
+      "id": "mage-full",
+      "path": "src/assets/mage-full.png",
+      "group": "人物与怪物",
+      "size": [
+        406,
+        664
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "0c4e226444e371a3227921121049408ce5f6ee639db46b55fd99661ecbdd3c62"
+    },
+    {
+      "id": "mage-motion",
+      "path": "src/assets/mage-motion.png",
+      "group": "人物与怪物",
+      "size": [
+        576,
+        544
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "7effe1bcaa88eb09dba61effcf2cf41d1e977d5f1426e4b016e89e6c15580f1a"
+    },
+    {
+      "id": "mage-portrait",
+      "path": "src/assets/mage-portrait.png",
+      "group": "场景与旧界面",
+      "size": [
+        72,
+        72
+      ],
+      "alpha": true,
+      "source": "项目既有素材",
+      "sha256": "74e361a459e7dc5f2de5b06fe5299d8437f4870df0c278771522744d5ce2e4a3"
+    },
+    {
+      "id": "mage",
+      "path": "src/assets/mage.png",
+      "group": "场景与旧界面",
+      "size": [
+        512,
+        768
+      ],
+      "alpha": true,
+      "source": "项目既有素材",
+      "sha256": "394ab1bf921382f49589b177dca899239de38a14d02cb9b5dacacf7786c57833"
+    },
+    {
+      "id": "panel_beigeLight",
+      "path": "src/assets/panel_beigeLight.png",
+      "group": "场景与旧界面",
+      "size": [
+        100,
+        100
+      ],
+      "alpha": true,
+      "source": "项目既有素材",
+      "sha256": "f2755c0e5cedb7b79d889d3770fd95bd13e2f82b12f21ffa239a7f762726c601"
+    },
+    {
+      "id": "panel_blue",
+      "path": "src/assets/panel_blue.png",
+      "group": "场景与旧界面",
+      "size": [
+        100,
+        100
+      ],
+      "alpha": true,
+      "source": "项目既有素材",
+      "sha256": "24277032d731ef06e3a99e0a8dc4d38bf61951fddff6b173c6fa2accd7642437"
+    },
+    {
+      "id": "panel_brown",
+      "path": "src/assets/panel_brown.png",
+      "group": "场景与旧界面",
+      "size": [
+        100,
+        100
+      ],
+      "alpha": true,
+      "source": "项目既有素材",
+      "sha256": "cee150c027a65cd2933d18c7d86083bd7713d7f792037299a9c6561811c9fba7"
+    },
+    {
+      "id": "rogue-full",
+      "path": "src/assets/rogue-full.png",
+      "group": "人物与怪物",
+      "size": [
+        486,
+        739
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "eeda68abaf5268779b929bcba0e229aef21c7d2bf9c6bfb5d8cf4132c3565ccc"
+    },
+    {
+      "id": "rogue-motion",
+      "path": "src/assets/rogue-motion.png",
+      "group": "人物与怪物",
+      "size": [
+        576,
+        544
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "cfea41bcc1da57a6817a8fa49dfd904ec87847a6de8120167557e1ae1195a00d"
+    },
+    {
+      "id": "rogue-portrait",
+      "path": "src/assets/rogue-portrait.png",
+      "group": "场景与旧界面",
+      "size": [
+        72,
+        72
+      ],
+      "alpha": true,
+      "source": "项目既有素材",
+      "sha256": "d329b94c9420f3e03a569e2b9116740c0ea0593661b85277b9236e9812b67d98"
+    },
+    {
+      "id": "rogue",
+      "path": "src/assets/rogue.png",
+      "group": "场景与旧界面",
+      "size": [
+        512,
+        768
+      ],
+      "alpha": true,
+      "source": "项目既有素材",
+      "sha256": "5292cbf2f9c0caea98bd7f2eb5c0c133bae0240b4fed387e3e242e8bfe65a4fa"
+    },
+    {
+      "id": "ruins-ui",
+      "path": "src/assets/ruins-ui.png",
+      "group": "场景与旧界面",
+      "size": [
+        780,
+        439
+      ],
+      "alpha": false,
+      "source": "项目既有素材",
+      "sha256": "d09df42f94c620da2d7cdb4dd5a34a77df8a5a8e6e9cb92beaad4798b8b979fe"
+    },
+    {
+      "id": "ruins",
+      "path": "src/assets/ruins.png",
+      "group": "场景与旧界面",
+      "size": [
+        1536,
+        864
+      ],
+      "alpha": false,
+      "source": "项目既有素材",
+      "sha256": "a5996a949aa60517af6d2ba0d78bc81be4a2a3a11ebd7e391841d3a45ae2511c"
+    },
+    {
+      "id": "sentinel-full",
+      "path": "src/assets/sentinel-full.png",
+      "group": "人物与怪物",
+      "size": [
+        477,
+        683
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "25d5713f1335e145e353f24f88b6c69fd17a1319eb3fffedf453bc1d054c83df"
+    },
+    {
+      "id": "sentinel-portrait",
+      "path": "src/assets/sentinel-portrait.png",
+      "group": "场景与旧界面",
+      "size": [
+        72,
+        72
+      ],
+      "alpha": true,
+      "source": "项目既有素材",
+      "sha256": "860b2905983b76cdca3a673a5f2fdcd91144ee392936bf40b099519b8b9650bb"
+    },
+    {
+      "id": "sentinel",
+      "path": "src/assets/sentinel.png",
+      "group": "场景与旧界面",
+      "size": [
+        512,
+        768
+      ],
+      "alpha": true,
+      "source": "项目既有素材",
+      "sha256": "cd4749819da6c815c489eca669f5fd0480d52e47b52dbd6efdf8e02ef45e3a67"
+    },
+    {
+      "id": "tomes/mage_arcane_tome",
+      "path": "src/assets/tomes/mage_arcane_tome.png",
+      "group": "九本典籍",
+      "size": [
+        96,
+        96
+      ],
+      "alpha": true,
+      "source": "项目既有典籍图标，v19 样稿复用",
+      "sha256": "b1e0a1055f642d2a9dd51281dbb927646a37c9e080f061861cbd90b5801ee649"
+    },
+    {
+      "id": "tomes/mage_flame_tome",
+      "path": "src/assets/tomes/mage_flame_tome.png",
+      "group": "九本典籍",
+      "size": [
+        96,
+        96
+      ],
+      "alpha": true,
+      "source": "项目既有典籍图标，v19 样稿复用",
+      "sha256": "deba476fd959a8642b765ddabc3bffed99e5b8d5a25d86bfb13c0b17cf085dc4"
+    },
+    {
+      "id": "tomes/mage_ice_tome",
+      "path": "src/assets/tomes/mage_ice_tome.png",
+      "group": "九本典籍",
+      "size": [
+        96,
+        96
+      ],
+      "alpha": true,
+      "source": "项目既有典籍图标，v19 样稿复用",
+      "sha256": "6eaf6f0d2bafa500883dceeb6e5542286f1a0b845a5f14232a985af37cecdca8"
+    },
+    {
+      "id": "tomes/rogue_poison_tome",
+      "path": "src/assets/tomes/rogue_poison_tome.png",
+      "group": "九本典籍",
+      "size": [
+        96,
+        96
+      ],
+      "alpha": true,
+      "source": "项目既有典籍图标，v19 样稿复用",
+      "sha256": "9a1918d2778daad25f987bc100fa7b52456dd64e435de0d9d5859316fb65cbe9"
+    },
+    {
+      "id": "tomes/rogue_ranged_tome",
+      "path": "src/assets/tomes/rogue_ranged_tome.png",
+      "group": "九本典籍",
+      "size": [
+        96,
+        96
+      ],
+      "alpha": true,
+      "source": "项目既有典籍图标，v19 样稿复用",
+      "sha256": "567d8dce2548d2b36e4603e63f4c1136e9e3b9105240718e234bb960a546cc13"
+    },
+    {
+      "id": "tomes/rogue_shadow_tome",
+      "path": "src/assets/tomes/rogue_shadow_tome.png",
+      "group": "九本典籍",
+      "size": [
+        96,
+        96
+      ],
+      "alpha": true,
+      "source": "项目既有典籍图标，v19 样稿复用",
+      "sha256": "288bbe662d732dc51fc6e4edfe37383246288d9b81e8ef895599de219d157057"
+    },
+    {
+      "id": "tomes/warrior_shield_tome",
+      "path": "src/assets/tomes/warrior_shield_tome.png",
+      "group": "九本典籍",
+      "size": [
+        96,
+        96
+      ],
+      "alpha": true,
+      "source": "项目既有典籍图标，v19 样稿复用",
+      "sha256": "c47589dd4693bf47315de254926b0e842caa82c087331e912c8eacca2fd92277"
+    },
+    {
+      "id": "tomes/warrior_spear_tome",
+      "path": "src/assets/tomes/warrior_spear_tome.png",
+      "group": "九本典籍",
+      "size": [
+        96,
+        96
+      ],
+      "alpha": true,
+      "source": "项目既有典籍图标，v19 样稿复用",
+      "sha256": "fe7173e2ddd411385cffed659841d60b7b72a3ebbd3f5fd34d04fdc6b391277a"
+    },
+    {
+      "id": "tomes/warrior_sword_tome",
+      "path": "src/assets/tomes/warrior_sword_tome.png",
+      "group": "九本典籍",
+      "size": [
+        96,
+        96
+      ],
+      "alpha": true,
+      "source": "项目既有典籍图标，v19 样稿复用",
+      "sha256": "6edf2de4c7e0c739c1069b69d52cc3e3c6948b5dd263b3d751a7f646212c89c6"
+    },
+    {
+      "id": "ui/controls/back",
+      "path": "src/assets/ui/controls/back.png",
+      "group": "界面按钮与图标",
+      "size": [
+        32,
+        32
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "ecd9eb06ab60a3b15d06b7e65eeeb438deaca6a520da305312ed3aa55cad30d5"
+    },
+    {
+      "id": "ui/controls/check",
+      "path": "src/assets/ui/controls/check.png",
+      "group": "界面按钮与图标",
+      "size": [
+        32,
+        32
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "8773207b6a3f2d0f498747b3f3dde51bd88a0160e2cf6f0cb44572facdd00e76"
+    },
+    {
+      "id": "ui/controls/close",
+      "path": "src/assets/ui/controls/close.png",
+      "group": "界面按钮与图标",
+      "size": [
+        32,
+        32
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "1d40126d225588826d727a06e24f42d8aad712f8d779b0f86d1a6c89b90b91e3"
+    },
+    {
+      "id": "ui/controls/forward",
+      "path": "src/assets/ui/controls/forward.png",
+      "group": "界面按钮与图标",
+      "size": [
+        32,
+        32
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "d714eb5cdcc531becc5fd78727ad14834834dc5059d079ca1b72df081d99d6b1"
+    },
+    {
+      "id": "ui/controls/lock",
+      "path": "src/assets/ui/controls/lock.png",
+      "group": "界面按钮与图标",
+      "size": [
+        32,
+        32
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "8083c4060db919c2913f1af4f5f37b5945b662dae446bf7df6c3d4837cada538"
+    },
+    {
+      "id": "ui/controls/minus",
+      "path": "src/assets/ui/controls/minus.png",
+      "group": "界面按钮与图标",
+      "size": [
+        32,
+        32
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "87d204e782e35b25157386fecbf68a400c14711e655e70794dfbcb5fa65a439d"
+    },
+    {
+      "id": "ui/controls/pause",
+      "path": "src/assets/ui/controls/pause.png",
+      "group": "界面按钮与图标",
+      "size": [
+        32,
+        32
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "02336b819572b240e893108e15e51f9fb687af290ab3d1d7f9650e8f7b1f1390"
+    },
+    {
+      "id": "ui/controls/play",
+      "path": "src/assets/ui/controls/play.png",
+      "group": "界面按钮与图标",
+      "size": [
+        32,
+        32
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "fbd2bfb7177630b3731d976711cdc1565f433fafd8ff678576c90babbbf7873d"
+    },
+    {
+      "id": "ui/controls/plus",
+      "path": "src/assets/ui/controls/plus.png",
+      "group": "界面按钮与图标",
+      "size": [
+        32,
+        32
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "213aa1aec311a0de2085c3a1a89ac767bf44cd060a45cb74a3bd6ed03fd52ead"
+    },
+    {
+      "id": "ui/controls/speed",
+      "path": "src/assets/ui/controls/speed.png",
+      "group": "界面按钮与图标",
+      "size": [
+        32,
+        32
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "eec307a56cf54bd784169538b1a4cf6a07863b4add76db1e48c15e20cc17c1db"
+    },
+    {
+      "id": "ui/icons/adventurers",
+      "path": "src/assets/ui/icons/adventurers.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "a92f56c9d8a89dd497e6b15436965202902182c03e9a6f94342a09a3de99374c"
+    },
+    {
+      "id": "ui/icons/attack",
+      "path": "src/assets/ui/icons/attack.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "d52c46ea04fece3e50e1c6320e991061dc369d016f16dc2a53a77be9cddc8cfc"
+    },
+    {
+      "id": "ui/icons/backpack",
+      "path": "src/assets/ui/icons/backpack.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "4fd39976ef07fde348aa2165e5d9c351611bc5d77dc1d329922daa47bb9499eb"
+    },
+    {
+      "id": "ui/icons/defense",
+      "path": "src/assets/ui/icons/defense.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "9828d4dac008ad654278266b4157f36059baa48f4b0f0a51ef2c20a5ddf1ed0f"
+    },
+    {
+      "id": "ui/icons/dungeon",
+      "path": "src/assets/ui/icons/dungeon.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "e7cb72bece3a1db44b9d17b843f6479f84212c28ceb56d6d4bf4d4269b7e4f9f"
+    },
+    {
+      "id": "ui/icons/energy",
+      "path": "src/assets/ui/icons/energy.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "c7ffc2883174738998e5312f657baf0540f8ba670b77536aa3bc27a85c585065"
+    },
+    {
+      "id": "ui/icons/gold",
+      "path": "src/assets/ui/icons/gold.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "495c7a2c3beb2f1566c688fa68098a8374789364cf2b7e01768be6a68c93e956"
+    },
+    {
+      "id": "ui/icons/guild-bonus",
+      "path": "src/assets/ui/icons/guild-bonus.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "3453a9b0c07fc883568d78ff7eab17061a795b04b7c7cb5dd52760dd37a0c3e3"
+    },
+    {
+      "id": "ui/icons/guild",
+      "path": "src/assets/ui/icons/guild.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "99567a9c9d1c6ac1221ec9df5ea0c71255222efad506171f006095ff27e55b95"
+    },
+    {
+      "id": "ui/icons/hp",
+      "path": "src/assets/ui/icons/hp.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "71532d58a3a86d01c4dba3cd516371d87a3b98ac32495486991477bc6c13d5b7"
+    },
+    {
+      "id": "ui/icons/library",
+      "path": "src/assets/ui/icons/library.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "3aee6cd2c3364fe0e0ceade870401f97240f3a048dbd598dafe87648989ad3d3"
+    },
+    {
+      "id": "ui/icons/medal",
+      "path": "src/assets/ui/icons/medal.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "8fbe5746f5d536e868bf5ff9a7c2202c94bd270da085ec853125a17225d79bc6"
+    },
+    {
+      "id": "ui/icons/recruit",
+      "path": "src/assets/ui/icons/recruit.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "529cb3da4c30d6ec5df736c9d74df185663f00f350398c92bef707a99c56c14d"
+    },
+    {
+      "id": "ui/icons/reforge",
+      "path": "src/assets/ui/icons/reforge.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "0c6ea14459977a0fa6fca6467970e8db4af57b087fee804951fcc9cd532a0a31"
+    },
+    {
+      "id": "ui/icons/settings",
+      "path": "src/assets/ui/icons/settings.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "c0a7696bb028746175498a86dc03248d8304cf9559a58f775072e72a90f4f430"
+    },
+    {
+      "id": "ui/icons/trial",
+      "path": "src/assets/ui/icons/trial.png",
+      "group": "界面按钮与图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "9327ed4bebc2ef9e699a6b30536c56e8f2a18c020fec162e66f3abe333feb7bf"
+    },
+    {
+      "id": "ui/shelf-plank",
+      "path": "src/assets/ui/shelf-plank.png",
+      "group": "界面按钮与图标",
+      "size": [
+        96,
+        16
+      ],
+      "alpha": false,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "0c58dc1631925444de5bec8c71df5ef3b1c81d1f8673d7215cd908ff15c0f442"
+    },
+    {
+      "id": "ui/skins/combat",
+      "path": "src/assets/ui/skins/combat.png",
+      "group": "界面按钮与图标",
+      "size": [
+        220,
+        75
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "9b55be814f04ae83a88a3c7f3255e0d5e8328ccc86727cd1136861c11db43f1b"
+    },
+    {
+      "id": "ui/skins/danger",
+      "path": "src/assets/ui/skins/danger.png",
+      "group": "界面按钮与图标",
+      "size": [
+        220,
+        75
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "5afd63c6d64e4c43596bdf84a8b2debeeafbb55cb272b992f94cf219f8770f9f"
+    },
+    {
+      "id": "ui/skins/disabled",
+      "path": "src/assets/ui/skins/disabled.png",
+      "group": "界面按钮与图标",
+      "size": [
+        220,
+        87
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "ac1cd7ee77d64ca918ae4129c63c8867ab6da91cc33033634b644784e4f22dc6"
+    },
+    {
+      "id": "ui/skins/magic",
+      "path": "src/assets/ui/skins/magic.png",
+      "group": "界面按钮与图标",
+      "size": [
+        220,
+        75
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "62a43654466b2f7d74d61d74169f8f649b88f15749f85fccfc1a0566b64e0400"
+    },
+    {
+      "id": "ui/skins/node-active",
+      "path": "src/assets/ui/skins/node-active.png",
+      "group": "界面按钮与图标",
+      "size": [
+        139,
+        138
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "19a40bb28f3f9e361e11fd73b9ab083de47adc695e34f10c8d91c0c6c0c30cd3"
+    },
+    {
+      "id": "ui/skins/node-locked",
+      "path": "src/assets/ui/skins/node-locked.png",
+      "group": "界面按钮与图标",
+      "size": [
+        138,
+        138
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "1270d3e3bc11b8f565b1fed951c3eddc3cdd5a80092ceb8c4138afc28776fc8e"
+    },
+    {
+      "id": "ui/skins/node-normal",
+      "path": "src/assets/ui/skins/node-normal.png",
+      "group": "界面按钮与图标",
+      "size": [
+        138,
+        138
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "578fc30d95272c2d56dab594b67cda8ea061b7cd1907ef50d4d1bb55ffe439d4"
+    },
+    {
+      "id": "ui/skins/primary-normal",
+      "path": "src/assets/ui/skins/primary-normal.png",
+      "group": "界面按钮与图标",
+      "size": [
+        220,
+        87
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "df41a2777fce9e4fb795f7489f70521a0f2e74464824e215efdb0e18a52c9e58"
+    },
+    {
+      "id": "ui/skins/primary-pressed",
+      "path": "src/assets/ui/skins/primary-pressed.png",
+      "group": "界面按钮与图标",
+      "size": [
+        220,
+        87
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "21b41ce2daa27d271649a8ef2f2503294da63dbc82ac6b47415fb826b4ab9c8a"
+    },
+    {
+      "id": "ui/skins/secondary-normal",
+      "path": "src/assets/ui/skins/secondary-normal.png",
+      "group": "界面按钮与图标",
+      "size": [
+        220,
+        75
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "7ac3985d9bdfc4a83671e88bdefaffc01c1a5d1d11c2131bd675b3b444d9ea72"
+    },
+    {
+      "id": "ui/skins/secondary-pressed",
+      "path": "src/assets/ui/skins/secondary-pressed.png",
+      "group": "界面按钮与图标",
+      "size": [
+        220,
+        75
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "d19985c2b257080be1b9b024b5c0f71d293a3e2fab8362ebe1ece8f05a5a4537"
+    },
+    {
+      "id": "ui/skins/selected",
+      "path": "src/assets/ui/skins/selected.png",
+      "group": "界面按钮与图标",
+      "size": [
+        220,
+        76
+      ],
+      "alpha": true,
+      "source": "v19 已审核 UI 图集；操作符号和木板为本地像素绘制",
+      "sha256": "673b0a1835aa85265922482075d22ad600530deba94274acf4199e84794149db"
+    },
+    {
+      "id": "warrior-full",
+      "path": "src/assets/warrior-full.png",
+      "group": "人物与怪物",
+      "size": [
+        455,
+        674
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "11116261de8f8b9ffe2b4c6875d2849ef8ee5115ced45705ddcb07416c5cf3a5"
+    },
+    {
+      "id": "warrior-motion",
+      "path": "src/assets/warrior-motion.png",
+      "group": "人物与怪物",
+      "size": [
+        576,
+        544
+      ],
+      "alpha": true,
+      "source": "项目既有素材；敌人来源见 ENEMY-ART.md",
+      "sha256": "c2f85e62944775038c138a5d673246f089bdba0cbbab40cfdad560f6bde63706"
+    },
+    {
+      "id": "warrior-portrait",
+      "path": "src/assets/warrior-portrait.png",
+      "group": "场景与旧界面",
+      "size": [
+        72,
+        72
+      ],
+      "alpha": true,
+      "source": "项目既有素材",
+      "sha256": "9e46d864fc83903f6023990902af5f068fe5228cb17f4507d926ab1eef80ced2"
+    },
+    {
+      "id": "warrior",
+      "path": "src/assets/warrior.png",
+      "group": "场景与旧界面",
+      "size": [
+        512,
+        768
+      ],
+      "alpha": true,
+      "source": "项目既有素材",
+      "sha256": "41ec7ef180bbe7df4d792c40c0e407878194caed0c2d069356927cc5bd16cbbb"
+    }
+  ]
+}

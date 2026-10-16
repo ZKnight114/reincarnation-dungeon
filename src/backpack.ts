@@ -1,9 +1,13 @@
 import { CATALOGUE } from './catalogue';
 import { estimateBuild } from './combat';
+import { applyTalentSources } from './talents';
 import { heroAttributes } from './hero';
 import { itemProposal, receivingLink, LINK_EFFECT_NAMES } from './item-rules';
 import { runRoute } from './journey';
-import { guildMultiplier, tomeAttributes } from './progression';
+import { tome } from './progression';
+import { equipmentFamily } from './categories';
+import { tomeAttributes } from './progression';
+import { applyGuild, emptyGuildBonus } from './guild';
 import { DESIGN_RESONANCE_IDS, RESONANCES, RESONANCE_KEYS } from './resonances';
 import { itemSkills, resonanceSkills, tomeSkills } from './skills';
 import type {
@@ -35,8 +39,8 @@ export const PROFESSIONS: Record<
   warrior: {
     name: '战士',
     color: '#c4aa77',
-    description: '剑重击与长枪连击，盾牌守护。可混合两条攻击路线。',
-    trait: '剑 / 长枪 / 盾牌',
+    description: '剑重击与长枪连击，防具守护。可混合两条攻击路线。',
+    trait: '剑 / 枪 / 防御',
     hp: 190,
     defense: 3,
     growth: { attack: 0.1, hp: 24, defense: 2 },
@@ -48,8 +52,8 @@ export const PROFESSIONS: Record<
   mage: {
     name: '法师',
     color: '#9dafe0',
-    description: '火焰爆发与冰霜控制，法袍辅助。物品自带灼烧、减速等回合技能。',
-    trait: '法杖 / 魔导书 / 法袍',
+    description: '火焰爆发与冰霜控制，魔法书辅助。物品自带灼烧、减速等回合技能。',
+    trait: '法杖 / 法球 / 辅助',
     hp: 150,
     defense: 0,
     growth: { attack: 0.12, hp: 18, defense: 1 },
@@ -61,8 +65,8 @@ export const PROFESSIONS: Record<
   rogue: {
     name: '盗贼',
     color: '#96b994',
-    description: '匕首近战与弓弩远程，皮甲辅助。物品自带毒伤和标记，可选择专精或混搭。',
-    trait: '匕首 / 弓弩 / 皮甲',
+    description: '短剑双剑近战与手弩远程，烟幕辅助。物品自带毒伤和标记，可选择专精或混搭。',
+    trait: '剑 / 弩 / 辅助',
     hp: 165,
     defense: 1,
     growth: { attack: 0.11, hp: 20, defense: 1.5 },
@@ -77,13 +81,13 @@ export const BRANCHES: Record<Branch, { name: string; color: string }> = {
   neutral: { name: '无分支', color: '#c9c4b0' },
   blade: { name: '剑', color: '#d6b47e' },
   pole: { name: '长枪', color: '#b9c8ce' },
-  guard: { name: '盾牌', color: '#b0a586' },
+  guard: { name: '防御', color: '#b0a586' },
   flame: { name: '火焰', color: '#e4a17a' },
   ice: { name: '冰霜', color: '#9dcfe0' },
-  ward: { name: '法袍', color: '#b0a1d3' },
-  assassin: { name: '刀刃', color: '#c29eae' },
-  archer: { name: '弓弩', color: '#a5bf86' },
-  leather: { name: '皮甲', color: '#bfa985' },
+  ward: { name: '魔法书', color: '#b0a1d3' },
+  assassin: { name: '短剑 / 双剑', color: '#c29eae' },
+  archer: { name: '手弩', color: '#a5bf86' },
+  leather: { name: '炼金工具', color: '#bfa985' },
 };
 export const BUFFS: Record<BuffKey, { name: string; description: string }> = {
   power: { name: '力量', description: '人物攻击 +12%' },
@@ -188,22 +192,23 @@ export const PACK_ITEMS: PackItemDefinition[] = Object.entries(CATALOGUE).map(([
             pole: 'spear',
             guard: 'shield',
             flame: 'staff',
-            ice: 'tome',
-            ward: 'robe',
-            assassin: 'dagger',
-            archer: id.endsWith('_3') ? 'bow' : 'crossbow',
-            leather: 'armor',
+            ice: 'orb',
+            ward: 'tome',
+            assassin: 'sword',
+            archer: 'crossbow',
+            leather: 'smoke',
           } as Record<string, string>
         )[branch],
     slot: neutral ? 'accessory' : functional ? 'armor' : 'weapon',
     shape: 'dot',
-    role: neutral
-      ? 'support'
-      : functional
-        ? id === 'mage_ward_3' || id === 'rogue_leather_2'
-          ? 'heal'
-          : 'shield'
-        : 'weapon',
+    role:
+      neutral || branch === 'leather'
+        ? 'support'
+        : functional
+          ? id === 'mage_ward_3'
+            ? 'heal'
+            : 'shield'
+          : 'weapon',
     cooldown: itemSkills(id, 1).find((k) => k.cooldown > 0)?.cooldown ?? 0,
     cost: 0,
     resource: null,
@@ -317,9 +322,12 @@ export function itemStats(templateId: string, level: number, profession: Profess
 export function contributionPoints(i: Equipment) {
   return cells(i).length * 2 ** (i.level - 1);
 }
-export function cells(item: Pick<Equipment, 'templateId'>, _rotation = 0): [number, number][] {
+export function cells(
+  item: Pick<Equipment, 'templateId' | 'legacyCells'>,
+  _rotation = 0,
+): [number, number][] {
   const c = CATALOGUE[item.templateId as keyof typeof CATALOGUE];
-  return (c?.cells ?? SHAPES[definition(item).shape]).map(([x, y]) => [x, y]);
+  return (item.legacyCells ?? c?.cells ?? SHAPES[definition(item).shape]).map(([x, y]) => [x, y]);
 }
 export function dimensions(item: Equipment, p: Pick<Placement, 'rotation'>) {
   const c = cells(item, p.rotation);
@@ -477,6 +485,7 @@ export function analyzePack(
       heal: number;
       hp: number;
       counter: number;
+      smoke: number;
     }
   > = {};
   const links: { source: string; target: string; label: string }[] = [];
@@ -490,6 +499,7 @@ export function analyzePack(
       heal: 0,
       hp: 0,
       counter: 0,
+      smoke: 0,
     };
   for (const target of active) {
     const p = layout.find((p) => p.id === target.id)!;
@@ -514,7 +524,7 @@ export function analyzePack(
           : g.level === 4 && g.profession === 'mage'
             ? 'shield'
             : g.level === 4 && g.profession === 'rogue'
-              ? 'heal'
+              ? 'smoke'
               : null;
       if (!kind) continue;
       const amount = kind === 'damage' ? [0.08, 0.12, 0.16, 0.2][g.level - 1] : 0.1;
@@ -537,7 +547,7 @@ export function analyzePack(
       }
   }
   const tiers = Object.fromEntries(
-    RESONANCE_KEYS.map((k) => [
+    [...new Set([...RESONANCE_KEYS, ...resonances])].map((k) => [
       k,
       resonances.includes(k) ? resonanceScore(items, layout, k).tier : 0,
     ]),
@@ -565,7 +575,7 @@ export function analyzePack(
     hasWeapon: active.some((i) => i.slot === 'weapon'),
   };
 }
-export function finalAttributes(state: GameState, draft = false) {
+export function nonGuildAttributes(state: GameState, draft = false) {
   const a = analyzePack(
       state.inventory,
       draft ? state.draft : state.placements,
@@ -579,30 +589,32 @@ export function finalAttributes(state: GameState, draft = false) {
     (state.run.trainee?.tomeId
       ? { id: state.run.trainee.tomeId, level: state.run.trainee.tomeLevel ?? 1 }
       : null);
-  const t = tomeAttributes(bound?.id ?? null, bound?.level ?? 0),
-    g = guildMultiplier(state.meta.guildLevel ?? 1);
+  const t = tomeAttributes(bound?.id ?? null, bound?.level ?? 0);
   return {
     attack:
       (base.attack + a.attributes.attack) *
       (1 + state.run.growth.attack + state.run.eventGrowth.attack) *
       (1 + state.run.buffs.power * 0.12) *
-      (t.attack ?? 1) *
-      g,
+      (t.attack ?? 1),
     hp:
       (base.hp + state.run.growth.hp + state.run.eventGrowth.hp + a.attributes.hp) *
       (1 + state.run.buffs.vitality * 0.12) *
-      (t.hp ?? 1) *
-      g,
+      (t.hp ?? 1),
     defense:
       (base.defense +
         state.run.growth.defense +
         state.run.eventGrowth.defense +
         a.attributes.defense +
         state.run.buffs.defense * 3) *
-      (t.defense ?? 1) *
-      g,
+      (t.defense ?? 1),
     speed: base.speed + state.run.buffs.tempo * 2 + state.run.eventGrowth.speed,
   };
+}
+export function finalAttributes(state: GameState, draft = false) {
+  return applyGuild(
+    nonGuildAttributes(state, draft),
+    state.run.trainee?.guildBonus ?? emptyGuildBonus(),
+  );
 }
 export function buildSources(state: GameState, draft = false) {
   const a = analyzePack(
@@ -622,6 +634,9 @@ export function buildSources(state: GameState, draft = false) {
     healBonus: a.bonuses[i.id].heal,
     counterBonus: a.bonuses[i.id].counter,
     ranged: i.branch === 'archer',
+    family: equipmentFamily(i),
+    profession: i.profession,
+    smokeBonus: a.bonuses[i.id].smoke,
   }));
   const bound = state.run.boundTome;
   if (bound)
@@ -630,6 +645,7 @@ export function buildSources(state: GameState, draft = false) {
       name: bound.id,
       kind: 'tome',
       skills: tomeSkills(bound.id, bound.level),
+      profession: tome(bound.id)!.profession,
     });
   for (const key of state.run.resonances)
     if (a.tiers[key])
@@ -638,10 +654,11 @@ export function buildSources(state: GameState, draft = false) {
         name: RESONANCES[key].name,
         kind: 'resonance',
         skills: resonanceSkills(DESIGN_RESONANCE_IDS[key], a.tiers[key]),
+        profession: state.run.profession,
       });
-  return sources;
+  return applyTalentSources(sources, state.run.trainee?.talents ?? []);
 }
-export function analysis(state: GameState, draft = false) {
+export function analysis(state: GameState, draft = false, includeGuild = true) {
   const a = analyzePack(
     state.inventory,
     draft ? state.draft : state.placements,
@@ -650,7 +667,7 @@ export function analysis(state: GameState, draft = false) {
     state.run.resonances,
   );
   const estimate = estimateBuild(
-    finalAttributes(state, draft),
+    includeGuild ? finalAttributes(state, draft) : nonGuildAttributes(state, draft),
     buildSources(state, draft),
     a.active.some((i) => i.branch === 'assassin') && a.active.some((i) => i.branch === 'archer'),
   );

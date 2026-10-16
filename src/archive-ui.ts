@@ -1,3 +1,5 @@
+import { itemBadge } from './item-badge';
+import { talentMarkup } from './talents';
 import { bagCells, cells, dimensions, PROFESSIONS, RESONANCES, resonanceScore } from './backpack';
 import { QUALITIES } from './data';
 import { ATTRIBUTE_KEYS, ATTRIBUTES, TALENTS } from './hero';
@@ -20,7 +22,7 @@ export function archiveDetails(h: HeroRecord, tab: ArchiveTab) {
   const b = h.loadout;
   const content =
     tab === 'profile'
-      ? `<section class="archive-attributes"><h3>${realmName(h.realm)}</h3><p>${h.tomeId ? (tome(h.tomeId)?.name ?? '') : ''}${h.tomeLevel ? ' · Lv.' + h.tomeLevel : ''}</p><h3>当前属性</h3><div class="hero-stats"><span>攻击 <b>${h.stats.attack}</b></span><span>生命 <b>${h.stats.hp}</b></span><span>防御 <b>${h.stats.defense}</b></span><span>速度 <b>${h.stats.speed}</b></span></div><small>续航 ${h.stats.sustain}/回合</small></section><section class="archive-talents"><h3>起始天赋</h3><div class="talent-grid">${h.talents.map((k) => `<div class="talent-badge"><strong>${TALENTS[k].name}</strong><small>${TALENTS[k].description}</small></div>`).join('')}</div><p>${ATTRIBUTE_KEYS.map((k) => `${ATTRIBUTES[k].name} +${h.allocation[k]} 点`).join(' · ')}</p></section><div class="graduate-trials">${h.trials.map((t, n) => `<span class="${n < h.stages ? 'passed' : ''}">${STAGES[n]}<small>${n < h.stages ? TRIALS[t ?? 0].name : '未通过'}</small></span>`).join('')}</div><p class="archive-score">战力来源：成长 ${h.score.growth} + 构筑 ${h.score.build} + 表现 ${h.score.performance}</p>`
+      ? `<section class="archive-attributes"><h3>${realmName(h.realm)}</h3><p>${h.tomeId ? (tome(h.tomeId)?.name ?? '') : ''}${h.tomeLevel ? ' · Lv.' + h.tomeLevel : ''}</p><h3>当前属性</h3><div class="hero-stats"><span>攻击 <b>${h.stats.attack}</b></span><span>生命 <b>${h.stats.hp}</b></span><span>防御 <b>${h.stats.defense}</b></span><span>速度 <b>${h.stats.speed}</b></span></div><small>续航 ${h.stats.sustain}/回合</small></section><section class="archive-talents"><h3>起始天赋</h3><div class="talent-grid">${h.talents.map((k) => talentMarkup(k, h.loadout?.equipment ?? [])).join('')}</div><p>${ATTRIBUTE_KEYS.map((k) => `${ATTRIBUTES[k].name} +${h.allocation[k]} 点`).join(' · ')}</p></section><div class="graduate-trials">${h.trials.map((t, n) => `<span class="${n < h.stages ? 'passed' : ''}">${STAGES[n]}<small>${n < h.stages ? TRIALS[t ?? 0].name : '未通过'}</small></span>`).join('')}</div><p class="archive-score">战力来源：成长 ${h.score.growth} + 构筑 ${h.score.build} + 表现 ${h.score.performance}</p>`
       : tab === 'resonances'
         ? `<div class="archive-resonances">${
             h.resonances.length
@@ -40,7 +42,7 @@ export function archiveDetails(h: HeroRecord, tab: ArchiveTab) {
                   .map((p) => {
                     const item = b.equipment.find((i) => i.id === p.id)!,
                       d = dimensions(item, p);
-                    return `<svg class="pack-piece bound-piece" data-bound-item="${item.id}" data-owner="${h.id}" role="button" tabindex="0" aria-label="${esc(item.name)}，等级${item.level}" style="left:${(p.x / 7) * 100}%;top:${(p.y / 6) * 100}%;width:${(d.w / 7) * 100}%;height:${(d.h / 6) * 100}%;--item-color:${QUALITIES[item.quality].color};--item-fill:${QUALITIES[item.quality].color}33" viewBox="0 0 ${d.w * 100} ${d.h * 100}"><path class="item-outline" d="${shapePath(cells(item, p.rotation))}"/>${itemPainting(item, p.rotation, 'archive-' + h.id)}<text class="item-level" x="${cells(item, p.rotation)[0][0] * 100 + 12}" y="${cells(item, p.rotation)[0][1] * 100 + 25}">Lv.${item.level}</text></svg>`;
+                    return `<svg class="pack-piece bound-piece" data-bound-item="${item.id}" data-owner="${h.id}" role="button" tabindex="0" aria-label="${esc(item.name)}，等级${item.level}" style="left:${(p.x / 7) * 100}%;top:${(p.y / 6) * 100}%;width:${(d.w / 7) * 100}%;height:${(d.h / 6) * 100}%;--item-color:${QUALITIES[item.quality].color};--item-fill:${QUALITIES[item.quality].color}33" viewBox="0 0 ${d.w * 100} ${d.h * 100}"><path class="item-outline" d="${shapePath(cells(item, p.rotation))}"/>${itemPainting(item, p.rotation, 'archive-' + h.id)}${itemBadge(item)}</svg>`;
                   })
                   .join(
                     '',

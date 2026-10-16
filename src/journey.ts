@@ -167,7 +167,7 @@ export function eventStory(kind: EventKind, variant = 0, hasExtreme = true) {
     case 'ending':
       return '地牢的出口透出晨光。最后整理行囊，将这段冒险留在勇者的档案中。';
     case 'boss':
-      return '地牢深处的王座缓缓亮起。最后的试炼，将决定勇者的毕业之路。';
+      return '地牢深处的祭坛缓缓亮起。击败守关者，通过本次试炼，勇者将晋升一小阶境界。';
     default:
       return [
         '脚步声惊动了暗处的魔物，一场战斗即将开始。',

@@ -1,4 +1,6 @@
 import catalogue from './progression-catalogue.json';
+import { equipmentFamily, PROFESSION_CATEGORIES } from './categories';
+export { equipmentFamily } from './categories';
 import { readableEffect } from './item-rules';
 import type { Branch, Equipment, Profession, ResonanceKey } from './types';
 export interface Resonance {
@@ -38,24 +40,8 @@ function add(
     effects,
     kind: family ? 'item' : 'profession',
     description: effects.join(' / '),
-    matches: (i) => i.profession === profession && (!family || equipmentFamily(i) === family),
+    matches: (i) => (family ? equipmentFamily(i) === family : i.profession === profession),
   };
-}
-export function equipmentFamily(i: Equipment) {
-  if (i.branch === 'neutral') return 'accessory';
-  return (
-    {
-      blade: 'sword',
-      pole: 'spear',
-      guard: 'shield',
-      flame: 'staff',
-      ice: 'focus',
-      ward: 'robe',
-      assassin: 'knife',
-      archer: 'ranged',
-      leather: 'leather',
-    } as Record<string, string>
-  )[i.branch];
 }
 // Stable keys preserve saved resonance identities; effects come from the reviewed catalogue.
 export const DESIGN_RESONANCE_IDS: Record<string, string> = {
@@ -130,12 +116,12 @@ for (const r of proposals) {
           {
             剑: 'sword',
             枪: 'spear',
-            盾: 'shield',
+            防御: 'shield',
             法杖: 'staff',
-            魔导书: 'focus',
-            法袍: 'robe',
+            法球: 'focus',
+            辅助: 'support',
             匕首: 'knife',
-            弓弩: 'ranged',
+            弩: 'ranged',
             皮甲: 'leather',
           } as Record<string, string>
         )[r.series]
@@ -154,16 +140,45 @@ for (const r of proposals) {
   );
 }
 export const RESONANCE_KEYS = Object.keys(RESONANCES) as ResonanceKey[];
+// Existing graduates retain their selected slots. These six aliases never enter new draws.
+for (const [legacy, canonical] of Object.entries({
+  rogue_knife: 'warrior_sword',
+  rogue_leather: 'mage_robe',
+}))
+  for (const suffix of ['base', 'edge', 'master']) {
+    const key = `${legacy}_${suffix}` as ResonanceKey;
+    const d = RESONANCES[`${canonical}_${suffix}` as ResonanceKey];
+    RESONANCES[key] = {
+      ...d,
+      requires: suffix === 'base' ? [] : [`${legacy}_base` as ResonanceKey],
+    };
+    DESIGN_RESONANCE_IDS[key] = DESIGN_RESONANCE_IDS[`${canonical}_${suffix}`];
+  }
 export const resonanceMatch = (key: ResonanceKey, item: Equipment) => RESONANCES[key].matches(item);
 export function resonanceAvailable(
   key: ResonanceKey,
   profession: Profession,
   chosen: ResonanceKey[],
   initial = false,
+  availableFamilies = PROFESSION_CATEGORIES[profession],
 ) {
   const d = RESONANCES[key];
   return (
-    d.profession === profession &&
+    (d.kind === 'profession'
+      ? d.profession === profession
+      : availableFamilies.includes(
+          (
+            {
+              剑: 'sword',
+              枪: 'spear',
+              防御: 'shield',
+              法杖: 'staff',
+              法球: 'focus',
+              弩: 'ranged',
+              辅助: 'support',
+            } as Record<string, string>
+          )[d.series],
+        )) &&
     !chosen.includes(key) &&
     (!initial || d.rank === 1) &&
     (!d.requires.length || d.requires.some((k) => chosen.includes(k)))
@@ -171,7 +186,17 @@ export function resonanceAvailable(
 }
 export function validResonanceOrder(keys: ResonanceKey[], profession: Profession) {
   return keys.every(
-    (k, n) => !!RESONANCES[k] && resonanceAvailable(k, profession, keys.slice(0, n), n === 0),
+    (k, n) =>
+      !!RESONANCES[k] &&
+      resonanceAvailable(k, profession, keys.slice(0, n), n === 0, [
+        'sword',
+        'spear',
+        'shield',
+        'staff',
+        'focus',
+        'ranged',
+        'support',
+      ]),
   );
 }
 export function itemResonanceTiers(item: Equipment, tiers: Record<ResonanceKey, number>) {

@@ -20,10 +20,11 @@ const species: Record<string, number> = {
   bone_king: 18,
   queen: 19,
 };
+// Limited adaptation cannot erase improved equipment or purchased guild attributes.
 export const growthMultiplier = (ratio: number) =>
-  Math.max(0.75, ratio <= 2 ? Math.sqrt(Math.max(0, ratio)) : Math.sqrt(2) * (ratio / 2) ** 0.25);
-// Standard-build references rise with progress but are never selected by opposing class.
-export const referenceStrength = (progress: number) => 120 + progress * 320;
+  Math.max(0.8, Math.min(1.3, 1 + 0.25 * (ratio - 1)));
+export const referenceStrength = (progress: number) =>
+  140 + 420 * progress + 700 * progress * progress;
 export function generateEnemy(s: GameState, strength: number, random: () => number): Enemy {
   const route = runRoute(s),
     p = Math.min(1, s.run.index / (route.normal - 1)),
@@ -57,26 +58,19 @@ export function generateEnemy(s: GameState, strength: number, random: () => numb
   }
   const t = ENEMY_TEMPLATES.find((e) => e.id === id)!,
     g = growthMultiplier(Math.max(strength, 0.85 * s.run.peakStrength) / referenceStrength(p));
-  const c = s.run.chapter,
-    stageHp = [2.8, 3.4, 4][Math.max(0, stage)],
-    stageAttack = [1.1, 1.18, 1.25][Math.max(0, stage)];
-  const extreme = s.run.index >= route.extremeStart;
-  const newbieHp = c === 1 ? 0.85 : c === 2 ? 0.95 : 1,
-    newbieAttack = c === 1 ? 0.8 : c === 2 ? 0.9 : 1;
-  // Late loot strongly raises A through both item attributes and skill multipliers.
-  // Give normal encounters more room to act, without copying that growth one for one.
-  const pacingHp = boss ? 1 + 0.65 * p : 1 + 3 * p;
+  const c = Math.min(10, s.run.chapter),
+    extreme = s.run.index >= route.extremeStart;
+  const chapterHp = (1 + 0.13 * (c - 1)) ** 1.3;
+  const stageHp = (c <= 3 ? [1.8, 2, 2.2] : [1.35, 1.5, 1.65])[Math.max(0, stage)];
   const hp = Math.max(
     1,
     Math.round(
-      200 *
-        (1 + 1.4 * p) *
-        (1 + 0.1 * (c - 1)) *
+      (180 + 450 * p + 2100 * p * p) *
+        chapterHp *
         g *
-        (boss ? (extreme ? 4 * 1.25 : stageHp) : 1) *
+        (boss ? (extreme ? 2.2 : stageHp) : 1.35) *
         t.multipliers.hp *
-        newbieHp *
-        pacingHp,
+        (c === 1 ? 0.9 : 1),
     ),
   );
   return {
@@ -87,14 +81,13 @@ export function generateEnemy(s: GameState, strength: number, random: () => numb
     hp,
     maxHp: hp,
     attack:
-      12 *
-      (1 + 0.65 * p) *
-      (1 + 0.06 * (c - 1)) *
-      g ** 0.7 *
-      (boss ? (extreme ? 1.25 * 1.15 : stageAttack) : 1) *
+      (9 + 12 * p + 5 * p * p) *
+      (1 + 0.08 * (c - 1)) *
+      g ** 0.35 *
+      (boss ? (extreme ? 1.5 : 1.18 + 0.08 * Math.max(0, stage)) : 1) *
       t.multipliers.attack *
-      newbieAttack,
-    defense: (4 + 4 * p + 1.5 * (c - 1)) * t.multipliers.defense,
+      (c === 1 ? 0.85 : 1),
+    defense: (4 + 6 * p + 2.2 * (c - 1)) * t.multipliers.defense,
     speed: Math.max(
       1,
       Math.round((10 + Math.floor(3 * p) + Math.floor((c - 1) / 3)) * t.multipliers.speed),

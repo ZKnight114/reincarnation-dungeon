@@ -38,5 +38,7 @@ html = html
     '</body>',
     () => `<script type="module">${js.replaceAll('</script', '<\\/script')}</script></body>`,
   );
+// Keep generated source line endings consistent across Windows and CI builds.
+html = html.replace(/\r\n?/g, '\n');
 await writeFile(new URL('轮回地牢.html', root), html);
 console.log(`Standalone demo: 轮回地牢.html (${Math.round(Buffer.byteLength(html) / 1024)} KB)`);

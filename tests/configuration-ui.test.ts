@@ -149,7 +149,8 @@ test('returning to chapter changes destination while preserving recruited identi
   assert.equal(game.state.run.chapter, 2);
   assert.equal(win.document.querySelector('[data-action="recruit"]'), null);
   click('[data-action="resume-recruit"]');
-  assert.deepEqual(game.state.run.trainee, recruit);
+  assert.deepEqual(game.state.run.trainee, { ...recruit, realmStart: 1 });
+  assert.equal(game.state.run.realm, 1);
   assert.equal(game.state.meta.energy.value, 55);
   assert.match(el('.admission-file').textContent, /第 2 关/);
 });
@@ -256,4 +257,24 @@ test('paused battle steps one actor at a time and shows round, actor and integra
   click('[data-action="step-turn"]');
   assert.equal(game.state.combat.round, 2);
   assert.equal(loadSave()!.combat.round, 2);
+});
+
+test('heavy weapons display the first activation countdown before either actor moves and after reload', () => {
+  game = start();
+  const heavy = game.makeItem('warrior_blade_4');
+  game.state.inventory.push(heavy);
+  game.state.draft = [{ id: heavy.id, x: 2, y: 1, rotation: 0 }];
+  ui.replace(game);
+  click('[data-action="continue"]');
+  assert.equal(game.state.phase, 'combat');
+  assert.equal(game.state.combat.runtime!.timers[heavy.id + ':0'], undefined);
+  const label = () => el(`[data-pack-item="${heavy.id}"] .cooldown-label`).textContent;
+  assert.equal(label(), '2 回合');
+  game = new Game(parseSave(JSON.stringify(game.state)));
+  ui.replace(game);
+  assert.equal(label(), '2 回合');
+  game.advanceTurn();
+  ui.render();
+  assert.equal(game.state.combat.hits[heavy.id], 0);
+  assert.equal(label(), '1 回合');
 });

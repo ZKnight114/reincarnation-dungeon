@@ -102,7 +102,7 @@ test('upper merge preserves receiver, shape and zero contribution until packed; 
   assert.equal(g.mergeItems(a.id, b.id), null);
   assert.equal(g.findItem(a.id), null);
   assert.equal(b.level, 2);
-  assert.equal(b.quality, 'green');
+  assert.equal(b.quality, 'blue');
   assert.deepEqual(g.state.draft, layout);
   assert.ok(g.looseItems().includes(b));
   assert.equal(g.state.player.hp, hp);

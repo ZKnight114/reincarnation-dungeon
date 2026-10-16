@@ -134,7 +134,7 @@ const drag = (id: string, from: [number, number], to: [number, number], end = 'p
   );
 };
 test('guild to targeted recruit and configured hero flow has one entry; no removed controls remain', () => {
-  assert.equal(win.document.querySelectorAll('#home-screen button').length, 4);
+  assert.equal(win.document.querySelectorAll('#home-screen button').length, 5);
   begin();
   assert.equal(game.state.phase, 'opening');
   assert.equal(game.state.run.trainee!.talents.length, 4);
@@ -164,10 +164,11 @@ test('guild library and level controls survive render frames during a touch pres
   assert.equal(el('.guild-progress-controls [data-action="library"]'), library);
   assert.equal(el('.guild-progress-controls [data-action="guild-level"]'), level);
   library.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
-  assert.equal((el('#modal') as any).open, true);
-  assert.match(el('#modal-body').textContent, /公会典籍/);
-  assert.equal(win.document.querySelectorAll('.library-list section').length, 9);
-  click('[data-action="close"]');
+  assert.equal((el('#modal') as any).open, false);
+  assert.equal((el('#guild-feature-screen') as any).hidden, false);
+  assert.match(el('#guild-feature-screen').textContent, /公会典籍/);
+  assert.equal(win.document.querySelectorAll('.library-book').length, 9);
+  click('#guild-feature-screen [data-action="guild"]');
   level.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
   assert.match(el('#modal-body').textContent, /冒险公会 Lv.1/);
   assert.ok(el('[data-action="upgrade-guild"]'));
@@ -188,7 +189,8 @@ test('allocation precedes an independent nine-book screen, with class filters an
   assert.equal(win.document.querySelectorAll('[data-tome]').length, 3);
   click('[data-tome="mage_flame_tome"]');
   assert.match(el('.tome-effects').textContent, /灼烧/);
-  assert.match(el('.tome-source').textContent, /15%.*法师.*法杖/);
+  assert.equal(win.document.querySelector('.tome-source'), null);
+  assert.match(el('.tome-equipped').textContent, /焚星秘典/);
   assert.equal(game.state.meta.tomes.mage_flame_tome.level, 0);
   assert.equal(loadSave()!.phase, 'tome');
   click('[data-action="back-allocation"]');
@@ -207,7 +209,7 @@ test('detail layout names adjacency recipients, concrete effects and both fighte
   start();
   const sword = game.state.inventory.find((i) => i.templateId === 'warrior_blade_3')!;
   click(`[data-pack-item="${sword.id}"]`);
-  assert.match(el('.item-adjacency-effect').textContent, /每相邻1件盾.*自身直接伤害增加8%/);
+  assert.match(el('.item-adjacency-effect').textContent, /每相邻1件防御物品.*自身直接伤害增加8%/);
   assert.match(el('.item-native-effect').textContent, /人物攻击|人物最大生命/);
   assert.doesNotMatch(el('#equipment-detail').textContent, /%[AHD]|外给增幅|接受联动/);
   assert.equal(el('.item-description-header h2').textContent, sword.name + ' 【1阶】');
@@ -280,7 +282,7 @@ test('exact dragged duplicate merges into receiver without consuming a spare', (
   assert.equal(game.findItem(source.id), null);
   assert.ok(game.findItem(spare.id));
   assert.equal(game.state.draft[0].id, target.id);
-  assert.ok(el('.pack-piece').classList.contains('quality-green'));
+  assert.ok(el('.pack-piece').classList.contains('quality-blue'));
 });
 test('occupied backpack drop swaps when both fit, otherwise ejects to upper area', () => {
   start();
@@ -326,7 +328,7 @@ test('equipment is one continuous silhouette and one illustration with a round c
   const piece = el('.pack-piece');
   assert.equal(piece.querySelectorAll('.item-outline').length, 1);
   assert.equal(piece.querySelectorAll('.item-painting').length, 1);
-  assert.equal(piece.querySelectorAll('.item-level').length, 1);
+  assert.equal(piece.querySelectorAll('.item-category-badge').length, 1);
   assert.equal(piece.querySelectorAll('.cooldown-label').length, 1);
   assert.equal(win.document.querySelectorAll('.pack-piece').length, 1);
   assert.equal(i.templateId, 'warrior_blade_3');

@@ -16,13 +16,117 @@ import {
 import { battleRuntime, fighter } from './combat';
 import { ENEMY_TEMPLATES } from './enemies';
 import { ACTION_SECONDS, createState, ENERGY_CAP, STORY_SECONDS } from './game';
-import { ATTRIBUTE_KEYS, ATTRIBUTE_POINTS, pointsSpent, TALENT_KEYS, TALENTS } from './hero';
+import { ATTRIBUTE_KEYS, allocationLimit, pointsSpent } from './hero';
+import { CHAPTER_CAP, GUILD_CAP, GUILD_NODES, emptyGuildBonus, medalReward } from './guild';
+import { validTalents } from './talents';
 import { runRoute, stageGrowth } from './journey';
 import { emptyTomes, heroRating, tome, tomeBranch, TOMES } from './progression';
 import { resonanceAvailable, validResonanceOrder } from './resonances';
 import { itemSkills } from './skills';
 import type { Equipment, GameState, HeroRecord, Placement, Trainee } from './types';
 export const SAVE_KEY = 'recursion-dungeon-save-v15';
+const LEGACY_FOOTPRINTS: Record<string, [number, number][]> = {
+  mage_ice_4: [
+    [0, 0],
+    [1, 0],
+    [2, 0],
+    [2, 1],
+  ],
+  rogue_assassin_4: [
+    [0, 0],
+    [0, 1],
+    [1, 1],
+    [2, 1],
+  ],
+  rogue_archer_4: [
+    [0, 0],
+    [1, 0],
+    [2, 0],
+    [0, 1],
+  ],
+};
+function migrateItemRules(s: GameState) {
+  if (s.rulesRevision === 1 || s.rulesRevision === 2) return s;
+  const all = [
+    ...(s.inventory ?? []),
+    ...(s.run.starterOffers ?? []),
+    ...(s.run.dig?.equipment ?? []),
+    ...s.meta.heroes.flatMap((h) => h.loadout?.equipment ?? []),
+  ];
+  for (const i of all) {
+    if (LEGACY_FOOTPRINTS[i.templateId])
+      i.legacyCells = structuredClone(LEGACY_FOOTPRINTS[i.templateId]);
+    const d = definition(i);
+    i.name = d.name;
+    i.artKind = d.art;
+    i.quality = (['white', 'blue', 'purple', 'orange'] as const)[i.level - 1];
+  }
+  s.rulesRevision = 1;
+  if (s.combat.runtime) s.combat.runtime.sources = buildSources(s);
+  for (const h of s.meta.heroes)
+    h.resonanceTiers = Object.fromEntries(
+      h.resonances.map((k) => [
+        k,
+        resonanceScore(h.loadout?.equipment ?? [], h.loadout?.placements ?? [], k).tier,
+      ]),
+    );
+  return s;
+}
+function migrateRules(state: GameState) {
+  const s = migrateItemRules(state);
+  if (s.rulesRevision === 2) return s;
+  s.meta.medals = 0;
+  s.meta.guildPurchased = 0;
+  s.meta.guildHistory = {
+    trained: s.meta.heroes.length,
+    trials: s.meta.heroes.reduce((n, h) => n + h.stages, 0),
+    aRated: s.meta.heroes.filter((h) => ['A', 'S'].includes(h.rating)).length,
+    sRated: s.meta.heroes.filter((h) => h.rating === 'S').length,
+  };
+  // Preserve existing graduate attributes and immutable ratings; future upgrades add to them.
+  for (const h of s.meta.heroes) {
+    h.attributePoints = 12;
+    h.guildBonus = emptyGuildBonus();
+    h.guildBaseline = {
+      attack: h.stats.attack,
+      hp: h.stats.hp,
+      defense: h.stats.defense,
+      speed: h.stats.speed,
+    };
+  }
+  if (s.run.trainee) {
+    const p = (s.meta.guildLevel - 1) * 0.05;
+    s.run.trainee.attributePoints = 12;
+    s.run.trainee.guildBonus = {
+      ...emptyGuildBonus(),
+      attackPercent: p,
+      hpPercent: p,
+      defensePercent: p,
+    };
+  }
+  if (s.run.chapter > CHAPTER_CAP && ['home', 'chapter', 'configure', 'tome'].includes(s.phase)) {
+    s.run.chapter = CHAPTER_CAP;
+    if (s.run.trainee) {
+      s.run.trainee.realmStart = CHAPTER_CAP - 1;
+      s.run.realm = s.run.trainee.realmStart;
+    }
+  }
+  s.run.legacyChapter = s.run.chapter > CHAPTER_CAP;
+  s.meta.highestChapter = Math.min(CHAPTER_CAP, s.meta.highestChapter);
+  if (!s.run.trainee) s.run.chapter = Math.min(CHAPTER_CAP, s.run.chapter);
+  if (s.run.summary) {
+    s.run.summary.medals = 0;
+    s.run.summary.legacyRewards = true;
+  }
+  s.rulesRevision = 2;
+  return s;
+}
+function guildBonus(v: any) {
+  check(object(v) && Object.keys(v).length === 7);
+  for (const k of ['attack', 'hp', 'defense', 'attackPercent', 'hpPercent', 'defensePercent'])
+    check(number(v[k], 10000));
+  check(integer(v.points, 0, 4));
+}
 export function cleanLegacyData(_storage: Storage = localStorage) {
   /* Keep previous saves and backups intact. */
 }
@@ -42,9 +146,11 @@ function migrateV14(old: any) {
   s.meta.tomeGifts = [];
   s.meta.pendingPages = [];
   const upgrade = (i: Equipment) => {
+    if (LEGACY_FOOTPRINTS[i.templateId])
+      i.legacyCells = structuredClone(LEGACY_FOOTPRINTS[i.templateId]);
     i.level = Math.min(4, i.level);
     Object.assign(i, itemStats(i.templateId, i.level, i.profession));
-    i.quality = (['white', 'green', 'blue', 'purple'] as const)[i.level - 1];
+    i.quality = (['white', 'blue', 'purple', 'orange'] as const)[i.level - 1];
   };
   [...s.inventory, ...s.run.starterOffers, ...(s.run.dig?.equipment ?? [])].forEach(upgrade);
   s.run.highestItem = Math.min(4, s.run.highestItem);
@@ -216,16 +322,14 @@ function trainee(v: any): asserts v is Trainee {
       number(v.createdAt, 8.64e15) &&
       PROFESSION_KEYS.includes(v.profession) &&
       ['random', 'targeted'].includes(v.recruitment) &&
-      Array.isArray(v.talents) &&
-      v.talents.length === 4 &&
-      new Set(v.talents).size === 4 &&
-      v.talents.every((k: any) => TALENT_KEYS.includes(k)),
+      validTalents(v.talents, v.profession),
   );
-  for (const a of ATTRIBUTE_KEYS)
-    check(v.talents.filter((k: keyof typeof TALENTS) => TALENTS[k].attribute === a).length === 1);
   check(object(v.allocation) && Object.keys(v.allocation).length === 4);
-  for (const a of ATTRIBUTE_KEYS) check(integer(v.allocation[a], 0, ATTRIBUTE_POINTS));
-  check(pointsSpent(v as Trainee) <= ATTRIBUTE_POINTS);
+  check(v.attributePoints === undefined || integer(v.attributePoints, 12, 16));
+  if (v.guildBonus !== undefined) guildBonus(v.guildBonus);
+  for (const a of ATTRIBUTE_KEYS)
+    check(integer(v.allocation[a], 0, allocationLimit(v as unknown as Trainee)));
+  check(pointsSpent(v as Trainee) <= allocationLimit(v as unknown as Trainee));
   check(integer(v.realmStart, 0, 17));
   check(
     (v.tomeId === null && v.tomeLevel === 0) ||
@@ -237,8 +341,9 @@ function resonanceList(raw: any, profession: any) {
   check(validResonanceOrder(raw, profession));
   for (const k of raw)
     check(
-      RESONANCE_KEYS.includes(k) &&
-        RESONANCES[k as keyof typeof RESONANCES].profession === profession,
+      !!RESONANCES[k as keyof typeof RESONANCES] &&
+        (RESONANCES[k as keyof typeof RESONANCES].kind === 'item' ||
+          RESONANCES[k as keyof typeof RESONANCES].profession === profession),
     );
 }
 function trials(v: any, stages: number) {
@@ -251,10 +356,15 @@ function hero(v: any): asserts v is HeroRecord {
   check(
     integer(h.routeLength, 18, 37) &&
       integer(h.normalLength, 18, h.routeLength) &&
-      integer(h.guildAtGraduation, 1, 10) &&
+      integer(h.guildAtGraduation, 1, GUILD_CAP) &&
       h.realm === Math.min(20, (h.realmStart ?? 0) + h.stages),
   );
-  check(pointsSpent(v) === ATTRIBUTE_POINTS);
+  if (h.guildBaseline !== undefined) {
+    check(object(h.guildBaseline));
+    for (const k of ATTRIBUTE_KEYS) check(number(h.guildBaseline[k]));
+    check(h.guildBaseline.hp > 0);
+  }
+  check(pointsSpent(v) === allocationLimit(v));
   check(
     PROFESSION_KEYS.includes(h.profession) &&
       integer(h.chapter, 1, 20) &&
@@ -292,7 +402,7 @@ function hero(v: any): asserts v is HeroRecord {
       ([h.normalLength, h.routeLength].includes(h.completed) && h.stages === 3),
   );
   trials(h.trials, h.stages);
-  check(object(h.loadout));
+  check(h.loadout === null || object(h.loadout));
   if (h.loadout !== null) {
     const b = h.loadout;
     check(object(b) && Array.isArray(b.equipment) && b.equipment.length <= 42);
@@ -322,11 +432,16 @@ function item(v: any): asserts v is Equipment {
       d.branch === v.branch &&
       d.slot === v.slot &&
       d.damageType === v.damageType &&
-      v.quality === ['white', 'green', 'blue', 'purple', 'orange'][v.level - 1] &&
+      v.quality === ['white', 'blue', 'purple', 'orange'][v.level - 1] &&
       text(v.name, 80) &&
       text(v.artKind, 40),
   );
   const stats = itemStats(v.templateId, v.level, v.profession);
+  if (v.legacyCells !== undefined)
+    check(
+      JSON.stringify(v.legacyCells) === JSON.stringify(LEGACY_FOOTPRINTS[v.templateId]),
+      '旧版物品占格无效',
+    );
   for (const key of ['attack', 'hp', 'defense', 'potency'] as const)
     check(number(v[key]) && Math.abs(v[key] - stats[key]) < 1e-7);
 }
@@ -362,8 +477,13 @@ function allowedEquipment(i: Equipment, profession: string, tomeId?: string | nu
 export function parseSave(source: string): GameState {
   check(source.length < 6_000_000, '存档过大');
   const raw = JSON.parse(source);
+  check(object(raw) && [14, 15].includes(raw.version), '支持 v15 或 v14 公会存档');
   safeKeys(raw);
-  const s = raw.version === 14 ? migrateV14(raw) : raw;
+  check(
+    raw.version === 14 || raw.rulesRevision === undefined || [0, 1, 2].includes(raw.rulesRevision),
+    '不支持此规则版本的存档',
+  );
+  const s: any = migrateRules(raw.version === 14 ? migrateV14(raw) : (raw as GameState));
   safeKeys(s);
   if (object(s.meta) && object(s.meta.tomes) && s.meta.tomeGifts === undefined)
     s.meta.tomeGifts = PROFESSION_KEYS.filter((p) =>
@@ -388,7 +508,25 @@ export function parseSave(source: string): GameState {
     ].includes(s.phase),
   );
   check(object(s.meta) && object(s.run));
-  check(integer(s.meta.guildLevel, 1, 10) && integer(s.meta.staminaSpent) && object(s.meta.tomes));
+  check(
+    integer(s.meta.guildLevel, 1, GUILD_CAP) &&
+      integer(s.meta.staminaSpent) &&
+      object(s.meta.tomes),
+  );
+  check(
+    s.rulesRevision === 2 &&
+      integer(s.meta.medals) &&
+      integer(s.meta.guildPurchased, 0, GUILD_NODES.length),
+  );
+  check(GUILD_NODES.slice(0, s.meta.guildPurchased).every((n) => n.level <= s.meta.guildLevel));
+  const history = s.meta.guildHistory;
+  check(object(history));
+  for (const k of ['trained', 'trials', 'aRated', 'sRated']) check(integer(history[k]));
+  check(
+    history.sRated <= history.aRated &&
+      history.aRated <= history.trained &&
+      history.trials <= history.trained * 3,
+  );
   check(Object.keys(s.meta.tomes).length === TOMES.length);
   check(
     Array.isArray(s.meta.tomeGifts) &&
@@ -432,7 +570,7 @@ export function parseSave(source: string): GameState {
       Array.isArray(m.heroes) &&
       m.heroes.length <= 500 &&
       integer(m.heroSerial) &&
-      integer(m.highestChapter, 1, 20) &&
+      integer(m.highestChapter, 1, CHAPTER_CAP) &&
       integer(m.wins) &&
       integer(m.runs) &&
       integer(m.totalKills),
@@ -449,7 +587,7 @@ export function parseSave(source: string): GameState {
   check(
     object(r) &&
       PROFESSION_KEYS.includes(r.profession) &&
-      integer(r.chapter, 1, m.highestChapter) &&
+      integer(r.chapter, 1, r.legacyChapter ? 20 : m.highestChapter) &&
       integer(r.index, 0, runRoute(s as GameState).length - 1) &&
       integer(r.points) &&
       integer(r.kills, 0, 42) &&
@@ -502,7 +640,7 @@ export function parseSave(source: string): GameState {
       'summary',
     ].includes(s.phase)
   )
-    check(pointsSpent(r.trainee) === ATTRIBUTE_POINTS);
+    check(pointsSpent(r.trainee) === allocationLimit(r.trainee));
   check(object(r.buffs) && Object.keys(r.buffs).length === BUFF_KEYS.length);
   for (const k of BUFF_KEYS) check(integer(r.buffs[k], 0, 3));
   trials(r.trials, r.stages);
@@ -635,10 +773,19 @@ export function parseSave(source: string): GameState {
       );
       for (const k of a.resonances)
         check(
-          RESONANCE_KEYS.includes(k) &&
-            RESONANCES[k as keyof typeof RESONANCES].profession === r.profession &&
+          !!RESONANCES[k as keyof typeof RESONANCES] &&
+            (RESONANCES[k as keyof typeof RESONANCES].kind === 'item' ||
+              RESONANCES[k as keyof typeof RESONANCES].profession === r.profession) &&
             !r.resonances.includes(k) &&
-            resonanceAvailable(k, r.profession, r.resonances, s.phase === 'initial'),
+            resonanceAvailable(k, r.profession, r.resonances, s.phase === 'initial', [
+              'sword',
+              'spear',
+              'shield',
+              'staff',
+              'focus',
+              'ranged',
+              'support',
+            ]),
         );
       check(
         s.phase === 'initial' || (['elite', 'boss'].includes(current?.kind) && current.completed),
@@ -805,7 +952,7 @@ export function parseSave(source: string): GameState {
       );
       for (const x of f.statuses)
         check(
-          ['poison', 'burn', 'chill', 'break', 'mark'].includes(x.kind) &&
+          ['poison', 'burn', 'chill', 'break', 'mark', 'smoke'].includes(x.kind) &&
             number(x.value) &&
             integer(x.remaining, 1, 3) &&
             text(x.source),
@@ -814,7 +961,8 @@ export function parseSave(source: string): GameState {
     for (const map of [r.flags, r.timers, r.charges])
       check(Object.keys(map).length <= 1000 && Object.values(map).every((n) => number(n)));
     check(
-      JSON.stringify(r.sources) === JSON.stringify(buildSources(s as GameState)),
+      s.phase !== 'combat' ||
+        JSON.stringify(r.sources) === JSON.stringify(buildSources(s as GameState)),
       '战斗技能与构筑不一致',
     );
     check(
@@ -889,6 +1037,8 @@ export function parseSave(source: string): GameState {
             h.id === a.heroId && h.profession === a.profession && h.outcome === a.outcome,
         ),
     );
+    check(integer(a.medals));
+    if (!a.legacyRewards) check(a.medals === medalReward(s as unknown as GameState, a.outcome));
     check(a.gold === (a.outcome === 'win' ? (100 + a.chapter * 15) * (r.extreme ? 2 : 1) : 0));
   }
   check(
@@ -989,11 +1139,34 @@ export function parseSave(source: string): GameState {
 }
 export function saveGame(state: GameState) {
   state.lastSaveTime = Date.now();
-  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  const raw = JSON.stringify(state);
+  // Validate before writing; a broken live state must never destroy a recoverable save.
+  parseSave(raw);
+  const previous = localStorage.getItem(SAVE_KEY);
+  if (previous && previous !== raw) {
+    try {
+      for (let n = 3; n > 1; n--) {
+        const backup = localStorage.getItem(SAVE_KEY + '-backup-' + (n - 1));
+        if (backup) localStorage.setItem(SAVE_KEY + '-backup-' + n, backup);
+      }
+      localStorage.setItem(SAVE_KEY + '-backup-1', previous);
+    } catch {
+      /* A full backup quota must not block a validated primary save. */
+    }
+  }
+  localStorage.setItem(SAVE_KEY, raw);
 }
 export function loadSave() {
   const raw = localStorage.getItem(SAVE_KEY);
-  if (raw) return parseSave(raw);
+  if (raw) {
+    if (JSON.parse(raw).rulesRevision !== 2 && !localStorage.getItem(SAVE_KEY + '-before-15.2'))
+      try {
+        localStorage.setItem(SAVE_KEY + '-before-15.2', raw);
+      } catch {
+        /* Original key remains intact. */
+      }
+    return parseSave(raw);
+  }
   const previous = localStorage.getItem('recursion-dungeon-save-v14');
   if (!previous) return null;
   // Back up exact bytes before migration; leave both old and backup keys in place.

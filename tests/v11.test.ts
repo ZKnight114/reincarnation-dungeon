@@ -37,7 +37,7 @@ test('all 30 offered templates use exactly the reviewed silhouettes and names, w
       )
         assert.notEqual(d.slot, 'weapon');
     }
-  assert.equal(definition({ templateId: 'rogue_assassin_4' }).name, '刺杀双匕');
+  assert.equal(definition({ templateId: 'rogue_assassin_4' }).name, '影袭双剑');
 });
 test('every profession can pack all six gifts into the same initial 15 open cells', () => {
   for (const p of PROFESSION_KEYS) {

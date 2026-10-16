@@ -2,6 +2,7 @@ import { Game } from '../src/game';
 import { firstFree, runBagCells, cells } from '../src/backpack';
 import { seed, recruitToConfigure, prepare } from './helpers';
 import { parseSave } from '../src/save';
+import { GUILD_NODES } from '../src/guild';
 import type { Profession } from '../src/types';
 export function manage(g: Game) {
   let pair = true;
@@ -51,9 +52,18 @@ export function play(
   extreme = false,
   verbose = false,
   auxiliaryTome?: string,
+  options: {
+    guildLevel?: number;
+    trialTier?: 0 | 1 | 2;
+    fights?: { index: number; boss: boolean; rounds: number; survived: boolean }[];
+  } = {},
 ) {
   const g = new Game(undefined, seed(n), () => 1700000000000);
   g.state.meta.highestChapter = chapter;
+  g.state.meta.guildLevel = options.guildLevel ?? 1;
+  g.state.meta.guildPurchased = options.guildLevel
+    ? GUILD_NODES.filter((n) => n.level <= options.guildLevel!).length
+    : 0;
   recruitToConfigure(g, chapter, p);
   if (auxiliaryTome) {
     const error = g.selectTome(auxiliaryTome);
@@ -78,8 +88,16 @@ export function play(
         g.continueJourney();
         break;
       case 'combat': {
-        const r = g.state.combat.round;
+        const r = g.state.combat.round,
+          boss = !!s.enemy?.isBoss;
         g.advanceTurn();
+        if (s.phase !== 'combat')
+          options.fights?.push({
+            index: s.run.index + 1,
+            boss,
+            rounds: r,
+            survived: s.phase !== 'summary',
+          });
         if (verbose && s.phase !== 'combat')
           console.log(
             'fight',
@@ -117,7 +135,7 @@ export function play(
         const e = g.currentEvent()!;
         g.chooseEvent(
           e.kind === 'boss'
-            ? 'trial-0'
+            ? `trial-${options.trialTier ?? 0}`
             : e.kind === 'rest'
               ? 'heal'
               : e.kind === 'dig'

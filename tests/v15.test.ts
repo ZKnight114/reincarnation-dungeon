@@ -21,8 +21,9 @@ import {
   resonanceScore,
 } from '../src/backpack';
 import { itemSkills, tomeSkills, resonanceSkills } from '../src/skills';
-import { DESIGN_RESONANCE_IDS, RESONANCES } from '../src/resonances';
+import { DESIGN_RESONANCE_IDS, RESONANCES, RESONANCE_KEYS } from '../src/resonances';
 import { TOMES, guildConditions, currentHero, realmName } from '../src/progression';
+import { guildBenefits } from '../src/guild';
 import { chapterRoute } from '../src/journey';
 import { generateEnemy, growthMultiplier } from '../src/enemies';
 import { parseSave, loadSave, SAVE_KEY } from '../src/save';
@@ -36,8 +37,8 @@ import {
   setEnemy,
 } from './helpers';
 import type { Source } from '../src/skill-types';
-test('all fifty-four resonance descriptions spell out the attributes used by their skills', () => {
-  assert.equal(Object.keys(RESONANCES).length, 54);
+test('all forty-eight candidate resonance descriptions spell out the attributes used by their skills', () => {
+  assert.equal(RESONANCE_KEYS.length, 48);
   for (const resonance of Object.values(RESONANCES)) {
     assert.doesNotMatch(resonance.description, /%[AHD]|\b[AHD]\b/);
     for (const effect of resonance.effects) assert.doesNotMatch(effect, /%[AHD]|\b[AHD]\b/);
@@ -52,11 +53,11 @@ const model = (id = 'reference', sources: Source[] = []) =>
     sources,
     id,
   );
-test('thirty four-stage items, fifty-four independent resonances and nine three-stage tomes have executable definitions', () => {
+test('thirty four-stage items, forty-eight independent resonances and nine three-stage tomes have executable definitions', () => {
   for (const p of ['warrior', 'mage', 'rogue'] as const)
     for (const i of availableItems(p))
       for (let n = 1; n <= 4; n++) assert.doesNotThrow(() => itemSkills(i.id, n));
-  assert.equal(Object.keys(RESONANCES).length, 54);
+  assert.equal(RESONANCE_KEYS.length, 48);
   for (const id of Object.values(DESIGN_RESONANCE_IDS))
     for (let n = 1; n <= 3; n++) assert.ok(resonanceSkills(id, n).length);
   assert.equal(TOMES.length, 9);
@@ -126,6 +127,7 @@ test('automatic healing retains charges and readiness at full health, has three 
     e = new BattleEngine(r, 1);
   e.heroTurn();
   assert.deepEqual(r.charges, {});
+  e.heroTurn(); // Healing becomes ready on its independently configured first activation.
   assert.equal(r.timers['item-1:0'], 0);
   for (let n = 0; n < 8; n++) {
     r.hero.hp = 500;
@@ -355,13 +357,13 @@ test('short chapters retain three trial breakthroughs, four resonance choices an
     positionEvent(g, 'boss', index);
     g.state.enemy!.hp = 0;
     g.update(0.01);
-    assert.equal(g.state.run.realm, g.state.run.stages);
+    assert.equal(g.state.run.realm, g.state.run.trainee!.realmStart! + g.state.run.stages);
     assert.equal(g.state.run.realm, previous + 1);
     g.finishAwakening();
     g.chooseReward(0);
   }
   assert.equal(g.state.run.resonances.length, 4);
-  assert.equal(realmName(g.state.run.realm), '青铜初阶');
+  assert.equal(realmName(g.state.run.realm), '白银初阶');
 });
 test('five/twenty recruitment tracks cumulative energy; guild upgrades require all three conditions and buff existing heroes', () => {
   assert.equal(RECRUIT_COST, 5);
@@ -378,7 +380,11 @@ test('five/twenty recruitment tracks cumulative energy; guild upgrades require a
   g.state.meta.wins = 1;
   const saved = structuredClone(g.state.meta.heroes[0]);
   assert.equal(g.upgradeGuild(), null);
-  const boosted = currentHero(saved, g.state.meta.guildLevel);
+  assert.deepEqual(currentHero(saved, guildBenefits(0)).stats, saved.stats);
+  g.state.meta.medals = 12;
+  assert.equal(g.buyGuildNode(0), null);
+  assert.equal(g.buyGuildNode(1), null);
+  const boosted = currentHero(saved, guildBenefits(g.state.meta.guildPurchased));
   assert.ok(boosted.stats.attack > saved.stats.attack);
   assert.ok(boosted.power > saved.power);
   assert.equal(boosted.rating, saved.rating);

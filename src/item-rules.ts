@@ -9,9 +9,11 @@ export const LINK_EFFECT_NAMES = {
   heal: '技能治疗量',
   hp: '提供的生命属性',
   counter: '反击伤害',
+  smoke: '烟幕减伤强度',
 };
 export function readableEffect(text: string) {
   return text
+    .replace(/%H生命/g, '%H')
     .replace(/%H敌/g, '%敌人最大生命')
     .replace(/%A/g, '%人物攻击')
     .replace(/%H/g, '%人物最大生命')
@@ -25,13 +27,13 @@ export function adjacencyDescription(i: Equipment) {
   const labels: Record<string, string> = {
     blade: '剑',
     pole: '枪',
-    guard: '盾',
+    guard: '防御物品',
     flame: '法杖',
-    ice: '魔导书',
-    ward: '法袍',
-    assassin: '匕首',
-    archer: '弓弩',
-    leather: '皮甲',
+    ice: '法球',
+    ward: '魔法书',
+    assassin: '剑',
+    archer: '手弩',
+    leather: '炼金工具',
   };
   const effects = {
     damage: '自身直接伤害',
@@ -39,21 +41,18 @@ export function adjacencyDescription(i: Equipment) {
     heal: '自身技能恢复的生命',
     hp: '本物品提供的生命属性',
     counter: '自身反击伤害',
+    smoke: '自身烟幕减伤强度',
   };
   if (rule)
     return `每相邻1件${rule.branches.map((b) => labels[b]).join('或')}，${effects[rule.kind]}增加${Math.round(rule.amount * 100)}%，最多计算3件。同一物品接触多格只计算1次。`;
   if (i.branch === 'neutral') {
     const targets =
-      i.profession === 'warrior'
-        ? '剑、枪'
-        : i.profession === 'mage'
-          ? '法杖、魔导书'
-          : '匕首、弓弩';
+      i.profession === 'warrior' ? '剑、枪' : i.profession === 'mage' ? '法杖、法球' : '剑、手弩';
     const extra =
       i.level === 4 && i.profession === 'mage'
-        ? '相邻法袍的护盾增加10%。'
+        ? '相邻魔法书的护盾增加10%。'
         : i.level === 4 && i.profession === 'rogue'
-          ? '相邻皮甲的治疗量增加10%。'
+          ? '相邻炼金工具的烟幕减伤强度增加10%。'
           : '';
     return `为相邻${targets}增加${[8, 12, 16, 20][i.level - 1]}%直接伤害。${extra}每个目标最多接受2件同职业单格物品的增幅；持续伤害、反击、典籍和共鸣不受此增幅。`;
   }
@@ -62,14 +61,18 @@ export function adjacencyDescription(i: Equipment) {
   if (i.profession === 'mage')
     return '本物品没有专属相邻效果；相邻的四阶奥术水晶可增加本物品的技能护盾。';
   if (i.profession === 'rogue')
-    return '本物品没有专属相邻效果；相邻的四阶暗影宝石可增加本物品的技能治疗量。';
+    return '本物品没有专属相邻效果；相邻的四阶暗影宝石可增加本物品的烟幕减伤强度。';
   return '本物品没有专属相邻效果。';
 }
 export function receivingLink(i: Equipment) {
   const max = i.level === 4;
   const rules: Record<
     string,
-    { branches: string[]; kind: 'damage' | 'shield' | 'heal' | 'hp' | 'counter'; amount: number }
+    {
+      branches: string[];
+      kind: 'damage' | 'shield' | 'heal' | 'hp' | 'counter' | 'smoke';
+      amount: number;
+    }
   > = {
     warrior_blade_3: { branches: ['guard'], kind: 'damage', amount: max ? 0.12 : 0.08 },
     warrior_pole_4: { branches: ['pole'], kind: 'damage', amount: max ? 0.1 : 0.06 },
@@ -81,7 +84,7 @@ export function receivingLink(i: Equipment) {
     mage_ward_4: { branches: ['flame', 'ice'], kind: 'hp', amount: max ? 0.12 : 0.08 },
     rogue_assassin_3: { branches: ['assassin'], kind: 'damage', amount: max ? 0.1 : 0.06 },
     rogue_archer_3: { branches: ['leather'], kind: 'damage', amount: max ? 0.1 : 0.06 },
-    rogue_leather_3: { branches: ['assassin'], kind: 'heal', amount: max ? 0.15 : 0.1 },
+    rogue_leather_3: { branches: ['assassin'], kind: 'smoke', amount: max ? 0.15 : 0.1 },
     rogue_leather_4: { branches: ['assassin', 'archer'], kind: 'hp', amount: max ? 0.12 : 0.08 },
   };
   return rules[i.templateId];

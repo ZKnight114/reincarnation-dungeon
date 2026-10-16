@@ -25,16 +25,34 @@ const status = (kind: SkillAction['status'], value: number, duration: number): S
   a: value / 100,
   duration,
 });
+const smoke = (value: number, duration = 1): SkillAction => ({
+  kind: 'smoke',
+  a: value / 100,
+  duration,
+});
 const periodic = (cooldown: number, ...actions: SkillAction[]): Skill => ({ cooldown, actions });
 const reactive = (trigger: Skill['trigger'], ...actions: SkillAction[]): Skill => ({
   cooldown: 0,
   trigger,
-  once: trigger !== 'shieldHit' && trigger !== 'tome',
+  once: trigger !== 'shieldHit' && trigger !== 'tome' && trigger !== 'support',
   actions,
 });
 
-// Values are executable counterparts of the reviewed four-stage item table.
+// First activation is separate from recurring cooldown. Defensive openers remain immediate.
 export function itemSkills(id: string, level: number): Skill[] {
+  const delay = id.endsWith('_4') ? 3 : id.endsWith('_3') ? 2 : 1;
+  const defensive = id.includes('guard') || id.includes('ward') || id.includes('leather');
+  return nativeItemSkills(id, level).map((skill) =>
+    skill.cooldown
+      ? {
+          ...skill,
+          initialDelay: defensive && !skill.actions.some((a) => a.kind === 'heal') ? 1 : delay,
+        }
+      : skill,
+  );
+}
+// Values are executable counterparts of the reviewed four-stage item table.
+function nativeItemSkills(id: string, level: number): Skill[] {
   const n = (v: number[]) => at(v, level),
     gold = level === 4;
   switch (id) {
@@ -177,14 +195,11 @@ export function itemSkills(id: string, level: number): Skill[] {
         ),
       ];
     case 'rogue_leather_2':
-      return [periodic(2, heal(n([2, 3, 4, 5])))];
+      return [periodic(2, smoke(n([10, 13, 16, 20])))];
     case 'rogue_leather_3':
-      return [periodic(n([3, 3, 2, 2]), shield(n([4, 5, 5, 6])), heal(n([1, 2, 2, 3])))];
+      return [periodic(n([3, 3, 2, 2]), smoke(n([14, 18, 22, 26])))];
     case 'rogue_leather_4':
-      return [
-        periodic(3, shield(n([7, 9, 11, 13]))),
-        ...(gold ? [reactive('low30', heal(5))] : []),
-      ];
+      return [periodic(3, smoke(n([18, 22, 26, 30]), 2))];
     default:
       throw new Error('未定义物品技能：' + id);
   }
@@ -282,7 +297,7 @@ export function tomeSkills(id: string, level: number): Skill[] {
       return [
         periodic(
           4,
-          hit(n([25, 35, 45]), 'physical', { when: 'selfLow' }),
+          hit(n([25, 35, 45]), 'physical', { when: 'smoke' }),
           shield(n([5, 7, 9])),
           heal(n([2, 3, 4])),
         ),
@@ -383,13 +398,13 @@ export function resonanceSkills(id: string, tier: number): Skill[] {
       return rank === 1
         ? [periodic(3, shield(n([3, 5, 7])))]
         : rank === 2
-          ? conditional([25, 40, 55], [15, 25, 35], 'mixed')
+          ? conditional([25, 40, 55], [15, 25, 35], 'smoke')
           : [reactive('low50', heal(n([3, 5, 7])), shield(n([4, 6, 8])))];
     case 'warrior_sword':
       return rank === 1
         ? basicHit([25, 40, 55])
         : rank === 2
-          ? conditional([20, 30, 40], [15, 25, 35], 'shield')
+          ? [periodic(3, hit(n([20, 30, 40])), hit(n([15, 25, 35])))]
           : [
               periodic(
                 4,
@@ -436,7 +451,7 @@ export function resonanceSkills(id: string, tier: number): Skill[] {
         ? [periodic(3, shield(n([3, 5, 7])))]
         : rank === 2
           ? [periodic(4, heal(n([1, 2, 3]), n([5, 8, 11])))]
-          : [reactive('shieldBreak', shield(n([4, 6, 8])), hit(n([25, 40, 55]), 'magic'))];
+          : [reactive('support', hit(n([20, 35, 50]), 'magic'), shield(n([2, 3, 4])))];
     case 'rogue_knife':
       return rank === 1
         ? basicHit([15, 22, 29], 2)

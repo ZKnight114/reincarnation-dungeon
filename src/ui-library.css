@@ -1,0 +1,872 @@
+/* Approved v19 art. Keep imagery separate from labels and game rules. */
+#app,
+body.playing #app {
+  /* A scaled canvas must not become a focus-scroll container at its raw height. */
+  overflow: clip;
+}
+:root {
+  --ui-secondary: url('./assets/ui/skins/secondary-normal.png');
+  --ui-secondary-pressed: url('./assets/ui/skins/secondary-pressed.png');
+  --ui-primary: url('./assets/ui/skins/primary-normal.png');
+  --ui-primary-pressed: url('./assets/ui/skins/primary-pressed.png');
+  --ui-disabled: url('./assets/ui/skins/disabled.png');
+  --ui-selected: url('./assets/ui/skins/selected.png');
+  --ui-combat: url('./assets/ui/skins/combat.png');
+  --ui-magic: url('./assets/ui/skins/magic.png');
+  --ui-danger: url('./assets/ui/skins/danger.png');
+}
+.ui-icon,
+.ui-control,
+.tome-art {
+  object-fit: contain;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.ui-icon {
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+}
+.ui-control {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+}
+.tome-art {
+  width: 40px;
+  height: 40px;
+}
+
+/* Apply skins to action controls; equipment and reward cards keep their own layout. */
+#app button.primary-button,
+#app button.secondary-button,
+#app .guild-progress-controls button,
+#app .home-settings,
+#app .attribute-controls button,
+#app .allocation-heading button,
+#app .recruit-tabs button,
+#app .roster-pagination button,
+#app .roster-filters button,
+#app .header-actions button,
+.guild-feature-screen button,
+.tome-select .tome-filters button,
+#modal button,
+#decision-sheet .event-actions button,
+#decision-sheet button.primary-button,
+#adventure-screen .adventure-footer > button,
+#adventure-screen .footer-main > button {
+  --ui-skin: var(--ui-secondary);
+  border: 8px solid transparent;
+  border-image: var(--ui-skin) 19 fill stretch;
+  border-radius: 0;
+  background: transparent;
+  color: #e9dfc5;
+  box-shadow: none;
+  image-rendering: pixelated;
+  transition: filter 0.1s;
+}
+#app button.primary-button,
+#modal button.primary-button,
+#decision-sheet button.primary-button {
+  --ui-skin: var(--ui-primary);
+  color: #392c1e;
+}
+#app button.primary-button:active,
+#modal button.primary-button:active,
+#decision-sheet button.primary-button:active {
+  --ui-skin: var(--ui-primary-pressed);
+}
+#app .guild-progress-controls button:active,
+.guild-feature-screen button:active,
+#modal button:active,
+#app .recruit-tabs button:active {
+  --ui-skin: var(--ui-secondary-pressed);
+}
+#app .tome-filters button.selected,
+#app .recruit-tabs button.selected,
+#app .roster-filters button.selected {
+  --ui-skin: var(--ui-selected);
+}
+#app button.primary-button:disabled,
+#app .recruit-tabs button:disabled,
+#adventure-screen .adventure-footer > button:disabled,
+#modal button:disabled,
+#decision-sheet button.primary-button:disabled {
+  --ui-skin: var(--ui-disabled);
+  color: #a5afa4;
+}
+#app .guild-progress-controls button {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 3px;
+  min-height: 46px;
+  font-size: 12px;
+}
+#app .guild-progress-controls {
+  top: 25%;
+  left: 4%;
+  right: 4%;
+  flex-wrap: nowrap;
+}
+#app .guild-progress-controls .ui-icon {
+  width: 22px;
+  height: 22px;
+}
+#app .home-settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 3px;
+  min-height: 42px;
+  width: 76px;
+}
+#app .guild-expedition {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+#app .guild-expedition .ui-icon {
+  width: 32px;
+  height: 32px;
+}
+#app .guild-nav .ui-icon {
+  width: 42px;
+  height: 42px;
+  margin: 0;
+}
+#guild-wallet .ui-icon {
+  width: 17px;
+  height: 17px;
+  margin-right: 4px;
+}
+#app .header-actions button {
+  padding: 0;
+  width: 36px;
+  height: 36px;
+}
+#app .header-actions button .ui-icon {
+  width: 20px;
+  height: 20px;
+}
+#app .attribute-controls button {
+  padding: 0;
+  min-height: 32px;
+}
+
+/* Retain footer geometry: the reforge drop target must not overlap the grid. */
+#adventure-screen .adventure-footer > button {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+#adventure-screen .adventure-footer .reforge-button .ui-icon {
+  width: 18px;
+  height: 18px;
+}
+#adventure-screen .adventure-footer .reforge-button span,
+#adventure-screen .adventure-footer .reforge-button small {
+  font-size: 10px;
+  line-height: 10px;
+}
+#adventure-screen .adventure-footer .backpack-button .ui-icon {
+  width: 25px;
+  height: 25px;
+}
+#adventure-screen .adventure-footer .speed-button .ui-control {
+  width: 19px;
+  height: 19px;
+}
+#adventure-screen .adventure-footer[data-tone] .footer-main .primary-button {
+  border: 8px solid transparent;
+  border-image: var(--ui-skin) 19 fill stretch;
+  background: transparent;
+  box-shadow: none;
+  color: #e9dfc5;
+}
+#adventure-screen .adventure-footer[data-tone='loot'] .footer-main .primary-button {
+  --ui-skin: var(--ui-combat);
+}
+#adventure-screen .adventure-footer[data-tone='explore'] .footer-main .primary-button {
+  --ui-skin: var(--ui-selected);
+}
+#adventure-screen .adventure-footer[data-tone='journey'] .footer-main .primary-button {
+  --ui-skin: var(--ui-secondary);
+}
+#adventure-screen .adventure-footer[data-tone='resonance'] .footer-main .primary-button {
+  --ui-skin: var(--ui-magic);
+}
+#adventure-screen .adventure-footer[data-tone='graduate'] .footer-main .primary-button {
+  --ui-skin: var(--ui-primary);
+  color: #392c1e;
+}
+#adventure-screen .adventure-footer[data-tone='battle'] .footer-main > button {
+  --ui-skin: var(--ui-combat);
+  background: transparent;
+  color: #e9dfc5;
+}
+#modal .danger-button {
+  --ui-skin: var(--ui-danger);
+}
+
+/* Feature pages use the existing 390 × 844 game canvas, with fixed bottom actions. */
+#guild-feature-screen {
+  position: absolute;
+  inset: 0;
+  width: 390px;
+  height: 844px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px 14px;
+  overflow: hidden;
+  background: radial-gradient(ellipse at top, #243b3d, #102329 60%);
+}
+#guild-feature-screen[hidden] {
+  display: none;
+}
+.feature-header {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 56px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--line);
+}
+.feature-header h1 {
+  font-size: 21px;
+  letter-spacing: 1px;
+  margin: 0;
+}
+#app .feature-header .feature-back {
+  position: absolute;
+  left: 0;
+  border: 0;
+  border-image: none;
+  background: none;
+  padding: 0;
+  height: 44px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.feature-back .ui-control {
+  width: 14px;
+  height: 14px;
+}
+#app .tome-filters {
+  display: flex;
+  flex-shrink: 0;
+  height: 44px;
+  gap: 6px;
+  margin: 0;
+}
+#app .tome-filters button {
+  flex: 1;
+  min-width: 0;
+  padding: 0 3px;
+  border-width: 6px;
+  font-size: 12px;
+}
+.feature-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 46px;
+  flex-shrink: 0;
+}
+.feature-footer small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.feature-footer button {
+  height: 44px;
+  padding: 0 5px;
+  font-size: 12px;
+}
+
+/* Inline chosen effects remain; extra helper text and the separate details button are removed. */
+#selection-screen.tome-select {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 16px 14px;
+  background: radial-gradient(ellipse at top, #243b3d, #102329 60%);
+}
+#selection-screen.tome-select > .feature-header {
+  position: relative;
+  inset: auto;
+  margin: 0;
+  height: 56px;
+  width: 100%;
+  padding: 0;
+}
+#selection-screen.tome-select .tome-dossier {
+  position: static;
+  inset: auto;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#selection-screen .tome-hero {
+  height: 92px;
+  flex-shrink: 0;
+  border: 0;
+  gap: 15px;
+}
+#selection-screen .tome-hero .hero-art {
+  width: 50px;
+  height: 82px;
+  padding: 0;
+  margin: 0;
+}
+#selection-screen .tome-hero img {
+  width: 50px;
+  height: 82px;
+}
+#selection-screen .tome-hero h2 {
+  font-size: 16px;
+}
+#selection-screen .tome-hero p {
+  margin: 5px 0 0;
+}
+#selection-screen .tome-preview {
+  display: flex;
+  height: 184px;
+  flex-shrink: 0;
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--line);
+  background: #233b3e;
+  box-shadow: inset 0 0 0 3px #132c30;
+}
+#selection-screen .tome-equipped {
+  width: 100px;
+  flex-shrink: 0;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-image: none;
+  background: #1b3034;
+  padding: 8px;
+  gap: 5px;
+  color: var(--ink);
+}
+#selection-screen .tome-equipped .tome-art {
+  width: 52px;
+  height: 52px;
+  align-self: center;
+}
+#selection-screen .tome-equipped strong {
+  font-size: 12px;
+}
+#selection-screen .tome-equipped small {
+  font-size: 11px;
+  color: var(--muted);
+}
+#selection-screen .tome-effects {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 10px;
+  overflow-y: auto;
+}
+#selection-screen .tome-effects h3 {
+  margin: 0;
+  font-size: 12px;
+  color: var(--gold);
+}
+#selection-screen .tome-effects p {
+  font-size: 11px;
+  line-height: 17px;
+  margin: 5px 0 0;
+}
+.tome-caption {
+  margin: 0;
+  font-size: 11px;
+  line-height: 17px;
+  flex-shrink: 0;
+}
+#selection-screen .tome-catalogue {
+  height: auto;
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  grid-auto-rows: auto;
+  gap: 6px;
+  overflow: hidden;
+}
+#selection-screen .tome-card {
+  min-height: 0;
+  padding: 4px 2px;
+  gap: 2px;
+  border: 1px solid #5a6659;
+  background: #1e3337;
+  color: #d4dcc8;
+  box-shadow: inset 0 0 0 2px #14282d;
+}
+#selection-screen .tome-card.selected {
+  border: 2px solid #d2b473;
+  background: #2c4140;
+  padding: 3px 1px;
+}
+#selection-screen .tome-card .tome-art {
+  width: 38px;
+  height: 38px;
+}
+#selection-screen .tome-card small {
+  font-size: 10px;
+  line-height: 12px;
+}
+#selection-screen .tome-card strong {
+  font-size: 12px;
+}
+#selection-screen .tome-card.locked {
+  color: #788c86;
+  background: #152a2e;
+}
+#selection-screen .tome-card.locked .tome-art {
+  filter: grayscale(0.8);
+  opacity: 0.4;
+}
+#selection-screen .tome-start {
+  position: static;
+  inset: auto;
+  margin: 0;
+  width: 100%;
+  height: 50px;
+  min-height: 50px;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+/* Shelves hold the same nine books; filtering never changes ownership. */
+.library-meta,
+.guild-route-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 34px;
+  flex-shrink: 0;
+  color: var(--gold);
+  font-size: 13px;
+}
+.library-meta span,
+.guild-route-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.library-shelves {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 6px;
+}
+.library-shelf {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding-bottom: 18px;
+}
+.library-shelf::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 14px;
+  background: url('./assets/ui/shelf-plank.png') repeat-x center/96px 16px;
+  image-rendering: pixelated;
+  box-shadow: 0 6px 8px #051519;
+  pointer-events: none;
+}
+#app .library-book {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  min-width: 0;
+  padding: 2px 0;
+  border: 0;
+  border-image: none;
+  background: none;
+  color: var(--ink);
+  box-shadow: none;
+  font-weight: 400;
+}
+.library-book .tome-art {
+  width: 62px;
+  height: 70px;
+}
+.library-book strong {
+  font-size: 12px;
+}
+.library-book small {
+  font-size: 10px;
+  line-height: 14px;
+}
+.library-book:not(.locked) small:last-child {
+  color: #85bcdf;
+}
+#app .library-book.locked {
+  color: #7d928d;
+}
+.library-book.locked .tome-art {
+  filter: grayscale(0.75);
+  opacity: 0.35;
+}
+.library-note {
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
+  padding-top: 10px;
+}
+.library-note h3 {
+  margin: 0;
+  font-size: 12px;
+  color: var(--gold);
+}
+.library-note p {
+  margin: 5px 0 0;
+  font-size: 11px;
+  line-height: 18px;
+  color: var(--muted);
+}
+
+/* Secondary tome detail uses blue / purple / gold without losing the rank on selection. */
+#modal.tome-modal {
+  width: min(350px, calc(100vw - 32px));
+  max-width: none;
+  height: min(560px, calc(100dvh - 48px));
+  max-height: none;
+  padding: 16px;
+  border: 3px solid #987544;
+  border-radius: 0;
+  background: #dfcea7;
+  color: #372d22;
+  box-shadow:
+    inset 0 0 0 2px #f0dfba,
+    0 10px 30px #0008;
+  overflow: hidden;
+}
+#modal.tome-modal::backdrop,
+#modal.guild-total-modal::backdrop {
+  background: #021216c7;
+  backdrop-filter: blur(2px);
+}
+.tome-modal #modal-body {
+  height: 100%;
+}
+.tome-modal .modal-close {
+  display: none;
+}
+.tome-detail {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tome-detail > header {
+  display: flex;
+  gap: 12px;
+  height: 66px;
+  flex-shrink: 0;
+  align-items: center;
+  position: relative;
+  padding-right: 26px;
+}
+.tome-detail header .tome-art {
+  width: 49px;
+  height: 60px;
+}
+#modal .tome-detail h2 {
+  color: #493523;
+  font-size: 18px;
+  margin: 0 0 7px;
+}
+.tome-detail header small {
+  font-size: 11px;
+  color: #6c5944;
+}
+#modal .tome-detail .detail-close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-image: none;
+  padding: 0;
+  background: #795934;
+}
+.tome-ranks {
+  display: flex;
+  height: 42px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.tome-ranks button {
+  flex: 1;
+  padding: 0;
+}
+#modal .tome-ranks .rank-1 {
+  --ui-skin: var(--ui-combat);
+}
+#modal .tome-ranks .rank-2 {
+  --ui-skin: var(--ui-magic);
+}
+#modal .tome-ranks .rank-3 {
+  --ui-skin: var(--ui-primary);
+  color: #392c1e;
+}
+#modal .tome-ranks button[aria-pressed='true'] {
+  outline: 1px solid #684b24;
+  outline-offset: 2px;
+}
+.tome-detail-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #9f8050 #d2bd94;
+}
+.tome-detail-body section {
+  padding: 10px 0;
+  border-bottom: 1px solid #b29a73;
+}
+.tome-detail-body section:last-child {
+  border-bottom: 0;
+}
+.tome-detail h3 {
+  font-size: 12px;
+  margin: 0;
+}
+#modal .tome-detail p {
+  font-size: 12px;
+  line-height: 20px;
+  margin: 7px 0 0;
+}
+.tome-detail-status {
+  flex-shrink: 0;
+  padding-top: 9px;
+  border-top: 1px solid #b29a73;
+  font-size: 11px;
+  line-height: 18px;
+}
+.tome-detail > .primary-button {
+  height: 48px;
+  flex-shrink: 0;
+  padding: 0 3px;
+  font-size: 12px;
+}
+
+/* A single continuous snake route, expandable by vertical scrolling. */
+.guild-route-overview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.guild-route-overview p {
+  font-size: 11px;
+  line-height: 19px;
+  margin: 0;
+  color: var(--muted);
+}
+.guild-route-overview button {
+  padding: 0 3px;
+  height: 44px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.guild-feature-screen .guild-route-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  touch-action: pan-y;
+  scrollbar-color: #79684b #102329;
+}
+.guild-route-content {
+  position: relative;
+  width: 100%;
+}
+.guild-route-content > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.guild-feature-screen .guild-route-node {
+  position: absolute;
+  width: 86px;
+  height: 104px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  border-image: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  outline: none;
+  color: var(--ink);
+  text-align: center;
+}
+.guild-feature-screen .guild-route-node::after {
+  display: none;
+}
+.guild-feature-screen .guild-node-symbol {
+  display: grid;
+  place-items: center;
+  position: relative;
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border: 0;
+  border-radius: 0;
+  background: url('./assets/ui/skins/node-normal.png') center/contain no-repeat;
+  image-rendering: pixelated;
+}
+.guild-feature-screen .guild-node-symbol > span {
+  position: relative;
+  width: 36px;
+  height: 36px;
+}
+.guild-feature-screen .guild-node-symbol .ui-icon {
+  width: 36px;
+  height: 36px;
+}
+.guild-node-symbol i {
+  position: absolute;
+  bottom: -6px;
+  right: -4px;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 14px;
+  color: #e4cf8f;
+  text-shadow: 1px 1px #071015;
+}
+.guild-feature-screen .guild-route-node.purchased .guild-node-symbol,
+.guild-feature-screen .guild-route-node.selected .guild-node-symbol {
+  background-image: url('./assets/ui/skins/node-active.png');
+}
+.guild-feature-screen .guild-route-node.selected .guild-node-symbol {
+  filter: drop-shadow(0 0 4px #c39e4c);
+  outline: 1px solid #d4b573;
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+.guild-feature-screen .guild-route-node.locked {
+  opacity: 0.72;
+}
+.guild-feature-screen .guild-route-node.locked .guild-node-symbol {
+  background-image: url('./assets/ui/skins/node-locked.png');
+  filter: grayscale(0.7);
+}
+.guild-feature-screen .guild-route-node.critical .guild-node-symbol {
+  background: #273d3d;
+  border: 2px solid #baa164;
+  border-radius: 5px;
+  outline: 1px solid #796340;
+  outline-offset: 3px;
+  width: 50px;
+  height: 50px;
+  margin: 5px;
+  transform: rotate(45deg);
+}
+.guild-feature-screen .guild-route-node.critical .guild-node-symbol > span {
+  transform: rotate(-45deg);
+}
+.guild-feature-screen .guild-route-node strong {
+  font-size: 11px;
+  font-weight: 400;
+  background: #102329;
+  margin: 0;
+  padding: 0 2px;
+}
+.guild-feature-screen .guild-route-node small {
+  font-size: 10px;
+  color: #b8c5b5;
+  background: #102329;
+  margin: 0;
+  padding: 0 2px;
+}
+.guild-feature-screen .guild-route-node.available small {
+  color: #e5c479;
+}
+.guild-node-check {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #b69e64;
+  border-radius: 50%;
+  background: #233b3d;
+  color: #edd99c;
+  font-size: 10px;
+}
+.guild-level-label {
+  position: absolute;
+  left: 8px;
+  font-size: 10px;
+  color: #a5b09e;
+  background: #102329;
+  padding: 1px 3px;
+  pointer-events: none;
+}
+.guild-route-footer {
+  display: flex;
+  flex-shrink: 0;
+  padding: 3px 0 0;
+}
+.guild-route-footer > button {
+  height: 50px;
+  width: 100%;
+  padding: 0;
+}
+#modal.guild-total-modal {
+  width: min(350px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  border-radius: 0;
+  border: 3px solid #987544;
+  background: #dfcea7;
+  color: #372d22;
+}
+#modal.guild-total-modal h2 {
+  color: #493523;
+  font-size: 20px;
+}

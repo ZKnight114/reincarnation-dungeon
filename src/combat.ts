@@ -101,6 +101,7 @@ export class BattleEngine {
     if (['poison', 'burn', 'chill', 'break', 'mark'].includes(c))
       return this.has(target, c as StatusKind);
     if (c === 'shield') return self.shield > 0;
+    if (c === 'smoke') return this.has(self, 'smoke');
     if (c === 'first') return this.r.heroFirst;
     if (c === 'mixed') return this.r.mixed;
     if (c === 'icefire') return this.has(target, 'burn') && this.has(target, 'chill');
@@ -152,9 +153,12 @@ export class BattleEngine {
         (type === 'true' ? 1 : 60 / (60 + defense * (1 - ignore) * (type === 'magic' ? 0.7 : 1)))
       : damageValue(raw, type, defense, self.profession, target.profession, ignore) *
         (side === 'enemy' ? this.enemyScale() : 1);
-    const absorbed = Math.min(shield, amount);
+    const protectedAmount = direct
+      ? amount * (1 - Math.min(0.45, statusValue(target, 'smoke')))
+      : amount;
+    const absorbed = Math.min(shield, protectedAmount);
     target.shield -= absorbed;
-    target.hp = Math.max(0, target.hp - (amount - absorbed));
+    target.hp = Math.max(0, target.hp - (protectedAmount - absorbed));
     if (side === 'hero')
       this.emit({ source, kind: 'damage', amount: absorbed + before - target.hp });
     else {
@@ -162,13 +166,38 @@ export class BattleEngine {
       this.emit({ source: 'hero', kind: 'hurt', amount: before - target.hp });
     }
     this.phase();
+    if (side === 'hero' && direct && before > target.hp && this.r.hero.hp > 0) {
+      const src = this.r.sources.find((s) => s.id === source);
+      const key = 'talentLifesteal:' + this.round;
+      const healed = Math.max(
+        0,
+        Math.min(
+          (before - target.hp) * (src?.lifesteal ?? 0),
+          self.maxHp * 0.02 - (this.r.flags[key] ?? 0),
+          self.maxHp - self.hp,
+        ),
+      );
+      self.hp += healed;
+      this.r.flags[key] = (this.r.flags[key] ?? 0) + healed;
+      if (healed) this.emit({ source, kind: 'healing', amount: healed });
+    }
+    if (side === 'enemy' && direct && target.hp > 0 && this.alive()) {
+      const rate = this.r.sources.reduce((n, s) => n + (s.reflect ?? 0), 0);
+      const key = 'talentReflect:' + this.round;
+      const reflected = Math.max(
+        0,
+        Math.min((before - target.hp) * rate, target.attack * 0.1 - (this.r.flags[key] ?? 0)),
+      );
+      this.r.flags[key] = (this.r.flags[key] ?? 0) + reflected;
+      if (reflected) this.damage(self, reflected, 'true', 'hero', this.r.sources[0].id, 0, false);
+    }
     if (side === 'enemy' && target.hp > 0 && this.alive())
       this.respond(
         shield > 0,
         shield > 0 && target.shield === 0,
         before,
         target.hp,
-        amount,
+        protectedAmount,
         direct,
         this.r.minions.find((m) => m.id === source) ?? self,
       );
@@ -229,9 +258,18 @@ export class BattleEngine {
       this.execute(q.source, q.skill, 'hero', q.index, received, enemy, false);
     }
   }
-  private applyStatus(target: Fighter, action: SkillAction, self: Fighter, source: string) {
+  private applyStatus(
+    target: Fighter,
+    action: SkillAction,
+    self: Fighter,
+    source: string,
+    bonus = 0,
+  ) {
     const kind = action.status!,
-      value = (action.a ?? 0) * (['poison', 'burn'].includes(kind) ? self.attack : 1),
+      value = Math.min(
+        ['poison', 'burn'].includes(kind) ? Infinity : kind === 'smoke' ? 0.45 : 0.3,
+        (action.a ?? 0) * (1 + bonus) * (['poison', 'burn'].includes(kind) ? self.attack : 1),
+      ),
       remaining = action.duration ?? 2;
     const old = target.statuses.find((s) => s.kind === kind && s.source === source);
     if (old) {
@@ -286,6 +324,7 @@ export class BattleEngine {
         if (source.kind === 'item' && action.type !== 'true' && direct)
           raw *=
             1 + (source.damageBonus ?? 0) + (source.ranged ? statusValue(snapshot, 'mark') : 0);
+        raw *= 1 + (source.talentDamage ?? 0) + (direct ? (source.talentDirect ?? 0) : 0);
         for (let n = 0; n < (action.hits ?? 1) && this.alive(); n++) {
           const victim = forcedTarget ?? this.target(side);
           lastTarget = victim;
@@ -330,10 +369,26 @@ export class BattleEngine {
           if (side === 'hero') this.emit({ source: source.id, kind: 'healing', amount: restored });
         }
       } else if (action.kind === 'status') {
-        if (lastTarget.hp > 0) this.applyStatus(lastTarget, action, self, source.id);
+        if (lastTarget.hp > 0)
+          this.applyStatus(
+            lastTarget,
+            action,
+            self,
+            source.id,
+            (source.statusBonus?.[action.status!] ?? 0) +
+              (['poison', 'burn'].includes(action.status!) ? (source.talentDamage ?? 0) : 0),
+          );
+      } else if (action.kind === 'smoke') {
+        this.applyStatus(
+          self,
+          { ...action, status: 'smoke' },
+          self,
+          source.id,
+          source.smokeBonus ?? 0,
+        );
       } else if (action.kind === 'counter') {
         this.r.charges[source.id + ':counter'] = 1;
-        this.r.flags[source.id + ':counter'] = raw;
+        this.r.flags[source.id + ':counter'] = raw * (1 + (source.talentDamage ?? 0));
       } else if (action.kind === 'consume') {
         consumed = self.shield * (action.h ?? 0.2);
         self.shield -= consumed;
@@ -378,9 +433,14 @@ export class BattleEngine {
   }
   private expire(side: 'hero' | 'enemy') {
     for (const target of side === 'hero' ? [this.r.hero] : [this.r.enemy, ...this.r.minions]) {
-      for (const s of target.statuses) s.remaining--;
+      for (const s of target.statuses) if (s.kind !== 'smoke') s.remaining--;
       target.statuses = target.statuses.filter((s) => s.remaining > 0);
     }
+    if (side === 'enemy')
+      for (const f of [this.r.hero, this.r.enemy]) {
+        for (const s of f.statuses) if (s.kind === 'smoke') s.remaining--;
+        f.statuses = f.statuses.filter((s) => s.remaining > 0);
+      }
   }
   heroTurn() {
     this.statuses('hero');
@@ -397,21 +457,29 @@ export class BattleEngine {
               : 0;
       return order(a) - order(b);
     });
-    let tomeFired = false;
+    let tomeFired = false,
+      supportFired = false;
     for (const source of sources) {
       source.skills.forEach((skill, index) => {
         if (skill.trigger === 'tome' && tomeFired && this.alive()) {
           this.execute(source, skill, 'hero', index);
           return;
         }
+        if (skill.trigger === 'support' && supportFired && this.alive()) {
+          const roundKey = `${source.id}:${index}:supportRound`;
+          if (this.r.flags[roundKey] !== this.round && this.execute(source, skill, 'hero', index))
+            this.r.flags[roundKey] = this.round;
+          return;
+        }
         if (skill.trigger || !skill.cooldown || !this.alive()) return;
         const key = source.id + ':' + index;
-        this.r.timers[key] = Math.max(0, (this.r.timers[key] ?? 0) - 1);
+        this.r.timers[key] = Math.max(0, (this.r.timers[key] ?? skill.initialDelay ?? 1) - 1);
         if (this.r.timers[key]) return;
         const fired = this.execute(source, skill, 'hero', index);
         if (fired) {
           this.r.timers[key] = skill.cooldown;
           if (source.kind === 'tome') tomeFired = true;
+          if (source.kind === 'item' && source.family === 'support') supportFired = true;
           const itemKey = source.id;
           if (source.kind === 'item') {
             this.r.flags[itemKey + ':hits'] = (this.r.flags[itemKey + ':hits'] ?? 0) + 1;

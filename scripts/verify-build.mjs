@@ -38,17 +38,34 @@ try {
     assert.ok(url?.startsWith('data:'), `Unexpected external resource: ${url}`);
   }
   for (const style of win.document.querySelectorAll('style'))
-    assert.doesNotMatch(style.textContent, /url\(\s*["']?(?!data:)/i);
+    for (const [, url] of style.textContent.matchAll(/url\(['"]?([^)'"\s]+)/g))
+      assert.ok(url.startsWith('data:'), 'Offline CSS must embed ' + url);
   Object.assign(globalThis, {
     window: win,
     document: win.document,
     localStorage: win.localStorage,
     requestAnimationFrame: () => 0,
     getComputedStyle: win.getComputedStyle.bind(win),
+    // happy-dom does not decode raster assets; the real-browser check covers decoding.
+    Image: class {
+      set src(_url) {
+        queueMicrotask(() => this.onload?.());
+      }
+      decode() {
+        return Promise.resolve();
+      }
+    },
   });
-  const inline = win.document.querySelector('script:not([src])');
+  const inline = win.document.querySelector('script[type="module"]:not([src])');
   assert.ok(inline);
   new Function(inline.textContent)();
+  for (let n = 0; n < 100 && win.document.getElementById('startup-loading'); n++)
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.equal(
+    win.document.getElementById('startup-loading'),
+    null,
+    'Offline Loading must complete before game controls appear',
+  );
   const save = () => JSON.parse(win.localStorage.getItem('recursion-dungeon-save-v15'));
   const click = (q) => {
     now += 500;

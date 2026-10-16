@@ -1,0 +1,74 @@
+/* v15.1: readable rarity, public categories and mobile detail/talent layout. */
+.talent-badge {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.talent-badge[class*='talent-'] {
+  border: 1px solid var(--talent-color, #b7aa8a);
+  border-left: 3px solid var(--talent-color, #b7aa8a);
+}
+.talent-badge strong {
+  color: var(--talent-color, inherit);
+  font-size: 12px;
+}
+.talent-badge em {
+  display: inline-block;
+  font-style: normal;
+  margin-left: 4px;
+  font-size: 9px;
+}
+.talent-badge small {
+  line-height: 1.3;
+  display: block;
+}
+.talent-inactive {
+  opacity: 0.7;
+}
+.equipment-detail {
+  box-sizing: border-box;
+  overflow-x: hidden;
+  max-width: calc(100vw - 20px);
+}
+.equipment-detail .item-description-header {
+  margin: -18px -13px 0;
+  flex-wrap: wrap;
+}
+.equipment-detail .item-description-header h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.equipment-detail .item-description-overview {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+.equipment-detail section,
+.equipment-detail p,
+.equipment-detail small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.equipment-detail .item-description-attributes p {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.equipment-detail .detail-actions {
+  flex-wrap: wrap;
+}
+.quality-white {
+  --item-color: #d4f2df;
+}
+.quality-orange {
+  --item-color: #ffcf55;
+}
+.item-painting {
+  overflow: visible;
+}
+@media (max-height: 760px) {
+  .admission-file .talent-badge {
+    padding: 4px;
+  }
+  .admission-file .talent-badge small {
+    font-size: 10px;
+  }
+}

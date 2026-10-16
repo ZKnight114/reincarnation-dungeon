@@ -6,6 +6,7 @@ import {
   buildSources,
   definition,
   finalAttributes,
+  nonGuildAttributes,
   itemStats,
   occupiedCells,
   planMove,
@@ -22,7 +23,7 @@ import { BattleEngine, battleRuntime, fighter, fighterSpeed } from './combat';
 import { generateEnemy } from './enemies';
 import {
   ATTRIBUTE_KEYS,
-  ATTRIBUTE_POINTS,
+  allocationLimit,
   emptyAllocation,
   heroAttributes,
   pointsSpent,
@@ -40,7 +41,9 @@ import {
   TOMES,
   upgradeCost,
 } from './progression';
+import { PROFESSION_CATEGORIES, equipmentFamily } from './categories';
 import { resonanceAvailable } from './resonances';
+import { CHAPTER_CAP, GUILD_NODES, guildBenefits, medalReward } from './guild';
 import type {
   Actor,
   AdventureEvent,
@@ -107,10 +110,14 @@ const emptyCombat = (): GameState['combat'] => ({
 export function createState(now = Date.now()): GameState {
   return {
     version: 15,
+    rulesRevision: 2,
     phase: 'home',
     meta: {
       gold: 100,
       guildLevel: 1,
+      medals: 0,
+      guildPurchased: 0,
+      guildHistory: { trained: 0, trials: 0, aRated: 0, sRated: 0 },
       staminaSpent: 0,
       tomes: emptyTomes(),
       tomeGifts: [],
@@ -267,7 +274,8 @@ export class Game {
   enterChapters() {
     const s = this.state;
     if (!['home', 'chapter', 'configure', 'tome'].includes(s.phase)) return false;
-    if (s.phase === 'home' && !s.run.trainee) s.run.chapter = s.meta.highestChapter;
+    if (s.phase === 'home' && !s.run.trainee)
+      s.run.chapter = Math.min(CHAPTER_CAP, s.meta.highestChapter);
     s.phase = 'chapter';
     s.revision++;
     return true;
@@ -278,10 +286,15 @@ export class Game {
       s.phase !== 'chapter' ||
       !Number.isInteger(chapter) ||
       chapter < 1 ||
-      chapter > s.meta.highestChapter
+      chapter > s.meta.highestChapter ||
+      chapter > CHAPTER_CAP
     )
       return false;
     s.run.chapter = chapter;
+    if (s.run.trainee) {
+      s.run.trainee.realmStart = startingRealm(chapter);
+      s.run.realm = startingRealm(chapter);
+    }
     s.revision++;
     return true;
   }
@@ -335,9 +348,11 @@ export class Game {
       createdAt: this.clock(),
       profession,
       recruitment: target ? 'targeted' : 'random',
-      talents: rollTalents(this.random),
+      talents: rollTalents(this.random, profession),
       allocation: emptyAllocation(),
-      realmStart: startingRealm(s.meta.guildLevel),
+      realmStart: startingRealm(chapter),
+      guildBonus: guildBenefits(s.meta.guildPurchased),
+      attributePoints: 12 + guildBenefits(s.meta.guildPurchased).points,
       tomeId: null,
       tomeLevel: 0,
     };
@@ -359,7 +374,7 @@ export class Game {
       ![1, -1].includes(delta)
     )
       return '当前无法分配属性';
-    if (delta > 0 && pointsSpent(t) >= ATTRIBUTE_POINTS) return '属性点已用完';
+    if (delta > 0 && pointsSpent(t) >= allocationLimit(t)) return '属性点已用完';
     if (t.allocation[attribute] + delta < 0) return '该属性尚未加点';
     t.allocation[attribute] += delta;
     s.revision++;
@@ -373,7 +388,11 @@ export class Game {
   }
   balanceAllocation() {
     if (!this.resetAllocation()) return false;
-    this.state.run.trainee!.allocation = { attack: 3, hp: 3, defense: 3, speed: 3 };
+    const trainee = this.state.run.trainee!;
+    const count = allocationLimit(trainee);
+    ATTRIBUTE_KEYS.forEach((key, index) => {
+      trainee.allocation[key] = Math.floor(count / 4) + (index < count % 4 ? 1 : 0);
+    });
     return true;
   }
   startRun(
@@ -384,12 +403,14 @@ export class Game {
     if (!['configure', 'tome'].includes(old.phase) || !old.run.trainee)
       return '先消耗体力招募见习勇者';
     if (profession !== old.run.trainee.profession) return '职业在招募时确定，定向招募可指定职业';
-    if (pointsSpent(old.run.trainee) !== ATTRIBUTE_POINTS) return '请分配全部 12 点属性';
+    if (pointsSpent(old.run.trainee) !== allocationLimit(old.run.trainee))
+      return `请分配全部 ${allocationLimit(old.run.trainee)} 点属性`;
     if (
       !Number.isInteger(chapter) ||
       chapter < 1 ||
+      chapter !== old.run.chapter ||
       chapter > old.meta.highestChapter ||
-      chapter > 20
+      chapter > CHAPTER_CAP
     )
       return '该地牢尚未解锁';
     if (old.phase !== 'tome') return '加点完成后请选择典籍';
@@ -486,9 +507,25 @@ export class Game {
     s.revision++;
     return null;
   }
+  resonanceFamilies() {
+    return [
+      ...new Set([
+        ...PROFESSION_CATEGORIES[this.state.run.profession],
+        ...this.state.inventory
+          .filter((i) => this.state.draft.some((p) => p.id === i.id))
+          .map(equipmentFamily),
+      ]),
+    ];
+  }
   resonanceChoices(initial = false) {
     return RESONANCE_KEYS.filter((k) =>
-      resonanceAvailable(k, this.state.run.profession, this.state.run.resonances, initial),
+      resonanceAvailable(
+        k,
+        this.state.run.profession,
+        this.state.run.resonances,
+        initial,
+        this.resonanceFamilies(),
+      ),
     );
   }
   chooseResonance(key: ResonanceKey): string | null {
@@ -500,7 +537,15 @@ export class Game {
       !r.resonances.includes(key) ||
       s.run.resonances.includes(key) ||
       s.run.resonances.length >= 4 ||
-      !resonanceAvailable(key, s.run.profession, s.run.resonances, s.phase === 'initial')
+      !resonanceAvailable(key, s.run.profession, s.run.resonances, s.phase === 'initial', [
+        'sword',
+        'spear',
+        'shield',
+        'staff',
+        'focus',
+        'ranged',
+        'support',
+      ])
     )
       return '请选择当前奖励中的共鸣';
     s.run.resonances.push(key);
@@ -530,7 +575,7 @@ export class Game {
       artKind: d.art,
       slot: d.slot,
       branch: d.branch,
-      quality: (['white', 'green', 'blue', 'purple', 'orange'] as const)[level - 1],
+      quality: (['white', 'blue', 'purple', 'orange'] as const)[level - 1],
       level,
       ...stats,
       damageType: d.damageType,
@@ -577,7 +622,7 @@ export class Game {
     if (this.currentEvent()?.completed) s.run.index++;
     s.revision++;
     s.isRunning = true;
-    s.run.peakStrength = Math.max(s.run.peakStrength, this.packAnalysis().strength);
+    s.run.peakStrength = Math.max(s.run.peakStrength, analysis(s, false, false).strength);
     this.beginEvent();
     return null;
   }
@@ -594,7 +639,7 @@ export class Game {
       eventStory(event.kind, event.variant, runRoute(s).hasExtreme),
     );
     if (['battle', 'boss', 'elite'].includes(event.kind) && !s.run.encounter)
-      s.run.encounter = generateEnemy(s, this.packAnalysis().strength, this.random);
+      s.run.encounter = generateEnemy(s, analysis(s, false, false).strength, this.random);
   }
   continueJourney() {
     const s = this.state;
@@ -657,7 +702,8 @@ export class Game {
       event = this.currentEvent();
     if (!event || !['battle', 'boss', 'elite'].includes(event.kind)) return;
     // The encounter is already frozen before the trial choice or battle presentation.
-    const base = s.run.encounter ?? generateEnemy(s, this.packAnalysis().strength, this.random);
+    const base =
+      s.run.encounter ?? generateEnemy(s, analysis(s, false, false).strength, this.random);
     s.enemy = structuredClone(base);
     const stage = runRoute(s).trials.indexOf(s.run.index);
     if (stage >= 0) {
@@ -1249,7 +1295,7 @@ export class Game {
   }
   private setItemLevel(i: Equipment, level: number) {
     i.level = level;
-    i.quality = (['white', 'green', 'blue', 'purple', 'orange'] as const)[level - 1];
+    i.quality = (['white', 'blue', 'purple', 'orange'] as const)[level - 1];
     Object.assign(i, itemStats(i.templateId, level, i.profession));
   }
   canMerge(sourceId: string, targetId: string) {
@@ -1453,7 +1499,8 @@ export class Game {
   confirmAllocation(): string | null {
     const s = this.state;
     if (s.phase !== 'configure' || !s.run.trainee) return '当前无法确认加点';
-    if (pointsSpent(s.run.trainee) !== ATTRIBUTE_POINTS) return '请分配全部 12 点属性';
+    if (pointsSpent(s.run.trainee) !== allocationLimit(s.run.trainee))
+      return `请分配全部 ${allocationLimit(s.run.trainee)} 点属性`;
     s.run.boundTome = null;
     s.phase = 'tome';
     s.revision++;
@@ -1485,6 +1532,30 @@ export class Game {
     s.meta.guildLevel++;
     s.revision++;
     return null;
+  }
+  buyGuildNode(id: number): string | null {
+    const s = this.state,
+      node = GUILD_NODES[id];
+    if (s.phase !== 'home') return '请返回公会升级增益';
+    if (!node || id !== s.meta.guildPurchased) return '请按路线顺序升级';
+    if (node.level > s.meta.guildLevel) return `公会达到${node.level}级后开放`;
+    if (s.meta.medals < node.cost) return '公会勋章不足';
+    s.meta.medals -= node.cost;
+    s.meta.guildPurchased++;
+    s.revision++;
+    return null;
+  }
+  upgradeGuildAvailable(): string | null {
+    let changed = false;
+    while (
+      guildConditions(this.state).length &&
+      guildConditions(this.state).every((c) => c.value >= c.target)
+    ) {
+      const error = this.upgradeGuild();
+      if (error) return error;
+      changed = true;
+    }
+    return changed ? null : '尚未满足三项升级条件';
   }
   private pageCandidates(p: Profession) {
     const eligible = TOMES.filter((t) => {
@@ -1563,6 +1634,7 @@ export class Game {
       chapter: s.run.chapter,
       realm: s.run.realm,
       guildAtGraduation: s.meta.guildLevel,
+      guildBaseline: nonGuildAttributes(s, true),
       routeLength: s.run.events.length,
       normalLength: runRoute(s).normal,
       outcome,
@@ -1604,7 +1676,13 @@ export class Game {
     const hero = this.heroPreview(outcome);
     if (!hero) return;
     const gold = outcome === 'win' ? (100 + s.run.chapter * 15) * (s.run.extreme ? 2 : 1) : 0;
+    const medals = medalReward(s, outcome);
     s.meta.heroes.push(hero);
+    s.meta.medals += medals;
+    s.meta.guildHistory.trained++;
+    s.meta.guildHistory.trials += hero.stages;
+    if (['A', 'S'].includes(hero.rating)) s.meta.guildHistory.aRated++;
+    if (hero.rating === 'S') s.meta.guildHistory.sRated++;
     // Tome drops are deferred until their acquisition system is designed.
     // Previously earned pages and pending rewards remain in the saved library.
     s.meta.gold += gold;
@@ -1614,6 +1692,7 @@ export class Game {
       profession: s.run.profession,
       completed: this.completed(),
       gold,
+      medals,
       kills: s.run.kills,
       seconds: s.run.seconds,
       rounds: s.run.rounds,
@@ -1624,7 +1703,10 @@ export class Game {
     };
     if (outcome === 'win') {
       s.meta.wins++;
-      s.meta.highestChapter = Math.min(20, Math.max(s.meta.highestChapter, s.run.chapter + 1));
+      s.meta.highestChapter = Math.min(
+        CHAPTER_CAP,
+        Math.max(s.meta.highestChapter, s.run.chapter + 1),
+      );
     }
     s.awakening = null;
     s.inventory = [];

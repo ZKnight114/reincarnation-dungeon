@@ -1,0 +1,278 @@
+{
+  "schemaVersion": 1,
+  "status": "implemented-v15.1",
+  "date": "2026-10-16",
+  "qualityOrder": ["blue", "purple", "gold"],
+  "qualities": {
+    "blue": {
+      "name": "稀有",
+      "color": "#4cb8ff",
+      "weight": 60
+    },
+    "purple": {
+      "name": "史诗",
+      "color": "#d17bff",
+      "weight": 30
+    },
+    "gold": {
+      "name": "传说",
+      "color": "#e2b776",
+      "weight": 10
+    }
+  },
+  "generation": {
+    "count": 4,
+    "professionCount": 1,
+    "professionMatchesMain": true,
+    "guaranteedItemCount": 1,
+    "guaranteedAttributeCount": 1,
+    "remainingRandomCount": 1,
+    "slotCategories": ["profession", "item", "attribute", "non-profession"],
+    "itemPool": "all-seven-public-categories",
+    "remainingCategoryWeights": {
+      "attribute": 50,
+      "item": 50
+    },
+    "uniformFamilyWithinCategory": true,
+    "uniqueBy": ["id", "quality"],
+    "sameNameDifferentQualityAllowed": true,
+    "qualityExclusion": "renormalize-remaining-weights",
+    "recruitmentModesShareWeights": true
+  },
+  "rules": {
+    "effectValuesFollowQualityOrder": true,
+    "rateValuesAreFractions": true,
+    "flatAttributeValuesAreNumbers": true,
+    "matchingTalentRatesAdd": true,
+    "itemEffectsExcludeResonancesAndTomes": true,
+    "professionEffectsMatchSourceProfession": true,
+    "professionMatchDoesNotChangeCounterMatrix": true,
+    "lifestealHpCapPerFullRound": 0.02,
+    "reflectAttackCapPerFullRound": 0.1,
+    "lifestealBasis": "actual-enemy-hp-damage-from-original-direct-actions",
+    "reflectBasis": "actual-hero-hp-loss-from-enemy-original-direct-actions",
+    "reflectDamageType": "true",
+    "reflectedDamageCannotTriggerReactions": true,
+    "talentReflectionExcludedFromDamageBonuses": true,
+    "talentLifestealOnlyInCombat": true,
+    "existingStatusShieldAndHealingLimitsPreserved": true,
+    "newSecondaryEffectsNotGrantedToItemsWithoutThatEffect": true
+  },
+  "talents": [
+    {
+      "id": "battle_instinct",
+      "name": "战斗直觉",
+      "category": "attribute",
+      "effects": [
+        {
+          "kind": "baseAttackFlat",
+          "values": [2, 4, 6]
+        }
+      ]
+    },
+    {
+      "id": "hardy",
+      "name": "坚韧体魄",
+      "category": "attribute",
+      "effects": [
+        {
+          "kind": "baseHpFlat",
+          "values": [12, 24, 36]
+        }
+      ]
+    },
+    {
+      "id": "iron_skin",
+      "name": "钢铁之肤",
+      "category": "attribute",
+      "effects": [
+        {
+          "kind": "baseDefenseFlat",
+          "values": [1, 2, 3]
+        }
+      ]
+    },
+    {
+      "id": "swift",
+      "name": "迅捷反应",
+      "category": "attribute",
+      "effects": [
+        {
+          "kind": "baseSpeedFlat",
+          "values": [1, 2, 3]
+        }
+      ]
+    },
+    {
+      "id": "warrior_soul",
+      "name": "战士之魂",
+      "category": "profession",
+      "profession": "warrior",
+      "effects": [
+        {
+          "kind": "professionDamageRate",
+          "values": [0.05, 0.08, 0.12]
+        },
+        {
+          "kind": "receivedHpReflectionRate",
+          "values": [0, 0, 0.08]
+        }
+      ]
+    },
+    {
+      "id": "mage_soul",
+      "name": "法师之魂",
+      "category": "profession",
+      "profession": "mage",
+      "effects": [
+        {
+          "kind": "professionDamageRate",
+          "values": [0.05, 0.08, 0.12]
+        },
+        {
+          "kind": "professionShieldRate",
+          "values": [0, 0, 0.08]
+        }
+      ]
+    },
+    {
+      "id": "rogue_soul",
+      "name": "盗贼之魂",
+      "category": "profession",
+      "profession": "rogue",
+      "effects": [
+        {
+          "kind": "professionDamageRate",
+          "values": [0.05, 0.08, 0.12]
+        },
+        {
+          "kind": "professionDirectLifestealRate",
+          "values": [0, 0, 0.02]
+        }
+      ]
+    },
+    {
+      "id": "sword_mastery",
+      "name": "剑术专长",
+      "category": "item",
+      "itemLabel": "剑",
+      "effects": [
+        {
+          "kind": "itemDirectDamageRate",
+          "values": [0.05, 0.1, 0.15]
+        },
+        {
+          "kind": "itemDirectLifestealRate",
+          "values": [0, 0, 0.01]
+        }
+      ],
+      "family": "sword"
+    },
+    {
+      "id": "spear_mastery",
+      "name": "枪术专长",
+      "category": "item",
+      "itemLabel": "枪",
+      "effects": [
+        {
+          "kind": "itemDirectDamageRate",
+          "values": [0.05, 0.1, 0.15]
+        },
+        {
+          "kind": "itemBreakStrengthRate",
+          "values": [0, 0, 0.1]
+        }
+      ],
+      "family": "spear"
+    },
+    {
+      "id": "shield_mastery",
+      "name": "防御专长",
+      "category": "item",
+      "itemLabel": "防御",
+      "effects": [
+        {
+          "kind": "itemShieldRate",
+          "values": [0.08, 0.14, 0.2]
+        },
+        {
+          "kind": "itemCounterDamageRate",
+          "values": [0, 0, 0.1]
+        }
+      ],
+      "family": "shield"
+    },
+    {
+      "id": "staff_mastery",
+      "name": "法杖专长",
+      "category": "item",
+      "itemLabel": "法杖",
+      "effects": [
+        {
+          "kind": "itemDirectDamageRate",
+          "values": [0.05, 0.1, 0.15]
+        },
+        {
+          "kind": "itemBurnDamageRate",
+          "values": [0, 0, 0.1]
+        }
+      ],
+      "family": "staff"
+    },
+    {
+      "id": "spellbook_mastery",
+      "name": "法球专长",
+      "category": "item",
+      "itemLabel": "法球",
+      "effects": [
+        {
+          "kind": "itemDirectDamageRate",
+          "values": [0.05, 0.1, 0.15]
+        },
+        {
+          "kind": "itemShieldRate",
+          "values": [0, 0, 0.1]
+        }
+      ],
+      "family": "focus"
+    },
+    {
+      "id": "robe_mastery",
+      "name": "辅助专长",
+      "category": "item",
+      "itemLabel": "辅助",
+      "effects": [
+        {
+          "kind": "itemShieldRate",
+          "values": [0.06, 0.12, 0.18]
+        },
+        {
+          "kind": "itemHealingRate",
+          "values": [0.06, 0.12, 0.18]
+        },
+        {
+          "kind": "itemSmokeStrengthRate",
+          "values": [0.06, 0.12, 0.18]
+        }
+      ],
+      "family": "support"
+    },
+    {
+      "id": "crossbow_mastery",
+      "name": "弩术专长",
+      "category": "item",
+      "itemLabel": "弩",
+      "effects": [
+        {
+          "kind": "itemDirectDamageRate",
+          "values": [0.05, 0.1, 0.15]
+        },
+        {
+          "kind": "itemMarkStrengthRate",
+          "values": [0, 0, 0.1]
+        }
+      ],
+      "family": "ranged"
+    }
+  ]
+}

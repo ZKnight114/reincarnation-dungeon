@@ -341,14 +341,13 @@ test('configuration attributes, tome selection and start control occupy distinct
     assert.equal(g.state.phase, 'tome');
     assert.equal(el('.tome-catalogue').children.length, 9);
     assert.equal(css('.tome-catalogue').gridTemplateColumns, 'repeat(3, 1fr)');
-    const cardRows =
-      parseFloat(css('.tome-catalogue').gridAutoRows) * 3 +
-      parseFloat(css('.tome-catalogue').gap) * 2;
-    assert.ok(cardRows <= parseFloat(css('.tome-catalogue').height));
-    assert.equal(css('.tome-start').bottom, '0px');
+    assert.equal(css('.tome-catalogue').gridTemplateRows, 'repeat(3, 1fr)');
+    assert.equal(css('.tome-start').position, 'static');
     assert.equal((el('[data-action="start"]') as any).disabled, false);
-    click('.tome-page-details');
-    assert.match(el('#modal-body').textContent, /第 1 阶.*第 2 阶.*第 3 阶/);
+    click('.tome-equipped');
+    assert.equal(w.document.querySelectorAll('[data-tome-rank]').length, 3);
+    click('[data-tome-rank="3"]');
+    assert.match(el('#modal-body').textContent, /人物属性 · 3阶效果/);
   } finally {
     w.happyDOM.close();
   }
@@ -372,7 +371,7 @@ test('footer colors follow exploration, loot, resonance and graduation without c
     const colors = new Set<string>();
     const color = (tone: string) => {
       assert.equal(el('#adventure-footer').getAttribute('data-tone'), tone);
-      colors.add(css('#adventure-footer .primary-button').backgroundColor);
+      colors.add(css('#adventure-footer .primary-button').borderImageSource);
     };
     color('explore');
     g.continueCamp();
@@ -419,7 +418,7 @@ test('item grade border stays above its illustration and badges differ on all fo
         drawing = piece.querySelector('.item-painting')!;
       assert.equal(drawing.nextElementSibling!.getAttribute('class'), 'item-grade-rim');
       assert.ok(piece.classList.contains('quality-' + upgraded.quality));
-      assert.equal(piece.querySelector('.item-level')!.textContent, n + '阶');
+      assert.equal(piece.querySelector('.item-category-badge text')!.textContent, '战');
       colors.add((piece as any).style.getPropertyValue('--item-color'));
       assert.equal(css(q + ' .item-grade-rim').pointerEvents, 'none');
       assert.equal(css(q + ' .item-grade-badge').pointerEvents, 'none');

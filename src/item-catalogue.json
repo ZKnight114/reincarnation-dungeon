@@ -6,7 +6,7 @@
       "profession": "战士",
       "category": null,
       "size": 1,
-      "shape": "单格",
+      "shape": "1格直形",
       "attributes": [
         {
           "attack": 1,
@@ -42,7 +42,8 @@
       "contributionTags": ["战士"],
       "contribution": [1, 2, 4, 8],
       "intent": "小体积布局枢纽；没有周期攻击，提供邻接增幅。",
-      "cells": [[0, 0]]
+      "cells": [[0, 0]],
+      "series": "基础"
     },
     {
       "id": "warrior_blade_2",
@@ -50,7 +51,7 @@
       "profession": "战士",
       "category": "剑",
       "size": 2,
-      "shape": "竖2格",
+      "shape": "2格直形",
       "attributes": [
         {
           "attack": 3,
@@ -89,7 +90,8 @@
       "cells": [
         [0, 0],
         [0, 1]
-      ]
+      ],
+      "series": "剑"
     },
     {
       "id": "warrior_blade_3",
@@ -97,7 +99,7 @@
       "profession": "战士",
       "category": "剑",
       "size": 3,
-      "shape": "竖3格",
+      "shape": "3格直形",
       "attributes": [
         {
           "attack": 5,
@@ -137,7 +139,8 @@
         [0, 0],
         [0, 1],
         [0, 2]
-      ]
+      ],
+      "series": "剑"
     },
     {
       "id": "warrior_blade_4",
@@ -145,7 +148,7 @@
       "profession": "战士",
       "category": "剑",
       "size": 4,
-      "shape": "竖L4格",
+      "shape": "4格L形",
       "attributes": [
         {
           "attack": 8,
@@ -186,7 +189,8 @@
         [0, 1],
         [0, 2],
         [1, 2]
-      ]
+      ],
+      "series": "剑"
     },
     {
       "id": "warrior_pole_2",
@@ -194,7 +198,7 @@
       "profession": "战士",
       "category": "枪",
       "size": 2,
-      "shape": "横2格",
+      "shape": "2格直形",
       "attributes": [
         {
           "attack": 3,
@@ -233,7 +237,8 @@
       "cells": [
         [0, 0],
         [1, 0]
-      ]
+      ],
+      "series": "枪"
     },
     {
       "id": "warrior_pole_3",
@@ -241,7 +246,7 @@
       "profession": "战士",
       "category": "枪",
       "size": 3,
-      "shape": "左下L3格",
+      "shape": "3格L形",
       "attributes": [
         {
           "attack": 5,
@@ -281,7 +286,8 @@
         [1, 0],
         [0, 1],
         [1, 1]
-      ]
+      ],
+      "series": "枪"
     },
     {
       "id": "warrior_pole_4",
@@ -289,7 +295,7 @@
       "profession": "战士",
       "category": "枪",
       "size": 4,
-      "shape": "横4格",
+      "shape": "4格直形",
       "attributes": [
         {
           "attack": 7,
@@ -330,15 +336,16 @@
         [1, 0],
         [2, 0],
         [3, 0]
-      ]
+      ],
+      "series": "枪"
     },
     {
       "id": "warrior_guard_2",
-      "name": "小盾",
+      "name": "铁护臂",
       "profession": "战士",
-      "category": "盾",
+      "category": "防御",
       "size": 2,
-      "shape": "竖2格",
+      "shape": "2格直形",
       "attributes": [
         {
           "attack": 0,
@@ -371,21 +378,22 @@
         "direction": "无",
         "text": "无相邻联动。"
       },
-      "contributionTags": ["战士", "盾"],
+      "contributionTags": ["战士", "防御"],
       "contribution": [2, 4, 8, 16],
       "intent": "基础防护；防御与生命都能改善护盾。",
       "cells": [
         [0, 0],
         [0, 1]
-      ]
+      ],
+      "series": "防具"
     },
     {
       "id": "warrior_guard_3",
-      "name": "鸢盾",
+      "name": "荆棘肩甲",
       "profession": "战士",
-      "category": "盾",
+      "category": "防御",
       "size": 3,
-      "shape": "右上L3格",
+      "shape": "3格L形",
       "attributes": [
         {
           "attack": 1,
@@ -418,22 +426,23 @@
         "direction": "别人给自己",
         "text": "每相邻1件剑，本物品反击伤害＋8%，最多3件；四阶每件＋12%。"
       },
-      "contributionTags": ["战士", "盾"],
+      "contributionTags": ["战士", "防御"],
       "contribution": [3, 6, 12, 24],
       "intent": "反击功能；只回应直接攻击，不被中毒、灼烧或反伤递归触发。",
       "cells": [
         [0, 0],
         [1, 0],
         [0, 1]
-      ]
+      ],
+      "series": "防具"
     },
     {
       "id": "warrior_guard_4",
-      "name": "大盾",
+      "name": "守卫塔盾",
       "profession": "战士",
-      "category": "盾",
+      "category": "防御",
       "size": 4,
-      "shape": "方4格",
+      "shape": "4格方形",
       "attributes": [
         {
           "attack": 0,
@@ -466,7 +475,7 @@
         "direction": "别人给自己",
         "text": "每相邻1件其他盾，本装备自身提供的生命＋10%，最多3件；四阶每件＋15%。"
       },
-      "contributionTags": ["战士", "盾"],
+      "contributionTags": ["战士", "防御"],
       "contribution": [4, 8, 16, 32],
       "intent": "防御核心；邻接只放大本件生命，不放大全人物生命。",
       "cells": [
@@ -474,7 +483,8 @@
         [1, 0],
         [0, 1],
         [1, 1]
-      ]
+      ],
+      "series": "防具"
     },
     {
       "id": "mage_gem",
@@ -482,7 +492,7 @@
       "profession": "法师",
       "category": null,
       "size": 1,
-      "shape": "单格",
+      "shape": "1格直形",
       "attributes": [
         {
           "attack": 1,
@@ -506,10 +516,10 @@
         }
       ],
       "stageEffects": [
-        "被动：相邻法杖／魔导书的直接法术伤害＋8%。",
-        "被动：相邻法杖／魔导书的直接法术伤害＋12%。",
-        "被动：相邻法杖／魔导书的直接法术伤害＋16%。",
-        "被动：相邻法杖／魔导书的直接法术伤害＋20%；同时使相邻法袍产生的护盾＋10%。"
+        "被动：相邻法杖／法球的直接法术伤害＋8%。",
+        "被动：相邻法杖／法球的直接法术伤害＋12%。",
+        "被动：相邻法杖／法球的直接法术伤害＋16%。",
+        "被动：相邻法杖／法球的直接法术伤害＋20%；同时使相邻魔法书产生的护盾＋10%。"
       ],
       "adjacency": {
         "direction": "给别人",
@@ -518,15 +528,16 @@
       "contributionTags": ["法师"],
       "contribution": [1, 2, 4, 8],
       "intent": "法术邻接枢纽；四阶能连接攻击与防护物品。",
-      "cells": [[0, 0]]
+      "cells": [[0, 0]],
+      "series": "基础"
     },
     {
       "id": "mage_flame_2",
-      "name": "短杖",
+      "name": "短法杖",
       "profession": "法师",
       "category": "法杖",
       "size": 2,
-      "shape": "竖2格",
+      "shape": "2格直形",
       "attributes": [
         {
           "attack": 4,
@@ -565,15 +576,16 @@
       "cells": [
         [0, 0],
         [0, 1]
-      ]
+      ],
+      "series": "法杖"
     },
     {
       "id": "mage_flame_3",
-      "name": "曲杖",
+      "name": "镶晶法杖",
       "profession": "法师",
       "category": "法杖",
       "size": 3,
-      "shape": "右上L3格",
+      "shape": "3格L形",
       "attributes": [
         {
           "attack": 6,
@@ -613,15 +625,16 @@
         [0, 0],
         [1, 0],
         [0, 1]
-      ]
+      ],
+      "series": "法杖"
     },
     {
       "id": "mage_flame_4",
-      "name": "长杖",
+      "name": "烈焰长杖",
       "profession": "法师",
       "category": "法杖",
       "size": 4,
-      "shape": "竖4格",
+      "shape": "4格直形",
       "attributes": [
         {
           "attack": 9,
@@ -662,15 +675,16 @@
         [0, 1],
         [0, 2],
         [0, 3]
-      ]
+      ],
+      "series": "法杖"
     },
     {
       "id": "mage_ice_2",
-      "name": "咒文书",
+      "name": "霜晶法球",
       "profession": "法师",
-      "category": "魔导书",
+      "category": "法球",
       "size": 2,
-      "shape": "横2格",
+      "shape": "2格直形",
       "attributes": [
         {
           "attack": 3,
@@ -703,21 +717,22 @@
         "direction": "无",
         "text": "无相邻联动。"
       },
-      "contributionTags": ["法师", "魔导书"],
+      "contributionTags": ["法师", "法球"],
       "contribution": [2, 4, 8, 16],
       "intent": "冰霜入门与先手辅助；减速不剥夺敌方回合。",
       "cells": [
         [0, 0],
         [1, 0]
-      ]
+      ],
+      "series": "法球"
     },
     {
       "id": "mage_ice_3",
-      "name": "三折魔典",
+      "name": "环轨法球",
       "profession": "法师",
-      "category": "魔导书",
+      "category": "法球",
       "size": 3,
-      "shape": "横3格",
+      "shape": "3格直形",
       "attributes": [
         {
           "attack": 5,
@@ -748,24 +763,25 @@
       ],
       "adjacency": {
         "direction": "别人给自己",
-        "text": "每相邻1件法袍，本物品产生的护盾＋10%，最多3件；四阶每件＋15%。"
+        "text": "每相邻1件魔法书，本物品产生的护盾＋10%，最多3件；四阶每件＋15%。"
       },
-      "contributionTags": ["法师", "魔导书"],
+      "contributionTags": ["法师", "法球"],
       "contribution": [3, 6, 12, 24],
-      "intent": "冰书与法袍混搭；让攻击型法师也有可布置的生存手段。",
+      "intent": "冰书与魔法书混搭；让攻击型法师也有可布置的生存手段。",
       "cells": [
         [0, 0],
         [1, 0],
         [2, 0]
-      ]
+      ],
+      "series": "法球"
     },
     {
       "id": "mage_ice_4",
-      "name": "链扣魔典",
+      "name": "寒星法球",
       "profession": "法师",
-      "category": "魔导书",
+      "category": "法球",
       "size": 4,
-      "shape": "右下L4格",
+      "shape": "4格L形",
       "attributes": [
         {
           "attack": 8,
@@ -798,23 +814,24 @@
         "direction": "无",
         "text": "无相邻联动。"
       },
-      "contributionTags": ["法师", "魔导书"],
+      "contributionTags": ["法师", "法球"],
       "contribution": [4, 8, 16, 32],
       "intent": "冰霜穿防核心；需要小书施加状态，但无状态也能正常输出。",
       "cells": [
         [0, 0],
         [1, 0],
-        [2, 0],
-        [2, 1]
-      ]
+        [1, 1],
+        [1, 2]
+      ],
+      "series": "法球"
     },
     {
       "id": "mage_ward_2",
-      "name": "短法袍",
+      "name": "咒文书",
       "profession": "法师",
-      "category": "法袍",
+      "category": "辅助",
       "size": 2,
-      "shape": "竖2格",
+      "shape": "2格直形",
       "attributes": [
         {
           "attack": 1,
@@ -847,21 +864,22 @@
         "direction": "无",
         "text": "无相邻联动。"
       },
-      "contributionTags": ["法师", "法袍"],
+      "contributionTags": ["法师", "辅助"],
       "contribution": [2, 4, 8, 16],
       "intent": "攻击也贡献防护，但护盾仍以生命为主。",
       "cells": [
         [0, 0],
         [0, 1]
-      ]
+      ],
+      "series": "魔法书"
     },
     {
       "id": "mage_ward_3",
-      "name": "旅行法袍",
+      "name": "封印魔法书",
       "profession": "法师",
-      "category": "法袍",
+      "category": "辅助",
       "size": 3,
-      "shape": "右下L3格",
+      "shape": "3格L形",
       "attributes": [
         {
           "attack": 2,
@@ -892,24 +910,25 @@
       ],
       "adjacency": {
         "direction": "别人给自己",
-        "text": "每相邻1件魔导书，本物品治疗量＋10%，最多3件；四阶每件＋15%。"
+        "text": "每相邻1件法球，本物品治疗量＋10%，最多3件；四阶每件＋15%。"
       },
-      "contributionTags": ["法师", "法袍"],
+      "contributionTags": ["法师", "辅助"],
       "contribution": [3, 6, 12, 24],
       "intent": "有限续航；替代恢复法力，与冰书互相支持不同数值。",
       "cells": [
         [0, 0],
         [0, 1],
         [1, 1]
-      ]
+      ],
+      "series": "魔法书"
     },
     {
       "id": "mage_ward_4",
-      "name": "仪式法袍",
+      "name": "仪式魔法书",
       "profession": "法师",
-      "category": "法袍",
+      "category": "辅助",
       "size": 4,
-      "shape": "方4格",
+      "shape": "4格方形",
       "attributes": [
         {
           "attack": 3,
@@ -940,9 +959,9 @@
       ],
       "adjacency": {
         "direction": "别人给自己",
-        "text": "每相邻1件法杖或魔导书，本装备自身提供的生命＋8%，最多3件；四阶每件＋12%。"
+        "text": "每相邻1件法杖或法球，本装备自身提供的生命＋8%，最多3件；四阶每件＋12%。"
       },
-      "contributionTags": ["法师", "法袍"],
+      "contributionTags": ["法师", "辅助"],
       "contribution": [4, 8, 16, 32],
       "intent": "法师防护大件；受益于攻装布局，但不改写攻装技能。",
       "cells": [
@@ -950,7 +969,8 @@
         [1, 0],
         [0, 1],
         [1, 1]
-      ]
+      ],
+      "series": "魔法书"
     },
     {
       "id": "rogue_gem",
@@ -958,7 +978,7 @@
       "profession": "盗贼",
       "category": null,
       "size": 1,
-      "shape": "单格",
+      "shape": "1格直形",
       "attributes": [
         {
           "attack": 1,
@@ -982,10 +1002,10 @@
         }
       ],
       "stageEffects": [
-        "被动：相邻匕首／弓弩的直接伤害＋8%。",
-        "被动：相邻匕首／弓弩的直接伤害＋12%。",
-        "被动：相邻匕首／弓弩的直接伤害＋16%。",
-        "被动：相邻匕首／弓弩的直接伤害＋20%；同时使相邻皮甲的治疗量＋10%。"
+        "被动：相邻剑／手弩的直接伤害＋8%。",
+        "被动：相邻剑／手弩的直接伤害＋12%。",
+        "被动：相邻剑／手弩的直接伤害＋16%。",
+        "被动：相邻剑／手弩的原生直接伤害＋20%；相邻炼金工具的烟幕减伤强度＋10%。"
       ],
       "adjacency": {
         "direction": "给别人",
@@ -993,16 +1013,17 @@
       },
       "contributionTags": ["盗贼"],
       "contribution": [1, 2, 4, 8],
-      "intent": "盗贼布局枢纽；四阶可辅助皮甲续航。",
-      "cells": [[0, 0]]
+      "intent": "盗贼布局枢纽；四阶可辅助炼金工具烟幕。",
+      "cells": [[0, 0]],
+      "series": "基础"
     },
     {
       "id": "rogue_assassin_2",
-      "name": "短匕",
+      "name": "潜行短剑",
       "profession": "盗贼",
-      "category": "匕首",
+      "category": "剑",
       "size": 2,
-      "shape": "竖2格",
+      "shape": "2格直形",
       "attributes": [
         {
           "attack": 3,
@@ -1035,21 +1056,22 @@
         "direction": "无",
         "text": "无相邻联动。"
       },
-      "contributionTags": ["盗贼", "匕首"],
+      "contributionTags": ["盗贼", "剑"],
       "contribution": [2, 4, 8, 16],
       "intent": "低直伤与高频上毒；不依赖共鸣启用毒流。",
       "cells": [
         [0, 0],
         [0, 1]
-      ]
+      ],
+      "series": "短剑 / 双剑"
     },
     {
       "id": "rogue_assassin_3",
-      "name": "曲刃双匕",
+      "name": "轻型双剑",
       "profession": "盗贼",
-      "category": "匕首",
+      "category": "剑",
       "size": 3,
-      "shape": "右下L3格",
+      "shape": "3格L形",
       "attributes": [
         {
           "attack": 5,
@@ -1080,24 +1102,25 @@
       ],
       "adjacency": {
         "direction": "别人给自己",
-        "text": "每相邻1件其他匕首，本物品直接物理伤害＋6%，最多3件；四阶每件＋10%。不放大额外真实伤害。"
+        "text": "每相邻1件其他剑，本物品直接物理伤害＋6%，最多3件；四阶每件＋10%。不放大额外真实伤害。"
       },
-      "contributionTags": ["盗贼", "匕首"],
+      "contributionTags": ["盗贼", "剑"],
       "contribution": [3, 6, 12, 24],
       "intent": "双匕多段与毒状态配合；额外伤害每次发动只结算一次。",
       "cells": [
         [0, 0],
         [1, 0],
         [1, 1]
-      ]
+      ],
+      "series": "短剑 / 双剑"
     },
     {
       "id": "rogue_assassin_4",
-      "name": "刺杀双匕",
+      "name": "影袭双剑",
       "profession": "盗贼",
-      "category": "匕首",
+      "category": "剑",
       "size": 4,
-      "shape": "左下L4格",
+      "shape": "4格L形",
       "attributes": [
         {
           "attack": 8,
@@ -1130,23 +1153,24 @@
         "direction": "无",
         "text": "无相邻联动。"
       },
-      "contributionTags": ["盗贼", "匕首"],
+      "contributionTags": ["盗贼", "剑"],
       "contribution": [4, 8, 16, 32],
       "intent": "毒流收尾大件；四阶增加斩杀倍率，不直接秒杀。",
       "cells": [
         [0, 0],
         [0, 1],
-        [1, 1],
-        [2, 1]
-      ]
+        [0, 2],
+        [1, 2]
+      ],
+      "series": "短剑 / 双剑"
     },
     {
       "id": "rogue_archer_2",
-      "name": "手弩",
+      "name": "轻型手弩",
       "profession": "盗贼",
-      "category": "弓弩",
+      "category": "弩",
       "size": 2,
-      "shape": "横2格",
+      "shape": "2格直形",
       "attributes": [
         {
           "attack": 3,
@@ -1170,7 +1194,7 @@
         }
       ],
       "stageEffects": [
-        "每2回合造成50%A物理伤害；施加标记：后续弓弩直接伤害＋6%，持续2回合。",
+        "每2回合造成50%A物理伤害；施加标记：后续手弩直接伤害＋6%，持续2回合。",
         "每2回合造成60%A物理伤害；标记增伤8%，持续2回合。",
         "每2回合造成70%A物理伤害；标记增伤10%，持续2回合。",
         "每2回合造成80%A物理伤害；标记增伤12%，持续3回合。"
@@ -1179,21 +1203,22 @@
         "direction": "无",
         "text": "无相邻联动；标记属于命中后的敌方状态，不属于邻接。"
       },
-      "contributionTags": ["盗贼", "弓弩"],
+      "contributionTags": ["盗贼", "弩"],
       "contribution": [2, 4, 8, 16],
       "intent": "建立远程目标；标记在本次攻击之后施加，多个标记只取最强。",
       "cells": [
         [0, 0],
         [1, 0]
-      ]
+      ],
+      "series": "手弩"
     },
     {
       "id": "rogue_archer_3",
-      "name": "短弓",
+      "name": "连发手弩",
       "profession": "盗贼",
-      "category": "弓弩",
+      "category": "弩",
       "size": 3,
-      "shape": "竖3格",
+      "shape": "3格直形",
       "attributes": [
         {
           "attack": 5,
@@ -1224,24 +1249,25 @@
       ],
       "adjacency": {
         "direction": "别人给自己",
-        "text": "每相邻1件皮甲，本物品直接伤害＋6%，最多3件；四阶每件＋10%。"
+        "text": "每相邻1件炼金工具，本物品直接伤害＋6%，最多3件；四阶每件＋10%。"
       },
-      "contributionTags": ["盗贼", "弓弩"],
+      "contributionTags": ["盗贼", "弩"],
       "contribution": [3, 6, 12, 24],
-      "intent": "稳定连射；以皮甲邻接换取增伤，避免全包只放弓。",
+      "intent": "稳定连射；以炼金工具邻接换取增伤，避免全包只放手弩。",
       "cells": [
         [0, 0],
         [0, 1],
         [0, 2]
-      ]
+      ],
+      "series": "手弩"
     },
     {
       "id": "rogue_archer_4",
-      "name": "折臂长弩",
+      "name": "重型手弩",
       "profession": "盗贼",
-      "category": "弓弩",
+      "category": "弩",
       "size": 4,
-      "shape": "左上L4格",
+      "shape": "4格L形",
       "attributes": [
         {
           "attack": 8,
@@ -1274,23 +1300,24 @@
         "direction": "无",
         "text": "无相邻联动。"
       },
-      "contributionTags": ["盗贼", "弓弩"],
+      "contributionTags": ["盗贼", "弩"],
       "contribution": [4, 8, 16, 32],
       "intent": "标记爆发大件；用横L布局制造邻接与放置取舍。",
       "cells": [
         [0, 0],
         [1, 0],
-        [2, 0],
-        [0, 1]
-      ]
+        [1, 1],
+        [1, 2]
+      ],
+      "series": "手弩"
     },
     {
       "id": "rogue_leather_2",
-      "name": "轻皮甲",
+      "name": "烟雾瓶",
       "profession": "盗贼",
-      "category": "皮甲",
+      "category": "辅助",
       "size": 2,
-      "shape": "竖2格",
+      "shape": "2格直形",
       "attributes": [
         {
           "attack": 0,
@@ -1314,30 +1341,31 @@
         }
       ],
       "stageEffects": [
-        "每2回合恢复2%H生命，每场最多3次；满血不消耗次数。",
-        "每2回合恢复3%H生命，每场最多3次；满血不消耗次数。",
-        "每2回合恢复4%H生命，每场最多3次；满血不消耗次数。",
-        "每2回合恢复5%H生命，每场最多3次；满血不消耗次数。"
+        "每2回合施放烟幕：受到的原生直接伤害减少10%，持续1次敌方行动。同类取最高值，上限45%；不减免毒、灼烧和反击。",
+        "每2回合施放烟幕：受到的原生直接伤害减少13%，持续1次敌方行动。同类取最高值，上限45%；不减免毒、灼烧和反击。",
+        "每2回合施放烟幕：受到的原生直接伤害减少16%，持续1次敌方行动。同类取最高值，上限45%；不减免毒、灼烧和反击。",
+        "每2回合施放烟幕：受到的原生直接伤害减少20%，持续1次敌方行动。同类取最高值，上限45%；不减免毒、灼烧和反击。"
       ],
       "adjacency": {
         "direction": "无",
-        "text": "无相邻联动。"
+        "text": "无专属相邻联动。"
       },
-      "contributionTags": ["盗贼", "皮甲"],
+      "contributionTags": ["盗贼", "辅助"],
       "contribution": [2, 4, 8, 16],
-      "intent": "盗贼基础续航；与战士、法师的2格护盾区分。",
+      "intent": "烟幕单一效果：减少原生直接伤害；同类取最高值，不叠乘。",
       "cells": [
         [0, 0],
         [0, 1]
-      ]
+      ],
+      "series": "炼金工具"
     },
     {
       "id": "rogue_leather_3",
-      "name": "猎手皮甲",
+      "name": "烟雾弹组",
       "profession": "盗贼",
-      "category": "皮甲",
+      "category": "辅助",
       "size": 3,
-      "shape": "左下L3格",
+      "shape": "3格L形",
       "attributes": [
         {
           "attack": 1,
@@ -1361,31 +1389,32 @@
         }
       ],
       "stageEffects": [
-        "每3回合获得4%H护盾，恢复1%H生命；治疗每场最多3次，护盾不受次数限制。",
-        "每3回合获得5%H护盾，恢复2%H生命；治疗每场最多3次，护盾不受次数限制。",
-        "每2回合获得5%H护盾，恢复2%H生命；治疗每场最多3次，护盾不受次数限制。",
-        "每2回合获得6%H护盾，恢复3%H生命；治疗每场最多3次，护盾不受次数限制。"
+        "每3回合施放烟幕：受到的原生直接伤害减少14%，持续1次敌方行动。同类取最高值，上限45%；不减免毒、灼烧和反击。",
+        "每3回合施放烟幕：受到的原生直接伤害减少18%，持续1次敌方行动。同类取最高值，上限45%；不减免毒、灼烧和反击。",
+        "每2回合施放烟幕：受到的原生直接伤害减少22%，持续1次敌方行动。同类取最高值，上限45%；不减免毒、灼烧和反击。",
+        "每2回合施放烟幕：受到的原生直接伤害减少26%，持续1次敌方行动。同类取最高值，上限45%；不减免毒、灼烧和反击。"
       ],
       "adjacency": {
         "direction": "别人给自己",
-        "text": "每相邻1件匕首，本物品治疗量＋10%，最多3件；四阶每件＋15%。"
+        "text": "每相邻1件剑类物品，烟幕减伤强度增加10%（四阶15%），最多3件。"
       },
-      "contributionTags": ["盗贼", "皮甲"],
+      "contributionTags": ["盗贼", "辅助"],
       "contribution": [3, 6, 12, 24],
-      "intent": "毒流续航；治疗耗尽后继续提供护盾，不成为空白装备。",
+      "intent": "烟幕单一效果：减少原生直接伤害；同类取最高值，不叠乘。",
       "cells": [
         [1, 0],
         [0, 1],
         [1, 1]
-      ]
+      ],
+      "series": "炼金工具"
     },
     {
       "id": "rogue_leather_4",
-      "name": "夜行皮甲",
+      "name": "烟幕匣",
       "profession": "盗贼",
-      "category": "皮甲",
+      "category": "辅助",
       "size": 4,
-      "shape": "方4格",
+      "shape": "4格方形",
       "attributes": [
         {
           "attack": 2,
@@ -1409,24 +1438,25 @@
         }
       ],
       "stageEffects": [
-        "每3回合获得7%H护盾。",
-        "每3回合获得9%H护盾。",
-        "每3回合获得11%H护盾。",
-        "每3回合获得13%H护盾；每场首次因敌方伤害跌至30%H及以下且仍存活时，恢复5%H生命。"
+        "每3回合施放烟幕：受到的原生直接伤害减少18%，持续2次敌方行动。同类取最高值，上限45%；不减免毒、灼烧和反击。",
+        "每3回合施放烟幕：受到的原生直接伤害减少22%，持续2次敌方行动。同类取最高值，上限45%；不减免毒、灼烧和反击。",
+        "每3回合施放烟幕：受到的原生直接伤害减少26%，持续2次敌方行动。同类取最高值，上限45%；不减免毒、灼烧和反击。",
+        "每3回合施放烟幕：受到的原生直接伤害减少30%，持续2次敌方行动。同类取最高值，上限45%；不减免毒、灼烧和反击。"
       ],
       "adjacency": {
         "direction": "别人给自己",
-        "text": "每相邻1件匕首或弓弩，本装备自身提供的生命＋8%，最多3件；四阶每件＋12%。"
+        "text": "每相邻1件本职业剑或手弩，本物品提供的生命增加8%（四阶12%），最多3件。"
       },
-      "contributionTags": ["盗贼", "皮甲"],
+      "contributionTags": ["盗贼", "辅助"],
       "contribution": [4, 8, 16, 32],
-      "intent": "盗贼生存核心；生命属性邻接不形成互相放大循环。",
+      "intent": "烟幕单一效果：减少原生直接伤害；同类取最高值，不叠乘。",
       "cells": [
         [0, 0],
         [1, 0],
         [0, 1],
         [1, 1]
-      ]
+      ],
+      "series": "炼金工具"
     }
   ]
 }

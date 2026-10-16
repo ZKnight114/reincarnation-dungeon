@@ -17,6 +17,8 @@ import type { Game } from './game';
 import { adjacencyDescription, readableEffect, itemProposal, itemStageText } from './item-rules';
 import { itemPainting, shapePath } from './scene';
 import { itemSkills } from './skills';
+import { itemBadge } from './item-badge';
+import { itemTalentText } from './talents';
 import type { Equipment, ResonanceKey } from './types';
 export const esc = (s: string) =>
   s.replace(
@@ -307,7 +309,7 @@ export class PackUI {
           : '相邻效果';
     this.details.innerHTML = `<header class="item-description-header" style="--quality-color:${QUALITIES[item.quality].color}"><h2>${esc(item.name)} <small>【${item.level}阶】</small></h2><span>${placed ? '装备中' : owned ? '暂放中' : '起始补给'}</span><button data-pack-action="close" aria-label="关闭装备详情">×</button></header>
     <div class="item-description-overview"><div class="item-description-tags">${itemPainting(item, 0, 'detail')}<strong>${proposal.contributionTags.join(' · ')}</strong><small>共鸣值：${contributionPoints(item)}</small><small>${shapePreview(item)}</small></div><div class="item-description-attributes"><p>人物攻击 <b>+${item.attack}</b></p><p>人物防御 <b>+${item.defense}</b></p><p>人物生命 <b>+${item.hp}</b></p></div></div>
-    <section class="item-native-effect"><h3>当前效果</h3><p>${esc(readableEffect(itemStageText(item)))}</p></section>
+    <section class="item-native-effect"><h3>当前效果</h3>${itemSkills(item.templateId, item.level).some((k) => k.cooldown) ? `<small>首次第 ${itemSkills(item.templateId, item.level).find((k) => k.cooldown)!.initialDelay ?? 1} 回合发动</small>` : ''}<p>${esc(readableEffect(itemStageText(item)))}</p><small>天赋增幅：${esc(itemTalentText(item, s.run.trainee?.talents ?? []))}</small></section>
     <section class="item-adjacency-effect"><h3>${role}</h3><p>${esc(adjacencyDescription(item))}</p><small>相邻指物品格子边缘接触，斜角不算。</small>${
       links.length
         ? `<div class="item-active-links"><strong>当前已生效</strong>${links
@@ -494,7 +496,7 @@ export class PackUI {
             const item = this.game.findItem(p.id)!,
               d = dimensions(item, p),
               points = cells(item, p.rotation);
-            return `<svg class="pack-piece quality-${item.quality}" data-pack-item="${item.id}" role="button" tabindex="0" aria-label="${esc(item.name)}，等级${item.level}" style="left:${(p.x / 7) * 100}%;top:${(p.y / 6) * 100}%;width:${(d.w / 7) * 100}%;height:${(d.h / 6) * 100}%;--item-color:${QUALITIES[item.quality].color};--item-fill:${gradeFill[item.quality]}" viewBox="0 0 ${d.w * 100} ${d.h * 100}"><path class="item-outline" d="${shapePath(points)}"/>${itemPainting(item, p.rotation, 'board')}<path class="item-grade-rim" d="${shapePath(points)}"/><rect class="item-grade-badge" x="${points[0][0] * 100 + 7}" y="${points[0][1] * 100 + 6}" width="55" height="27" rx="3"/><text class="item-level" x="${points[0][0] * 100 + 12}" y="${points[0][1] * 100 + 25}">${item.level}阶</text></svg>`;
+            return `<svg class="pack-piece quality-${item.quality}" data-pack-item="${item.id}" role="button" tabindex="0" aria-label="${esc(item.name)}，等级${item.level}" style="left:${(p.x / 7) * 100}%;top:${(p.y / 6) * 100}%;width:${(d.w / 7) * 100}%;height:${(d.h / 6) * 100}%;--item-color:${QUALITIES[item.quality].color};--item-fill:${gradeFill[item.quality]}" viewBox="0 0 ${d.w * 100} ${d.h * 100}"><path class="item-outline" d="${shapePath(points)}"/>${itemPainting(item, p.rotation, 'board')}<path class="item-grade-rim" d="${shapePath(points)}"/>${itemBadge(item)}</svg>`;
           })
           .join('');
       document.getElementById('pack-space')!.textContent = `${a.occupied}/${runBagCapacity(s)} 格`;
@@ -516,7 +518,7 @@ export class PackUI {
   private fieldItem(i: Equipment, offer: boolean) {
     const d = dimensions(i, { rotation: 0 }),
       points = cells(i);
-    return `<svg class="field-piece field-item quality-${i.quality} ${offer ? 'offer' : ''}" data-pack-item="${i.id}" role="button" tabindex="0" aria-label="${esc(i.name)}，等级${i.level}，${cells(i).length}格" style="--shape-w:${d.w};--shape-h:${d.h};--item-color:${QUALITIES[i.quality].color};--item-fill:${gradeFill[i.quality]}" viewBox="0 0 ${d.w * 100} ${d.h * 100}"><title>${esc(i.name)} · Lv.${i.level} · ${BRANCHES[i.branch].name}</title><path class="item-outline" d="${shapePath(points)}"/>${itemPainting(i, 0, 'field')}<path class="item-grade-rim" d="${shapePath(points)}"/><rect class="item-grade-badge" x="${points[0][0] * 100 + 7}" y="${points[0][1] * 100 + 6}" width="55" height="27" rx="3"/><text class="item-level" x="${points[0][0] * 100 + 12}" y="${points[0][1] * 100 + 25}">${i.level}阶</text></svg>`;
+    return `<svg class="field-piece field-item quality-${i.quality} ${offer ? 'offer' : ''}" data-pack-item="${i.id}" role="button" tabindex="0" aria-label="${esc(i.name)}，等级${i.level}，${cells(i).length}格" style="--shape-w:${d.w};--shape-h:${d.h};--item-color:${QUALITIES[i.quality].color};--item-fill:${gradeFill[i.quality]}" viewBox="0 0 ${d.w * 100} ${d.h * 100}"><title>${esc(i.name)} · Lv.${i.level} · ${BRANCHES[i.branch].name}</title><path class="item-outline" d="${shapePath(points)}"/>${itemPainting(i, 0, 'field')}<path class="item-grade-rim" d="${shapePath(points)}"/>${itemBadge(i)}</svg>`;
   }
   private cooldowns() {
     const s = this.game.state;
@@ -524,7 +526,16 @@ export class PackUI {
       const id = el.dataset.packItem!,
         i = this.game.findItem(id);
       if (!i) continue;
-      const remaining = Math.max(0, (s.combat.timers[id] ?? 0) - 1),
+      const runtime = s.combat.runtime,
+        skills =
+          runtime?.sources.find((source) => source.id === id)?.skills ??
+          itemSkills(i.templateId, i.level),
+        index = skills.findIndex((skill) => skill.cooldown > 0),
+        timer =
+          runtime && index >= 0
+            ? (runtime.timers[id + ':' + index] ?? skills[index].initialDelay ?? 1)
+            : (s.combat.timers[id] ?? 0),
+        remaining = Math.max(0, timer - 1),
         inCombat = s.phase === 'combat';
       let label = el.querySelector<SVGTextElement>('.cooldown-label');
       if (!label) {
@@ -535,12 +546,7 @@ export class PackUI {
         label.setAttribute('y', String(c[1] * 100 + 84));
         el.append(label);
       }
-      label.textContent =
-        inCombat && itemSkills(i.templateId, i.level).some((s) => s.cooldown)
-          ? remaining
-            ? `${remaining} 回合`
-            : '就绪'
-          : '';
+      label.textContent = inCombat && index >= 0 ? (remaining ? `${remaining} 回合` : '就绪') : '';
     }
   }
 }

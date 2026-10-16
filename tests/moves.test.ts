@@ -136,7 +136,7 @@ test('drag merging conserves resonance score and exact receiver anchor, no stone
   assert.equal(g.previewMove(donor.id, 0, 0).kind, 'merge');
   assert.equal(g.moveItem(donor.id, 0, 0), null);
   assert.equal(g.findItem(donor.id), null);
-  assert.equal(target.quality, 'green');
+  assert.equal(target.quality, 'blue');
   assert.deepEqual(g.state.draft[0], old);
   assert.deepEqual(cells(target), shape);
   assert.equal(resonanceScore(g.state.inventory, g.state.draft, 'flurry').score, score);
@@ -148,9 +148,9 @@ test('every merge grade is correct through Lv4; Lv4 duplicates relocate rather t
     target = g.state.inventory[0];
   g.state.player.hp = 20;
   for (const [level, q] of [
-    [1, 'green'],
-    [2, 'blue'],
-    [3, 'purple'],
+    [1, 'blue'],
+    [2, 'purple'],
+    [3, 'orange'],
   ] as const) {
     const donor = add(g, target.templateId, level);
     assert.equal(g.moveItem(donor.id, 0, 0), null);

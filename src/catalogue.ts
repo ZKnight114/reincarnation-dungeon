@@ -1,5 +1,10 @@
+// Approved v9 art; fixed cells are shared by rendering and placement.
 export const CATALOGUE = {
-  warrior_gem: { name: '勇气徽章', cells: [[0, 0]], sprite: 'W-0' },
+  warrior_gem: {
+    name: '勇气徽章',
+    cells: [[0, 0]],
+    sprite: 'W-0',
+  },
   warrior_blade_2: {
     name: '单手剑',
     cells: [
@@ -55,7 +60,7 @@ export const CATALOGUE = {
     sprite: 'W-B4',
   },
   warrior_guard_2: {
-    name: '小盾',
+    name: '铁护臂',
     cells: [
       [0, 0],
       [0, 1],
@@ -63,7 +68,7 @@ export const CATALOGUE = {
     sprite: 'W-F2',
   },
   warrior_guard_3: {
-    name: '鸢盾',
+    name: '荆棘肩甲',
     cells: [
       [0, 0],
       [1, 0],
@@ -72,7 +77,7 @@ export const CATALOGUE = {
     sprite: 'W-F3',
   },
   warrior_guard_4: {
-    name: '大盾',
+    name: '守卫塔盾',
     cells: [
       [0, 0],
       [1, 0],
@@ -81,9 +86,13 @@ export const CATALOGUE = {
     ],
     sprite: 'W-F4',
   },
-  mage_gem: { name: '奥术水晶', cells: [[0, 0]], sprite: 'M-0' },
+  mage_gem: {
+    name: '奥术水晶',
+    cells: [[0, 0]],
+    sprite: 'M-0',
+  },
   mage_flame_2: {
-    name: '短杖',
+    name: '短法杖',
     cells: [
       [0, 0],
       [0, 1],
@@ -91,7 +100,7 @@ export const CATALOGUE = {
     sprite: 'M-A2',
   },
   mage_flame_3: {
-    name: '曲杖',
+    name: '镶晶法杖',
     cells: [
       [0, 0],
       [1, 0],
@@ -100,7 +109,7 @@ export const CATALOGUE = {
     sprite: 'M-A3',
   },
   mage_flame_4: {
-    name: '长杖',
+    name: '烈焰长杖',
     cells: [
       [0, 0],
       [0, 1],
@@ -110,7 +119,7 @@ export const CATALOGUE = {
     sprite: 'M-A4',
   },
   mage_ice_2: {
-    name: '咒文书',
+    name: '霜晶法球',
     cells: [
       [0, 0],
       [1, 0],
@@ -118,7 +127,7 @@ export const CATALOGUE = {
     sprite: 'M-B2',
   },
   mage_ice_3: {
-    name: '三折魔典',
+    name: '环轨法球',
     cells: [
       [0, 0],
       [1, 0],
@@ -127,17 +136,17 @@ export const CATALOGUE = {
     sprite: 'M-B3',
   },
   mage_ice_4: {
-    name: '链扣魔典',
+    name: '寒星法球',
     cells: [
       [0, 0],
       [1, 0],
-      [2, 0],
-      [2, 1],
+      [1, 1],
+      [1, 2],
     ],
     sprite: 'M-B4',
   },
   mage_ward_2: {
-    name: '短法袍',
+    name: '咒文书',
     cells: [
       [0, 0],
       [0, 1],
@@ -145,7 +154,7 @@ export const CATALOGUE = {
     sprite: 'M-F2',
   },
   mage_ward_3: {
-    name: '旅行法袍',
+    name: '封印魔法书',
     cells: [
       [0, 0],
       [0, 1],
@@ -154,7 +163,7 @@ export const CATALOGUE = {
     sprite: 'M-F3',
   },
   mage_ward_4: {
-    name: '仪式法袍',
+    name: '仪式魔法书',
     cells: [
       [0, 0],
       [1, 0],
@@ -163,9 +172,13 @@ export const CATALOGUE = {
     ],
     sprite: 'M-F4',
   },
-  rogue_gem: { name: '暗影宝石', cells: [[0, 0]], sprite: 'R-0' },
+  rogue_gem: {
+    name: '暗影宝石',
+    cells: [[0, 0]],
+    sprite: 'R-0',
+  },
   rogue_assassin_2: {
-    name: '短匕',
+    name: '潜行短剑',
     cells: [
       [0, 0],
       [0, 1],
@@ -173,7 +186,7 @@ export const CATALOGUE = {
     sprite: 'R-A2',
   },
   rogue_assassin_3: {
-    name: '曲刃双匕',
+    name: '轻型双剑',
     cells: [
       [0, 0],
       [1, 0],
@@ -182,17 +195,17 @@ export const CATALOGUE = {
     sprite: 'R-A3',
   },
   rogue_assassin_4: {
-    name: '刺杀双匕',
+    name: '影袭双剑',
     cells: [
       [0, 0],
       [0, 1],
-      [1, 1],
-      [2, 1],
+      [0, 2],
+      [1, 2],
     ],
     sprite: 'R-A4',
   },
   rogue_archer_2: {
-    name: '手弩',
+    name: '轻型手弩',
     cells: [
       [0, 0],
       [1, 0],
@@ -200,7 +213,7 @@ export const CATALOGUE = {
     sprite: 'R-B2',
   },
   rogue_archer_3: {
-    name: '短弓',
+    name: '连发手弩',
     cells: [
       [0, 0],
       [0, 1],
@@ -209,17 +222,17 @@ export const CATALOGUE = {
     sprite: 'R-B3',
   },
   rogue_archer_4: {
-    name: '折臂长弩',
+    name: '重型手弩',
     cells: [
       [0, 0],
       [1, 0],
-      [2, 0],
-      [0, 1],
+      [1, 1],
+      [1, 2],
     ],
     sprite: 'R-B4',
   },
   rogue_leather_2: {
-    name: '轻皮甲',
+    name: '烟雾瓶',
     cells: [
       [0, 0],
       [0, 1],
@@ -227,7 +240,7 @@ export const CATALOGUE = {
     sprite: 'R-F2',
   },
   rogue_leather_3: {
-    name: '猎手皮甲',
+    name: '烟雾弹组',
     cells: [
       [1, 0],
       [0, 1],
@@ -236,7 +249,7 @@ export const CATALOGUE = {
     sprite: 'R-F3',
   },
   rogue_leather_4: {
-    name: '夜行皮甲',
+    name: '烟幕匣',
     cells: [
       [0, 0],
       [1, 0],

@@ -7,7 +7,7 @@ export const QUALITIES: Record<Quality, { label: string; multiplier: number; col
   purple: { label: '史诗', multiplier: 2, color: '#d17bff' },
   orange: { label: '传说', multiplier: 3, color: '#e2b776' },
 };
-export const QUALITY_ORDER: Quality[] = ['white', 'green', 'blue', 'purple', 'orange'];
+export const QUALITY_ORDER: Quality[] = ['white', 'blue', 'purple', 'orange'];
 export const SLOTS: Record<EquipmentSlot, string> = {
   weapon: '武器',
   armor: '护甲',

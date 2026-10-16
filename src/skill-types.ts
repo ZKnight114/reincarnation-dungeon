@@ -1,6 +1,6 @@
 import type { DamageType } from './types';
 
-export type StatusKind = 'poison' | 'burn' | 'chill' | 'break' | 'mark';
+export type StatusKind = 'poison' | 'burn' | 'chill' | 'break' | 'mark' | 'smoke';
 export type Condition =
   | 'poison'
   | 'burn'
@@ -12,9 +12,10 @@ export type Condition =
   | 'mixed'
   | 'icefire'
   | 'targetLow'
-  | 'selfLow';
+  | 'selfLow'
+  | 'smoke';
 export interface SkillAction {
-  kind: 'damage' | 'shield' | 'heal' | 'status' | 'counter' | 'consume';
+  kind: 'damage' | 'shield' | 'heal' | 'status' | 'counter' | 'consume' | 'smoke';
   a?: number;
   h?: number;
   d?: number;
@@ -35,9 +36,10 @@ export interface SkillAction {
   bonus?: number;
 }
 export interface Skill {
+  initialDelay?: number;
   cooldown: number;
   actions: SkillAction[];
-  trigger?: 'shieldHit' | 'shieldBreak' | 'low30' | 'low50' | 'tome';
+  trigger?: 'shieldHit' | 'shieldBreak' | 'low30' | 'low50' | 'tome' | 'support';
   once?: boolean;
   every?: number;
 }
@@ -51,6 +53,14 @@ export interface Source {
   healBonus?: number;
   counterBonus?: number;
   ranged?: boolean;
+  family?: string;
+  profession?: import('./types').Profession;
+  smokeBonus?: number;
+  talentDamage?: number;
+  talentDirect?: number;
+  lifesteal?: number;
+  reflect?: number;
+  statusBonus?: Partial<Record<StatusKind, number>>;
 }
 export interface BattleStatus {
   kind: StatusKind;

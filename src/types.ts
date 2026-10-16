@@ -84,6 +84,7 @@ export interface Equipment {
   damageType: DamageType;
   branch: Branch;
   potency: number;
+  legacyCells?: [number, number][];
 }
 export interface Placement {
   id: string;
@@ -168,7 +169,18 @@ export type Outcome = 'win' | 'death' | 'retreat';
 export type Rating = 'D' | 'C' | 'B' | 'A' | 'S';
 export type Attribute = 'attack' | 'hp' | 'defense' | 'speed';
 export type Attributes = Record<Attribute, number>;
+export interface GuildBonus {
+  attack: number;
+  hp: number;
+  defense: number;
+  attackPercent: number;
+  hpPercent: number;
+  defensePercent: number;
+  points: number;
+}
+export type TalentQuality = 'blue' | 'purple' | 'gold';
 export type TalentKey =
+  | `${string}:${TalentQuality}`
   | 'born_fighter'
   | 'keen_focus'
   | 'battle_instinct'
@@ -190,6 +202,8 @@ export interface Trainee {
   recruitment: 'random' | 'targeted';
   talents: TalentKey[];
   allocation: Attributes;
+  attributePoints?: number;
+  guildBonus?: GuildBonus;
   realmStart?: number;
   tomeId?: string | null;
   tomeLevel?: number;
@@ -209,12 +223,15 @@ export interface HeroRecord extends Trainee {
   resonances: ResonanceKey[];
   resonanceTiers: Partial<Record<ResonanceKey, number>>;
   stats: { attack: number; hp: number; defense: number; speed: number; sustain: number };
+  guildBaseline?: Attributes;
   score: { growth: number; build: number; performance: number };
   graduatedAt: number;
   loadout: HeroLoadout | null;
   trials: (TrialTier | null)[];
 }
 export interface RunSummary {
+  medals?: number;
+  legacyRewards?: boolean;
   outcome: Outcome;
   chapter: number;
   profession: Profession;
@@ -236,6 +253,7 @@ export interface DigState {
   claimed: string[];
 }
 export interface GameState {
+  rulesRevision?: number;
   version: 15;
   phase:
     | 'home'
@@ -252,6 +270,9 @@ export interface GameState {
     | 'reward'
     | 'summary';
   meta: {
+    medals: number;
+    guildPurchased: number;
+    guildHistory: { trained: number; trials: number; aRated: number; sRated: number };
     guildLevel: number;
     staminaSpent: number;
     tomes: Record<string, { level: number; pages: number }>;
@@ -299,6 +320,7 @@ export interface GameState {
     enemyHistory: Profession[];
     boundTome: { id: string; level: number } | null;
     legacyRoute?: boolean;
+    legacyChapter?: boolean;
   };
   awakening: {
     stage: number;

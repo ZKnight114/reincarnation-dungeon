@@ -1,12 +1,14 @@
 {
   "name": "reincarnation-dungeon",
-  "version": "15.0.0",
+  "version": "15.2.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build && node scripts/standalone.mjs && node scripts/verify-build.mjs",
+    "build": "tsc --noEmit && vite build && node scripts/standalone.mjs && node scripts/verify-build.mjs && node scripts/verify-startup.mjs",
     "preview": "vite preview --host 127.0.0.1",
+    "design:export": "tsx scripts/export-design.ts",
+    "assets:index": "node scripts/index-assets.mjs && prettier --write src/assets/library.json",
     "test": "tsx --test --test-concurrency=2 tests/*.test.ts",
     "format": "prettier --write src scripts tests vite.config.ts package.json tsconfig.json",
     "format:check": "prettier --check src scripts tests vite.config.ts package.json tsconfig.json"

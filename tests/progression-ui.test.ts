@@ -71,7 +71,7 @@ test('all four merge grades change tint, equipment artwork remains one piece and
   }
   assert.equal(styles.size, 4);
   assert.equal(paints.size, 1);
-  assert.equal(item.quality, 'purple');
+  assert.equal(item.quality, 'orange');
 });
 test('jobs have distinct art and descriptions, neutral gem contributes profession points', () => {
   for (const p of ['warrior', 'mage', 'rogue'] as const) {

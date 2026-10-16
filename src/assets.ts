@@ -3,7 +3,17 @@
 let files: Record<string, string> = {};
 try {
   files = import.meta.glob(
-    ['./assets/{W,M,R}-*.png', './assets/*-full.png', './assets/*-motion.png'],
+    [
+      './assets/{W,M,R}-*.png',
+      './assets/*-full.png',
+      './assets/*-motion.png',
+      './assets/guild-home.png',
+      './assets/ruins-ui.png',
+      './assets/buttonLong_beige.png',
+      './assets/panel_beigeLight.png',
+      './assets/ui/**/*.png',
+      './assets/tomes/*.png',
+    ],
     { eager: true, query: '?url', import: 'default' },
   ) as Record<string, string>;
 } catch {
@@ -15,3 +25,4 @@ const transparentPlaceholder = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQ
 export function spriteUrl(name: string): string {
   return files[`./assets/${name}.png`] ?? transparentPlaceholder;
 }
+export const startupAssets = () => [...new Set(Object.values(files))];
