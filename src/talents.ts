@@ -1,5 +1,6 @@
 import catalogue from './talent-catalogue.json';
-import type { Attribute, Equipment, Profession, TalentKey, TalentQuality } from './types';
+import type { Aptitude, Attribute, Equipment, Profession, TalentKey, TalentQuality } from './types';
+import { APTITUDES } from './aptitude';
 import type { Source } from './skill-types';
 import { equipmentFamily } from './categories';
 import { LEGACY_TALENTS } from './legacy-talents';
@@ -70,8 +71,23 @@ for (const family of catalogue.talents) {
 export const TALENT_KEYS = Object.keys(TALENTS) as TalentKey[];
 const pick = <T>(pool: T[], random: () => number) =>
   pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))];
-export function rollTalents(random: () => number, profession: Profession = 'warrior'): TalentKey[] {
+export function rollTalents(
+  random: () => number,
+  profession: Profession = 'warrior',
+  aptitude?: Aptitude,
+): TalentKey[] {
   const chosen: TalentKey[] = [];
+  const positions = [0, 1, 2, 3];
+  const forced = new Map<number, TalentQuality>();
+  if (aptitude) {
+    for (let n = positions.length - 1; n > 0; n--) {
+      const target = Math.min(n, Math.floor(random() * (n + 1)));
+      [positions[n], positions[target]] = [positions[target], positions[n]];
+    }
+    const a = APTITUDES[aptitude];
+    positions.slice(0, a.gold).forEach((p) => forced.set(p, 'gold'));
+    positions.slice(a.gold, a.gold + a.purple).forEach((p) => forced.set(p, 'purple'));
+  }
   for (const category of [
     'profession',
     'item',
@@ -86,7 +102,10 @@ export function rollTalents(random: () => number, profession: Profession = 'warr
     // Select families uniformly, then normalize quality weights after excluding used instances.
     const family = pick(
       families.filter((t) =>
-        ['blue', 'purple', 'gold'].some((q) => !chosen.includes(`${t.id}:${q}` as TalentKey)),
+        (forced.has(chosen.length)
+          ? [forced.get(chosen.length)!]
+          : ['blue', 'purple', 'gold']
+        ).some((q) => !chosen.includes(`${t.id}:${q}` as TalentKey)),
       ),
       random,
     );
@@ -95,7 +114,9 @@ export function rollTalents(random: () => number, profession: Profession = 'warr
     );
     let draw = random() * qualities.reduce((n, q) => n + TALENT_QUALITIES[q].weight, 0);
     const quality =
-      qualities.find((q) => (draw -= TALENT_QUALITIES[q].weight) < 0) ?? qualities.at(-1)!;
+      forced.get(chosen.length) ??
+      qualities.find((q) => (draw -= TALENT_QUALITIES[q].weight) < 0) ??
+      qualities.at(-1)!;
     chosen.push(`${family.id}:${quality}`);
   }
   return chosen;

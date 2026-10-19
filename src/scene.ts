@@ -1,6 +1,6 @@
 import { cells, spriteName } from './backpack';
 import { actorArt, pixel } from './pixel';
-import type { Equipment, Profession } from './types';
+import type { Equipment, Profession, HeroAppearance } from './types';
 
 export function dungeonArt(chapter: number) {
   const tones = [
@@ -42,11 +42,15 @@ export function itemPainting(item: Equipment, _rotation = 0, _context = 'item') 
   const points = cells(item),
     w = (Math.max(...points.map((p) => p[0])) + 1) * 100,
     h = (Math.max(...points.map((p) => p[1])) + 1) * 100;
-  return `<svg viewBox="0 0 ${w} ${h}" class="item-painting" data-profession="${item.profession}" data-branch="${item.branch}" aria-hidden="true"><image href="${pixel(spriteName(item)!)}" width="${w}" height="${h}"/></svg>`;
+  const verticalSpear = item.templateId === 'warrior_pole_4' && w < h;
+  const image = verticalSpear
+    ? `<image href="${pixel(spriteName(item)!)}" width="${h}" height="${w}" transform="translate(0 ${h}) rotate(-90)"/>`
+    : `<image href="${pixel(spriteName(item)!)}" width="${w}" height="${h}"/>`;
+  return `<svg viewBox="0 0 ${w} ${h}" class="item-painting" data-profession="${item.profession}" data-branch="${item.branch}" aria-hidden="true">${image}</svg>`;
 }
 export function guildArt() {
   return `<svg class="guild-art" viewBox="0 0 900 740" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="guild-sky" x2="0" y2="1"><stop stop-color="#273246"/><stop offset="1" stop-color="#99806c"/></linearGradient><linearGradient id="guild-stone" x2="1" y2="1"><stop stop-color="#a28d6d"/><stop offset="1" stop-color="#5a5547"/></linearGradient></defs><rect width="900" height="740" fill="url(#guild-sky)"/><circle cx="710" cy="120" r="41" fill="#e4d7b4" opacity=".7"/><path d="M0 320 140 150 300 335 470 220 680 330 820 220 900 290v450H0Z" fill="#3f4b49"/><path d="M0 485q180-80 340-16t560-15v286H0Z" fill="#344434"/><g fill="url(#guild-stone)" stroke="#413d33" stroke-width="6"><path d="M180 352h540v284H180Z"/><path d="M125 305h118v340H125Zm532 0h118v340H657Z"/><path d="m97 308 87-161 86 161Zm532 0 87-161 86 161Z" fill="#4a4b48"/><path d="m192 357 258-161 258 161Z" fill="#56494c"/><path d="M291 383h318v253H291Z"/></g><g stroke="#6e5941" stroke-width="8"><path d="M381 636V476q0-96 69-96t69 96v160Z" fill="#2e302c"/><path d="M450 395v241M390 508h120m-120 58h120"/><path d="M207 422h46v77h-46Zm440 0h46v77h-46Z" fill="#e2bc78"/><path d="M158 354h40v89h-40Zm544 0h40v89h-40Z" fill="#dcad66"/></g><path d="M319 326h262v56H319Z" fill="#c2ab77" stroke="#806d45" stroke-width="5"/><text x="450" y="362" text-anchor="middle" font-size="27" fill="#3b3930" font-family="Georgia,serif" letter-spacing="4">ADVENTURERS GUILD</text><g fill="#58755f" stroke="#c4b483" stroke-width="3"><path d="M263 376h35v145l-18-13-17 13Z"/><path d="M602 376h35v145l-18-13-17 13Z"/></g><path d="M377 630h145l55 110H323Z" fill="#867b63"/><g fill="#c29b61"><circle cx="340" cy="608" r="10"/><circle cx="560" cy="608" r="10"/></g><path d="M340 610v66m220-66v66" stroke="#473c2f" stroke-width="8"/><g fill="#18332b"><path d="m61 416-86 160h42l-48 123h162L75 576h32Z"/><path d="m845 387-71 136h31l-48 127h143V506Z"/></g></svg>`;
 }
-export function heroArt(profession: Profession) {
-  return actorArt(profession);
+export function heroArt(profession: Profession, appearance?: HeroAppearance) {
+  return actorArt(profession, appearance);
 }

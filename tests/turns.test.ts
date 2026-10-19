@@ -20,7 +20,8 @@ function endless() {
   g.state.draft = [];
   placeFree(g, g.state.inventory[0].id);
   advanceCamp(g);
-  setEnemy(g, { hp: 1e8, maxHp: 1e8, attack: 0 });
+  setEnemy(g, { hp: 1e8, maxHp: 1e8, attack: 0, speed: 1 });
+  g.state.combat.order = ['hero', 'enemy'];
   return g;
 }
 
@@ -168,7 +169,8 @@ test('higher speed acts first and equal speed favors the hero at the next round 
 test('a fast hero lethal hit cancels the dead enemy turn; a faster enemy lethal hit cancels hero equipment', () => {
   const fast = start();
   advanceCamp(fast);
-  setEnemy(fast, { hp: 1 });
+  setEnemy(fast, { hp: 1, speed: 1 });
+  fast.state.combat.order = ['hero', 'enemy'];
   const hp = fast.state.player.hp;
   assert.equal(fast.nextActor(), 'hero');
   fast.advanceTurn();

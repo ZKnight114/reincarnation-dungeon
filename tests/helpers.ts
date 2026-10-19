@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { Game } from '../src/game';
 import { TRIAL_NODES, stageGrowth, chapterRoute } from '../src/journey';
-import { firstFree, openBagCells, validateLayout } from '../src/backpack';
+import { firstFree, runBagCells, validateLayout, PROFESSIONS } from '../src/backpack';
 import type { EventKind, Profession } from '../src/types';
 export const seed = (initial: number) => {
   let n = initial;
@@ -11,12 +11,12 @@ export const seed = (initial: number) => {
   };
 };
 export function placeFree(g: Game, id: string) {
-  const p = firstFree(g.state.inventory, g.state.draft, id, openBagCells(g.state.run.kills));
+  const p = firstFree(g.state.inventory, g.state.draft, id, runBagCells(g.state));
   return p ? g.placeItem(id, p.x, p.y, p.rotation) : '无空位';
 }
 export function fitStarters(g: Game) {
   const items = g.state.inventory,
-    open = openBagCells(g.state.run.kills);
+    open = runBagCells(g.state);
   function fit(n: number, layout: Game['state']['draft']): Game['state']['draft'] | null {
     if (n === items.length) return layout;
     for (let y = 0; y < 6; y++)
@@ -30,8 +30,18 @@ export function fitStarters(g: Game) {
     return null;
   }
   const result = fit(0, []);
-  assert.ok(result, 'starter shapes fit initial bag');
-  g.state.draft = result;
+  // Random gifts may exceed the opening bag. Keeping a usable subset is intentional.
+  g.state.draft = result ?? [];
+  if (!result) {
+    for (const i of [...items].sort(
+      (a, b) => Number(b.slot === 'weapon') - Number(a.slot === 'weapon'),
+    )) {
+      const p = firstFree(items, g.state.draft, i.id, open);
+      if (p) g.state.draft.push(p);
+    }
+  }
+  if (g.state.run.starterRound === 2)
+    assert.ok(g.state.draft.some((p) => items.find((i) => i.id === p.id)?.slot === 'weapon'));
   g.state.revision++;
 }
 export function recruitToConfigure(g: Game, chapter = 1, profession: Profession = 'warrior') {
@@ -63,6 +73,14 @@ export function start(profession: Profession = 'warrior', random = seed(19)) {
   g.state.meta.highestChapter = 4;
   recruitToConfigure(g, 4, profession);
   assert.equal(g.startRun(profession), null);
+  // Mechanics fixtures retain the historical rectangle for tests with explicit coordinates.
+  // Fresh-run layout, randomized loot and real playthroughs are tested independently.
+  g.state.run.packLayout = 'legacy';
+  // A known build fixture isolates downstream mechanics from opening loot randomness.
+  // Opening random generation itself is tested using startRun directly.
+  g.state.run.starterPlan = structuredClone(PROFESSIONS[profession].starter);
+  g.state.itemSerial = 0;
+  g.state.run.starterOffers = g.state.run.starterPlan[0].map((id) => g.makeItem(id));
   return prepare(g);
 }
 export function positionEvent(g: Game, kind: EventKind, index?: number) {
@@ -113,7 +131,9 @@ export function setEnemy(g: Game, values: Partial<NonNullable<Game['state']['ene
     attack: e.attack,
     defense: e.defense,
     speed: e.speed,
+    profession: e.profession,
   });
+  if (values.templateId) r.enemyId = values.templateId;
   if (values.effects)
     r.enemy.statuses = values.effects.map((x) => ({
       kind: x.kind,

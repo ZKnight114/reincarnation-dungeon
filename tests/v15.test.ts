@@ -357,8 +357,11 @@ test('short chapters retain three trial breakthroughs, four resonance choices an
     positionEvent(g, 'boss', index);
     g.state.enemy!.hp = 0;
     g.update(0.01);
+    assert.equal(g.state.phase, 'camp');
+    assert.equal(g.continueCamp(), null);
     assert.equal(g.state.run.realm, g.state.run.trainee!.realmStart! + g.state.run.stages);
     assert.equal(g.state.run.realm, previous + 1);
+    if (g.state.run.pendingPromotion) assert.equal(g.continueCamp(), null);
     g.finishAwakening();
     g.chooseReward(0);
   }

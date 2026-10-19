@@ -1,5 +1,6 @@
 import { startupAssets, spriteUrl } from './assets';
-const ready = new Set<string>();
+const ready = new Map<string, HTMLImageElement>();
+export const decodedAsset = (url: string) => ready.get(url);
 const el = (id: string) => document.getElementById(id)!;
 export function loadingProgress(done: number, total: number, label: string) {
   const percent = Math.floor((done * 100) / Math.max(1, total));
@@ -29,7 +30,7 @@ export async function preloadAssets(onProgress: (done: number, total: number) =>
         decode.then(
           () => {
             clearTimeout(timeout);
-            ready.add(url);
+            ready.set(url, img);
             resolve();
           },
           () => {

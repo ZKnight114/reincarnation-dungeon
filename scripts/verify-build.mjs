@@ -2,6 +2,11 @@ import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { Window } from 'happy-dom';
 const source = await readFile(new URL('../轮回地牢.html', import.meta.url), 'utf8');
+// The footprint catalogue is data-only; read the exact approved geometry without a TS runtime.
+const catalogueSource = await readFile(new URL('../src/catalogue.ts', import.meta.url), 'utf8');
+const catalogue = new Function(
+  catalogueSource.replace('export const CATALOGUE =', 'return').replace('} as const;', '};'),
+)();
 assert.doesNotMatch(source, /@font-face|data:font\/|data:application\/font/i);
 
 // Check both delivery formats: the web bundle references separate PNGs,
@@ -25,7 +30,9 @@ assert.doesNotMatch(source, /new URL\([^)]*,import\.meta\.url\)\.href/);
 
 const win = new Window({ url: 'http://localhost/' }),
   realNow = Date.now;
-let now = realNow();
+let now = realNow(),
+  frameCallback = null,
+  frameTime = performance.now();
 Date.now = () => now;
 try {
   win.localStorage.setItem('recursion-dungeon-save-v8', 'old');
@@ -44,10 +51,15 @@ try {
     window: win,
     document: win.document,
     localStorage: win.localStorage,
-    requestAnimationFrame: () => 0,
+    requestAnimationFrame: (callback) => {
+      frameCallback = callback;
+      return 1;
+    },
     getComputedStyle: win.getComputedStyle.bind(win),
     // happy-dom does not decode raster assets; the real-browser check covers decoding.
     Image: class {
+      naturalWidth = 128;
+      naturalHeight = 192;
       set src(_url) {
         queueMicrotask(() => this.onload?.());
       }
@@ -93,9 +105,9 @@ try {
   assert.equal(save().meta.energy.value, 40);
   assert.equal(save().phase, 'configure');
   assert.equal(
-    win.getComputedStyle(win.document.querySelector('.admission-submit')).top,
-    '666px',
-    'Bundled configuration must retain the final pixel-layout stylesheet overrides',
+    win.getComputedStyle(win.document.querySelector('.admission-file')).display,
+    'flex',
+    'Bundled configuration must use the final content-row layout',
   );
   assert.equal(win.document.querySelectorAll('.talent-badge').length, 4);
   assert.equal(win.document.querySelectorAll('.attribute-row').length, 4);
@@ -107,59 +119,84 @@ try {
   click('[data-action="start"]');
   assert.equal(save().phase, 'opening');
   const gridStyle = win.getComputedStyle(win.document.getElementById('pack-grid'));
-  assert.equal(gridStyle.width, '350px');
-  assert.equal(gridStyle.height, '300px');
+  assert.equal(gridStyle.width, '327px');
+  assert.equal(gridStyle.height, '280px');
+  assert.equal(gridStyle.gap, '2px');
+  assert.equal(win.document.querySelectorAll('.pack-cell.open').length, 15);
   assert.equal(win.document.querySelector('#field-items button'), null);
-  const positions = [
-    [1, 1],
-    [2, 1],
-    [4, 1],
-    [5, 1],
-    [2, 2],
-    [3, 2],
-  ];
-  for (let n = 0; n < 2; n++) {
-    click('[data-action="claim-starters"]');
-    const loose = save().inventory.filter((i) => !save().draft.some((p) => p.id === i.id));
-    assert.equal(loose.length, 3);
-    for (const item of loose) {
-      now += 500;
-      win.document.getElementById('pack-grid').getBoundingClientRect = () => ({
-        left: 0,
-        top: 100,
-        right: 420,
-        bottom: 460,
-        width: 420,
-        height: 360,
-      });
-      const [x, y] = positions[Number(item.id.slice(5)) - 1],
-        root = win.document.getElementById('adventure-screen'),
-        target = win.document.querySelector(`[data-pack-item="${item.id}"]`);
-      target.dispatchEvent(
-        new win.PointerEvent('pointerdown', {
+  const plan = save().run.starterPlan;
+  assert.equal(plan.flat().length, 6);
+  click('[data-action="claim-starters"]');
+  assert.deepEqual(
+    save().run.starterOffers.map((i) => i.templateId),
+    plan[1],
+  );
+  click('[data-action="claim-starters"]');
+  assert.equal(save().inventory.length, 6);
+  const items = save().inventory.sort(
+    (a, b) =>
+      Number(b.slot === 'weapon' && catalogue[b.templateId].cells.length === 2) -
+      Number(a.slot === 'weapon' && catalogue[a.templateId].cells.length === 2),
+  );
+  for (const item of items) {
+    const occupied = new Set(
+      save().draft.flatMap((p) =>
+        catalogue[save().inventory.find((i) => i.id === p.id).templateId].cells.map(
+          ([x, y]) => `${x + p.x},${y + p.y}`,
+        ),
+      ),
+    );
+    const points = catalogue[item.templateId].cells;
+    let at;
+    const open = new Set(
+      [...win.document.querySelectorAll('.pack-cell.open')].map((el) => el.dataset.packCell),
+    );
+    for (let y = 0; y < 6 && !at; y++)
+      for (let x = 0; x < 7; x++)
+        if (
+          points.every(
+            ([dx, dy]) => open.has(`${x + dx},${y + dy}`) && !occupied.has(`${x + dx},${y + dy}`),
+          )
+        ) {
+          at = [x, y];
+          break;
+        }
+    if (!at) continue; // Keeping only the equipment that fits is a legal player decision.
+    now += 500;
+    win.document.getElementById('pack-grid').getBoundingClientRect = () => ({
+      left: 0,
+      top: 100,
+      right: 327,
+      bottom: 380,
+      width: 327,
+      height: 280,
+    });
+    const [x, y] = at,
+      root = win.document.getElementById('adventure-screen'),
+      target = win.document.querySelector(`[data-pack-item="${item.id}"]`);
+    target.dispatchEvent(
+      new win.PointerEvent('pointerdown', {
+        bubbles: true,
+        pointerId: 1,
+        pointerType: 'touch',
+        button: 0,
+        clientX: 30,
+        clientY: 30,
+      }),
+    );
+    for (const type of ['pointermove', 'pointerup'])
+      root.dispatchEvent(
+        new win.PointerEvent(type, {
           bubbles: true,
           pointerId: 1,
           pointerType: 'touch',
-          button: 0,
-          clientX: 30,
-          clientY: 30,
+          clientX: x * 47 + 22.5,
+          clientY: 100 + y * 47 + 22.5,
         }),
       );
-      for (const type of ['pointermove', 'pointerup'])
-        root.dispatchEvent(
-          new win.PointerEvent(type, {
-            bubbles: true,
-            pointerId: 1,
-            pointerType: 'touch',
-            clientX: x * 60 + 30,
-            clientY: 100 + y * 60 + 30,
-          }),
-        );
-    }
   }
-  assert.equal(save().inventory.length, 6);
-  assert.equal(win.document.querySelectorAll('.pack-piece').length, 6);
-  assert.equal(win.document.querySelectorAll('.item-outline').length, 6);
+  assert.ok(save().draft.length > 0 && save().draft.length <= 6);
+  assert.equal(win.document.querySelectorAll('.pack-piece').length, save().draft.length);
   assert.equal(win.document.querySelectorAll('.pack-cell').length, 42);
   click('[data-action="finish-opening"]');
   assert.equal(save().phase, 'initial');
@@ -172,20 +209,30 @@ try {
   assert.equal(win.document.getElementById('view-pack').hidden, true);
   assert.equal(win.document.querySelector('#decision-sheet').open, false);
   assert.ok(win.document.getElementById('journey-history').textContent.trim());
-  click('[data-action="continue-story"]');
+  assert.equal(win.document.querySelector('[data-action="continue-story"]').disabled, true);
+  for (let n = 0; n < 80 && !win.document.querySelector('[data-action="skip-combat"]'); n++) {
+    now += 100;
+    frameTime += 100;
+    frameCallback(frameTime);
+  }
+  assert.ok(
+    win.document.querySelector('[data-action="skip-combat"]'),
+    'Playback must automatically enter combat',
+  );
+  // Explicit UI actions persist the live state; return the speed to 1x after checking it.
+  for (let n = 0; n < 3; n++) click('[data-action="cycle-speed"]');
   assert.equal(save().phase, 'combat');
   assert.ok(win.document.querySelector('.battle-scene'));
   assert.equal(win.document.querySelectorAll('.resonance-slot').length, 4);
   assert.equal(win.document.querySelector('#stash-items'), null);
-  click('[data-action="combat-tools"]');
-  click('[data-action="pause"]');
-  assert.equal(save().isRunning, false);
+  assert.equal(win.document.querySelector('[data-action="combat-tools"]'), null);
+  assert.equal(win.document.querySelector('[data-action="pause"]'), null);
+  click('[data-action="skip-combat"]');
+  assert.equal(save().skipCombat, true);
   assert.ok(win.document.querySelector('#turn-order').textContent.includes('回合'));
-  click('[data-action="step-turn"]');
-  assert.equal(save().combat.actionIndex, 1);
-  assert.equal(save().combat.lastActor, 'hero');
-  assert.equal(save().combat.round, 1);
-  assert.equal(save().isRunning, false);
+  click('[data-action="cycle-speed"]');
+  assert.equal(save().speed, 2);
+  assert.equal(save().isRunning, true);
   console.log(
     `Standalone v15 guild → chapter carousel → targeted recruitment → four talents and allocation → six shape gifts with touch drags → initial resonance → discrete combat passed (${Math.round(Buffer.byteLength(source) / 1024)} KB).`,
   );

@@ -1,11 +1,27 @@
 import { spriteUrl } from './assets';
 import { ENEMIES } from './data';
-import type { Enemy, Profession } from './types';
+import type { Enemy, Profession, HeroAppearance } from './types';
+import { portraitUrl } from './character-parts';
+import { ACTOR_APPEARANCE, ENEMY_ANCHORS } from './actor-appearance';
+import { actorRig } from './motion';
 export const pixel = spriteUrl;
-export const actorArt = (profession: Profession) =>
-  `<img class="pixel-actor hero-portrait" src="${pixel(profession + '-full')}" alt="">`;
-export const actorMotion = (profession: Profession) =>
-  `<span class="actor-sprite" style="background-image:url('${pixel(profession + '-motion')}')" aria-hidden="true"></span>`;
+export const actorArt = (profession: Profession, appearance?: HeroAppearance) =>
+  `<img class="pixel-actor hero-portrait ${appearance ? 'composite-portrait' : ''}" ${appearance ? `data-gender="${appearance.gender}"` : ''} src="${portraitUrl(profession, appearance) ?? pixel(ACTOR_APPEARANCE[profession].image)}" alt="">`;
+export const actorMotion = (profession: Profession) => {
+  const appearance = ACTOR_APPEARANCE[profession];
+  return appearance.motion?.source === appearance.image
+    ? `<span class="actor-sprite" style="background-image:url('${pixel(appearance.motion.image)}')" aria-hidden="true"></span>`
+    : '';
+};
+export const heroRig = (profession: Profession, appearance?: HeroAppearance) =>
+  actorRig(
+    actorArt(profession, appearance),
+    'hero',
+    appearance ? { center: [50, 50] } : ACTOR_APPEARANCE[profession].anchors,
+    appearance ? '' : actorMotion(profession),
+  );
+export const foeRig = (enemy: Enemy) =>
+  actorRig(foeArt(enemy), 'enemy', ENEMY_ANCHORS[foeSprite(enemy.species)]);
 export function foeSprite(species: number) {
   const form = ENEMIES[species]?.form;
   const sprites: Record<string, string> = {

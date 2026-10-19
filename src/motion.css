@@ -1,0 +1,537 @@
+/* Shared movement for any static art. Keep labels, touch targets and pack geometry stationary. */
+.actor-rig {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  isolation: isolate;
+}
+.actor-body,
+.actor-art,
+.actor-fx-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.actor-body {
+  transform-origin: 50% 96%;
+  animation: motion-breathe 2.6s ease-in-out infinite;
+}
+.actor-art {
+  transform: scale(var(--actor-scale, 1));
+  transform-origin: 50% 96%;
+}
+.actor-fx-layer {
+  z-index: 3;
+  overflow: visible;
+}
+.actor-shadow {
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: 1px;
+  height: 9px;
+  background: radial-gradient(ellipse, #041419aa 25%, transparent 73%);
+  pointer-events: none;
+  z-index: -1;
+}
+/* Loot stays in the foreground. The explorer belongs below the scene veil,
+   at the same approved position and baseline; never create a separate character row. */
+#adventure-screen .has-offers .battle-scene {
+  z-index: -1;
+  pointer-events: none;
+}
+#adventure-screen .has-offers:after {
+  z-index: 0;
+}
+#adventure-screen .has-offers .hero-fighter {
+  opacity: 0.62;
+  filter: saturate(0.78) brightness(0.9);
+}
+#adventure-screen .has-offers .field-items {
+  z-index: 6;
+}
+#adventure-screen .actor-rig .actor-art > img {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  translate: -50% 0;
+  object-position: center bottom;
+}
+#adventure-screen .actor-rig.has-sheet .hero-portrait {
+  display: none;
+}
+#adventure-screen .actor-rig:not(.has-sheet) .actor-sprite {
+  display: none;
+}
+#adventure-screen .actor-rig .actor-sprite {
+  left: 2px;
+  bottom: 5px;
+}
+#adventure-screen .fighter.acting,
+#adventure-screen .fighter.hurt {
+  animation: none;
+  translate: none;
+  filter: none;
+}
+#adventure-screen .fighter.acting .actor-body {
+  animation: motion-strike calc(0.24s * var(--motion-factor, 1)) ease-out both;
+}
+#adventure-screen .fighter.acting [data-attack='arcane'] .actor-body,
+#adventure-screen .fighter.acting [data-attack='bolt'] .actor-body,
+#adventure-screen .fighter.acting [data-attack='poison'] .actor-body {
+  animation-name: motion-cast;
+}
+#adventure-screen .fighter.hurt:not(.acting) .actor-body {
+  animation: motion-hurt calc(0.15s * var(--motion-factor, 1)) ease-out both;
+}
+#adventure-screen .fighter.hurt .actor-art {
+  animation: motion-hit-light calc(0.15s * var(--motion-factor, 1)) ease-out;
+}
+#adventure-screen .fighter:not(.acting):not(.hurt) .actor-rig[data-motion='explore'] .actor-body {
+  animation: motion-walk calc(0.66s * var(--motion-factor, 1)) ease-in-out infinite;
+}
+#adventure-screen .fighter:not(.acting):not(.hurt) .actor-rig[data-motion='explore'] .actor-shadow {
+  animation: motion-shadow calc(0.66s * var(--motion-factor, 1)) ease-in-out infinite;
+}
+#adventure-screen .actor-sprite {
+  animation-duration: calc(0.9s * var(--motion-factor, 1));
+}
+#adventure-screen .exploring .actor-sprite {
+  animation-duration: calc(0.66s * var(--motion-factor, 1));
+}
+#adventure-screen .hero-fighter.acting .actor-sprite {
+  animation-duration: calc(0.24s * var(--motion-factor, 1));
+}
+#adventure-screen .hero-fighter.hurt .actor-sprite {
+  animation-duration: calc(0.15s * var(--motion-factor, 1));
+}
+@keyframes motion-breathe {
+  50% {
+    transform: translateY(-1px);
+  }
+}
+@keyframes motion-walk {
+  25%,
+  75% {
+    transform: translateY(-2px) rotate(calc(0.6deg * var(--actor-direction)));
+  }
+  50% {
+    transform: translateY(0);
+  }
+}
+@keyframes motion-shadow {
+  25%,
+  75% {
+    opacity: 0.6;
+    transform: scaleX(0.92);
+  }
+}
+@keyframes motion-strike {
+  0%,
+  100% {
+    transform: none;
+  }
+  38% {
+    transform: translateX(calc(16px * var(--actor-direction)))
+      rotate(calc(5deg * var(--actor-direction)));
+  }
+}
+@keyframes motion-cast {
+  0%,
+  100% {
+    transform: none;
+  }
+  30% {
+    transform: translateX(calc(-4px * var(--actor-direction)));
+  }
+  65% {
+    transform: translateX(calc(5px * var(--actor-direction)))
+      rotate(calc(2deg * var(--actor-direction)));
+  }
+}
+@keyframes motion-hurt {
+  0%,
+  100% {
+    transform: none;
+  }
+  25% {
+    transform: translateX(calc(-6px * var(--actor-direction)));
+  }
+  50% {
+    transform: translateX(calc(3px * var(--actor-direction)));
+  }
+  75% {
+    transform: translateX(calc(-2px * var(--actor-direction)));
+  }
+}
+@keyframes motion-hit-light {
+  20% {
+    filter: brightness(2) contrast(0.8);
+  }
+  65% {
+    filter: brightness(1.25);
+  }
+}
+.actor-departure {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 100px;
+  height: 144px;
+  pointer-events: none;
+  animation: motion-depart calc(0.32s * var(--motion-factor, 1)) ease-out forwards;
+}
+#adventure-screen .actor-departure .enemy-fighter {
+  visibility: visible;
+}
+@keyframes motion-depart {
+  25% {
+    filter: brightness(1.5);
+  }
+  to {
+    opacity: 0;
+    translate: 7px 0;
+  }
+}
+
+/* All effects use proportional rig anchors and cannot capture a pointer. */
+.actor-effect {
+  position: absolute;
+  left: var(--actor-center-x, 50%);
+  top: var(--actor-center-y, 46%);
+  width: 68px;
+  height: 68px;
+  margin: -34px 0 0 -34px;
+  pointer-events: none;
+  animation: motion-effect calc(0.28s * var(--motion-factor, 1)) ease-out forwards;
+  --effect-color: #f4d793;
+}
+.effect-slash {
+  border-top: 5px solid #fff0c2;
+  border-radius: 50%;
+  transform: rotate(-38deg);
+  box-shadow: 0 -3px #d1a768;
+}
+.effect-thrust {
+  height: 4px;
+  margin-top: -2px;
+  background: linear-gradient(90deg, transparent, #fff0bc 65%, transparent);
+  box-shadow: 0 2px #9fcac9;
+}
+.effect-bolt {
+  width: 44px;
+  height: 3px;
+  margin: -2px 0 0 -22px;
+  background: #dfd5b7;
+  rotate: -25deg;
+  box-shadow: 0 3px #876748;
+}
+.effect-arcane {
+  border: 3px solid #abc7ff;
+  background: radial-gradient(ellipse, #c9e4ffbb, transparent 65%);
+  border-radius: 50%;
+  --effect-color: #9fafff;
+}
+.effect-poison {
+  background: radial-gradient(ellipse, #b9e56f99, #76a65666 40%, transparent 70%);
+  --effect-color: #b4d975;
+}
+.effect-impact {
+  width: 42px;
+  height: 42px;
+  margin: -21px 0 0 -21px;
+  background:
+    linear-gradient(45deg, transparent 46%, #fff1b6 48% 52%, transparent 54%),
+    linear-gradient(-45deg, transparent 46%, #fff1b6 48% 52%, transparent 54%);
+}
+.effect-heal {
+  border-bottom: 4px solid #b6eaa0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 10px,
+    #b2dc7944 11px 13px,
+    transparent 14px 21px
+  );
+  --effect-color: #b9e5a7;
+}
+.effect-shield {
+  width: 80px;
+  height: 94px;
+  margin: -47px 0 0 -40px;
+  border: 3px solid #99d7ee;
+  border-radius: 45% 45% 50% 50%;
+  background: linear-gradient(110deg, transparent 40%, #b3e8ef55 48%, transparent 58%);
+  --effect-color: #a7d9ef;
+}
+.effect-awaken {
+  width: 100px;
+  height: 148px;
+  margin: -74px 0 0 -50px;
+  background: linear-gradient(90deg, transparent, #ffe0a25c, transparent);
+  border-bottom: 4px solid #ffe0a2;
+  animation: motion-awaken calc(1.3s * var(--motion-factor, 1)) ease-out both;
+}
+@keyframes motion-effect {
+  0% {
+    opacity: 0;
+    scale: 0.65;
+  }
+  25% {
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.25;
+    translate: 0 -5px;
+  }
+}
+@keyframes motion-awaken {
+  0% {
+    opacity: 0;
+    scale: 0.7 0.2;
+  }
+  30%,
+  65% {
+    opacity: 1;
+    scale: 1 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.2 1;
+  }
+}
+
+#adventure-screen .combat-projectile {
+  position: absolute;
+  z-index: 5;
+  animation: motion-projectile calc(0.32s * var(--motion-factor, 1)) ease-out forwards;
+  pointer-events: none;
+}
+.projectile-arcane {
+  background: #bfcbff;
+  box-shadow: 0 0 5px #a69fff;
+}
+.projectile-poison {
+  background: #b7d581;
+  box-shadow: 0 0 5px #94c174;
+}
+.projectile-bolt,
+.projectile-thrust {
+  width: 12px;
+  height: 3px;
+  border-radius: 0;
+  rotate: var(--projectile-angle);
+}
+@keyframes motion-projectile {
+  to {
+    translate: var(--tx) var(--ty);
+    opacity: 0;
+  }
+}
+#adventure-screen .actor-fx-layer .combat-number {
+  left: var(--actor-center-x, 50%);
+  top: 15%;
+  font-size: 18px;
+  line-height: 22px;
+  z-index: 4;
+  white-space: nowrap;
+  animation: motion-number calc(0.52s * var(--motion-factor, 1)) ease-out forwards;
+}
+#adventure-screen .actor-fx-layer .combat-number.healing {
+  top: 33%;
+}
+#adventure-screen .actor-fx-layer .combat-number.shield,
+#adventure-screen .actor-fx-layer .combat-number.blocked {
+  top: 47%;
+}
+@keyframes motion-number {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -3px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -28px);
+  }
+}
+
+/* Immediate actual HP with a delayed loss trail. New combats initialize without a refill animation. */
+#adventure-screen .fighter-health .bar {
+  position: relative;
+  isolation: isolate;
+}
+#adventure-screen .fighter-health .bar > i {
+  position: relative;
+  z-index: 1;
+  transition: width calc(0.2s * var(--motion-factor, 1)) ease-out;
+}
+#adventure-screen .health-trail {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  background: #e7c48a;
+  transition: width calc(0.4s * var(--motion-factor, 1)) ease-out
+    calc(0.12s * var(--motion-factor, 1));
+}
+.health-damaged {
+  animation: motion-health-hurt calc(0.55s * var(--motion-factor, 1)) ease-out;
+}
+.health-restored {
+  animation: motion-health-heal calc(0.55s * var(--motion-factor, 1)) ease-out;
+}
+@keyframes motion-health-hurt {
+  20% {
+    box-shadow: 0 0 4px #e9a284;
+  }
+}
+@keyframes motion-health-heal {
+  25% {
+    box-shadow: 0 0 5px #b3da93;
+  }
+}
+
+/* Animate only noninteractive equipment art/rims, never move its occupied cells or hit shape. */
+.equipment-landed .item-painting {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: motion-land 0.28s ease-out;
+}
+.equipment-merged .item-painting {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: motion-merge 0.58s ease-out;
+}
+.equipment-merged .item-grade-rim {
+  animation: motion-merge-rim 0.58s ease-out;
+}
+.equipment-revealed {
+  animation: motion-reveal 0.3s ease-out calc(var(--reveal-order, 0) * 0.06s) both;
+}
+@keyframes motion-land {
+  0% {
+    transform: scale(0.92);
+  }
+  55% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes motion-merge {
+  0% {
+    transform: scale(0.88);
+    filter: brightness(1.6);
+  }
+  40% {
+    transform: scale(1.08);
+    filter: brightness(1.3);
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes motion-merge-rim {
+  20%,
+  45% {
+    stroke: #fff3ba;
+    filter: drop-shadow(0 0 3px var(--item-color));
+  }
+}
+@keyframes motion-reveal {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.resonance-fired {
+  animation-duration: calc(0.65s * var(--motion-factor, 1));
+}
+.resonance-promoted {
+  animation: motion-resonance calc(0.75s * var(--motion-factor, 1)) ease-out;
+}
+#adventure-screen .pack-piece.triggered .item-outline {
+  animation-duration: calc(0.45s * var(--motion-factor, 1));
+}
+#adventure-screen .realm-promotion strong {
+  animation-duration: calc(0.7s * var(--motion-factor, 1));
+}
+.tome-fired {
+  animation: motion-resonance calc(0.5s * var(--motion-factor, 1)) ease-out;
+}
+@keyframes motion-resonance {
+  25% {
+    filter: brightness(1.35);
+    box-shadow:
+      inset 0 0 10px #dcc08a,
+      0 0 5px #cfb587;
+  }
+}
+.motion-awakening .realm-promotion {
+  animation: motion-resonance calc(1.3s * var(--motion-factor, 1)) ease-out;
+}
+
+#app button:not(:disabled),
+dialog button:not(:disabled) {
+  transition:
+    filter 0.1s,
+    box-shadow 0.1s;
+}
+#app button:not(:disabled):active,
+dialog button:not(:disabled):active {
+  filter: brightness(0.86);
+}
+button.motion-tapped {
+  animation: motion-button 0.18s ease-out;
+}
+@keyframes motion-button {
+  0% {
+    filter: brightness(0.85);
+  }
+  55% {
+    filter: brightness(1.16);
+  }
+  100% {
+    filter: none;
+  }
+}
+#app[data-motion-paused='true'] .fighter:not(.acting):not(.hurt) .actor-body,
+#app[data-motion-paused='true'] .fighter:not(.acting):not(.hurt) .actor-sprite,
+#app[data-motion-paused='true'] .actor-shadow,
+#app[data-motion-paused='true'] .battle-panel:before {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  #adventure-screen .actor-body,
+  #adventure-screen .actor-art,
+  #adventure-screen .actor-shadow,
+  #adventure-screen .actor-sprite,
+  #adventure-screen .actor-effect,
+  #adventure-screen .actor-departure,
+  #adventure-screen .combat-projectile,
+  #adventure-screen .combat-number,
+  .equipment-landed .item-painting,
+  .equipment-merged .item-painting,
+  .equipment-merged .item-grade-rim,
+  .equipment-revealed,
+  .resonance-promoted,
+  .tome-fired,
+  .health-damaged,
+  .health-restored,
+  .motion-awakening .realm-promotion,
+  button.motion-tapped {
+    animation: none !important;
+  }
+  #adventure-screen .fighter-health .bar > i,
+  #adventure-screen .health-trail {
+    transition: none !important;
+  }
+}

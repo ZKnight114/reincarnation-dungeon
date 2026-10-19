@@ -199,7 +199,9 @@ test('trial victories grant three items, recovery, growth and a unique resonance
     g.state.enemy!.hp = 0;
     g.update(0.05);
     assert.equal(g.state.inventory.length, before + 3);
+    if (g.state.run.pendingPromotion) assert.equal(g.continueCamp(), null);
     assert.equal(g.state.phase, 'awakening');
+    if (g.state.run.pendingPromotion) assert.equal(g.continueCamp(), null);
     g.finishAwakening();
     assert.ok(g.state.player.hp > 30);
     assert.equal(g.state.run.stages, stage + 1);
@@ -210,7 +212,8 @@ test('trial victories grant three items, recovery, growth and a unique resonance
     assert.doesNotThrow(() => parseSave(JSON.stringify(g.state)));
   }
   assert.equal(g.state.run.resonances.length, 4);
-  assert.equal(advanceCamp(g), null);
+  assert.equal(g.state.phase, 'journey');
+  g.continueJourney();
   assert.equal(g.state.phase, 'event');
   assert.equal(g.state.run.index, 25);
   assert.equal(g.state.meta.heroes.length, 0);
@@ -317,6 +320,7 @@ test('full 37-node extreme run awards a fixed hero and currency once, then permi
   while (g.state.phase !== 'summary' && steps++ < 300) {
     const s = g.state;
     if (s.phase === 'camp') advanceCamp(g);
+    else if (s.phase === 'journey') g.continueJourney();
     else if (s.phase === 'combat') {
       s.enemy!.hp = 0;
       g.update(0.05);

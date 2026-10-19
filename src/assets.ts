@@ -13,6 +13,7 @@ try {
       './assets/panel_beigeLight.png',
       './assets/ui/**/*.png',
       './assets/tomes/*.png',
+      './assets/characters/**/*.png',
     ],
     { eager: true, query: '?url', import: 'default' },
   ) as Record<string, string>;

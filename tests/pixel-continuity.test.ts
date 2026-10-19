@@ -47,12 +47,12 @@ test('enlarged seven-by-six pack fits below resonances and above controls with s
       footer = css('#adventure-footer'),
       slots = css('.resonance-slot'),
       strip = css('#resonance-strip');
-    assert.equal(grid.width, '350px');
-    assert.equal(grid.height, '300px');
+    assert.equal(grid.width, '327px');
+    assert.equal(grid.height, '280px');
     assert.ok(parseFloat(board.top) + parseFloat(pack.top) > 426);
     assert.ok(parseFloat(slots.height) < 65);
-    assert.equal(parseFloat(grid.gap), 0);
-    assert.equal(parseFloat(grid.width) / 7, parseFloat(grid.height) / 6);
+    assert.equal(parseFloat(grid.gap), 2);
+    assert.equal((parseFloat(grid.width) + 2) / 7, (parseFloat(grid.height) + 2) / 6);
     assert.ok(
       parseFloat(pack.left) >= 0 &&
         parseFloat(pack.left) + parseFloat(pack.width) <= parseFloat(board.width),
@@ -86,7 +86,7 @@ test('enlarged seven-by-six pack fits below resonances and above controls with s
       ui.render();
       const scale = +w.document.documentElement.style.getPropertyValue('--game-scale');
       assert.ok(390 * scale <= width + 0.1 && 844 * scale <= height + 0.1);
-      assert.equal(css('#pack-grid').width, '350px');
+      assert.equal(css('#pack-grid').width, '327px');
     }
   } finally {
     w.happyDOM.close();
@@ -104,7 +104,7 @@ test('exploring, combat and loot share the left hero position and baseline; deci
       css('.hero-fighter').animationName,
       css('.battle-scene').left,
       css('.battle-scene').top,
-      css('.actor-sprite').bottom,
+      css('.actor-art').bottom,
     ];
     const origin = fighter();
     assert.equal(el('#battle-panel').classList.contains('exploring'), true);
@@ -130,7 +130,7 @@ test('exploring, combat and loot share the left hero position and baseline; deci
     ui.render();
     assert.equal(el('#battle-panel').classList.contains('exploring'), false);
     assert.equal(el('#battle-panel').classList.contains('waiting'), true);
-    assert.equal(css('.actor-sprite').backgroundPositionY, '0px');
+    assert.equal(el('.actor-rig').getAttribute('data-motion'), 'idle');
   } finally {
     w.happyDOM.close();
   }
@@ -147,9 +147,11 @@ test('trial and awakening keep the altar visible and restore real growth before 
     g.state.enemy!.hp = 0;
     g.advanceTurn();
     ui.render();
+    if (g.state.run.pendingPromotion) assert.equal(g.continueCamp(), null);
     assert.equal(g.state.phase, 'awakening');
-    assert.equal(css('.trial-altar').display, 'block');
-    assert.equal(css('.battle-scene').justifyContent, 'center');
+    ui.render();
+    assert.equal(el('#adventure-screen').classList.contains('ritual-screen'), true);
+    assert.equal(el('#awakening-result').parentElement!.id, 'adventure-screen');
     assert.equal(el('#battle-panel').classList.contains('exploring'), false);
     assert.match(
       el('#awakening-result').textContent,
@@ -161,6 +163,7 @@ test('trial and awakening keep the altar visible and restore real growth before 
     assert.ok(parseFloat(css('.realm-promotion strong').fontSize) >= 24);
     const resumed = new Game(parseSave(JSON.stringify(g.state)));
     assert.equal(resumed.state.run.realm, g.state.run.realm);
+    if (g.state.run.pendingPromotion) assert.equal(g.continueCamp(), null);
     g.finishAwakening();
     ui.render();
     assert.equal(g.state.phase, 'reward');
@@ -193,8 +196,8 @@ test('every profession loose footprint uses one square-cell size without indepen
         assert.equal(s.maxHeight, 'none');
         assert.equal(s.maxWidth, 'none');
         // calc()/custom properties remain unevaluated by this DOM engine.
-        assert.equal(s.width.replace(/\s/g, ''), `calc(${d.w}*50px)`);
-        assert.equal(s.height.replace(/\s/g, ''), `calc(${d.h}*50px)`);
+        assert.equal(s.width.replace(/\s/g, ''), `${d.w * 47 - 2}px`);
+        assert.equal(s.height.replace(/\s/g, ''), `${d.h * 47 - 2}px`);
         assert.ok(d.h * 50 + 12 + 10 <= parseFloat(css('#field-items').height));
       }
     } finally {
@@ -244,8 +247,8 @@ test('touch dragging targets the enlarged grid at native and scaled sizes and st
               bubbles: true,
               pointerType: 'touch',
               pointerId: 1,
-              clientX: left + ((x + 0.5) * width) / 7,
-              clientY: top + ((y + 0.5) * height) / 6,
+              clientX: left + (x * 47 + 22.5) * scale,
+              clientY: top + (y * 47 + 22.5) * scale,
             }),
           );
       };
@@ -256,10 +259,10 @@ test('touch dragging targets the enlarged grid at native and scaled sizes and st
       assert.deepEqual(g.state.draft, [{ id: item.id, x: 1, y: 1, rotation: 0 }]);
       const piece = el(`.pack-piece[data-pack-item="${item.id}"]`);
       assert.ok(
-        Math.abs((parseFloat((piece as any).style.left) / 100) * width - width / 7) < 0.001,
+        Math.abs((parseFloat((piece as any).style.left) / 100) * width - 47 * scale) < 0.001,
       );
       assert.ok(
-        Math.abs((parseFloat((piece as any).style.height) / 100) * height - height / 3) < 0.001,
+        Math.abs((parseFloat((piece as any).style.height) / 100) * height - 92 * scale) < 0.001,
       );
     } finally {
       w.happyDOM.close();
@@ -376,7 +379,8 @@ test('footer colors follow exploration, loot, resonance and graduation without c
     color('explore');
     g.continueCamp();
     ui.render();
-    color('journey');
+    assert.equal(el('#adventure-footer').getAttribute('data-tone'), 'journey');
+    assert.equal(el('#adventure-footer').getAttribute('data-readiness'), 'waiting');
     g.continueJourney();
     ui.render();
     assert.equal(el('#adventure-footer').getAttribute('data-tone'), 'battle');
@@ -387,8 +391,11 @@ test('footer colors follow exploration, loot, resonance and graduation without c
     positionEvent(g, 'boss');
     g.state.enemy!.hp = 0;
     g.advanceTurn();
+    assert.equal(g.state.phase, 'camp');
+    assert.equal(g.continueCamp(), null);
     ui.render();
     color('resonance');
+    if (g.state.run.pendingPromotion) assert.equal(g.continueCamp(), null);
     g.finishAwakening();
     g.chooseReward(0);
     g.state.run.extreme = true;
@@ -396,7 +403,7 @@ test('footer colors follow exploration, loot, resonance and graduation without c
     g.chooseEvent('finish');
     ui.render();
     color('graduate');
-    assert.equal(colors.size, 5);
+    assert.equal(colors.size, 4);
   } finally {
     w.happyDOM.close();
   }
@@ -418,7 +425,10 @@ test('item grade border stays above its illustration and badges differ on all fo
         drawing = piece.querySelector('.item-painting')!;
       assert.equal(drawing.nextElementSibling!.getAttribute('class'), 'item-grade-rim');
       assert.ok(piece.classList.contains('quality-' + upgraded.quality));
-      assert.equal(piece.querySelector('.item-category-badge text')!.textContent, '战');
+      assert.equal(
+        piece.querySelector('.item-category-badge')!.getAttribute('aria-label')?.startsWith('战士'),
+        true,
+      );
       colors.add((piece as any).style.getPropertyValue('--item-color'));
       assert.equal(css(q + ' .item-grade-rim').pointerEvents, 'none');
       assert.equal(css(q + ' .item-grade-badge').pointerEvents, 'none');

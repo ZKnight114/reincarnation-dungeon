@@ -16,9 +16,11 @@ export type UIIcon =
   | 'energy'
   | 'attack'
   | 'hp'
-  | 'defense';
+  | 'defense'
+  | 'dig';
+// Profession/status/dig icons belong to the same registered pixel library.
 export const uiIcon = (name: UIIcon, className = '') =>
-  `<img class="ui-icon ${className}" src="${spriteUrl('ui/icons/' + name)}" alt="" aria-hidden="true">`;
+  `<img class="ui-icon ${className}" src="${spriteUrl(name === 'dig' ? 'ui/status/dig' : 'ui/icons/' + name)}" alt="" aria-hidden="true">`;
 export const uiControl = (
   name: 'back' | 'close' | 'plus' | 'minus' | 'play' | 'pause' | 'speed' | 'check' | 'lock',
 ) => `<img class="ui-control" src="${spriteUrl('ui/controls/' + name)}" alt="" aria-hidden="true">`;

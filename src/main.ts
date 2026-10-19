@@ -3,6 +3,7 @@ import { loadSave, parseSave, SAVE_KEY } from './save';
 import { UI } from './ui';
 import { finishLoading, loadingError, loadingProgress, preloadAssets } from './loading';
 import { startupAssets } from './assets';
+import { preloadCharacterParts } from './character-parts';
 import type { GameState } from './types';
 
 // Styles intentionally build on earlier layers; preserve this cascade order.
@@ -18,6 +19,10 @@ import './v15.css';
 import './v15-update.css';
 import './guild-tree.css';
 import './ui-library.css';
+import './motion.css';
+import './playtest.css';
+import './six-updates.css';
+import './pending-updates.css';
 
 let started = false,
   busy = false;
@@ -39,9 +44,16 @@ function launch(state: GameState | null) {
     const delta = Math.min(0.25, Math.max(0, (now - previous) / 1000));
     previous = now;
     if (!document.hidden) {
-      if (!ui.holdingJourney) game.update(delta * game.state.speed);
+      const revision = game.state.revision;
+      const wasCombat = game.state.phase === 'combat';
+      // Never burst several visible sources into one frame after a slow render.
+      if (!ui.holdingJourney)
+        game.update(delta * game.state.speed, game.state.skipCombat ? Infinity : 1);
       uiTime += delta;
-      if (uiTime >= 0.1) {
+      if (
+        (wasCombat && revision !== game.state.revision) ||
+        uiTime >= (game.state.phase === 'combat' ? 0.05 : 0.1)
+      ) {
         ui.render();
         uiTime = 0;
       }
@@ -140,6 +152,7 @@ async function boot() {
       loadingProgress(done + 1, total + 3, `加载资源 ${done}/${total}`),
     );
     loadingProgress(count + 1, count + 3, '读取进度');
+    await preloadCharacterParts();
     let state: GameState | null;
     try {
       state = loadSave();

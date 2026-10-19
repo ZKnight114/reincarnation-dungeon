@@ -286,7 +286,7 @@ for (const d of PACK_ITEMS) {
 export function spriteName(item: Pick<Equipment, 'templateId'>) {
   return CATALOGUE[item.templateId as keyof typeof CATALOGUE]?.sprite;
 }
-const BAG_ORDER: [number, number][] = [
+const LEGACY_BAG_ORDER: [number, number][] = [
   ...Array.from({ length: 15 }, (_, n) => [1 + (n % 5), 1 + Math.floor(n / 5)] as [number, number]),
   ...Array.from({ length: 5 }, (_, x) => [x + 1, 4] as [number, number]),
   ...Array.from({ length: 5 }, (_, x) => [x + 1, 0] as [number, number]),
@@ -294,9 +294,40 @@ const BAG_ORDER: [number, number][] = [
   ...Array.from({ length: 5 }, (_, y) => [6, y] as [number, number]),
   ...Array.from({ length: 7 }, (_, x) => [x, 5] as [number, number]),
 ];
+const INITIAL_BAG: [number, number][] = [
+  ...Array.from({ length: 12 }, (_, n) => [2 + (n % 3), 1 + Math.floor(n / 3)] as [number, number]),
+  [1, 2],
+  [1, 3],
+  [1, 4],
+];
+// Add adjoining strips; every expansion remains connected and the final extent is 7×6.
+const EXPANSION: [number, number][] = [
+  [1, 1],
+  [1, 0],
+  [2, 0],
+  [3, 0],
+  [4, 0],
+  [5, 0],
+  [5, 1],
+  [5, 2],
+  [5, 3],
+  [5, 4],
+  [0, 4],
+  [0, 3],
+  [0, 2],
+  [0, 1],
+  [0, 0],
+  [6, 0],
+  [6, 1],
+  [6, 2],
+  [6, 3],
+  [6, 4],
+  ...Array.from({ length: 7 }, (_, x) => [x, 5] as [number, number]),
+];
+const BAG_ORDER = [...INITIAL_BAG, ...EXPANSION];
 export const bagCapacity = (kills: number) => Math.min(42, 15 + kills * 2);
-export const bagCells = (capacity = 42) =>
-  new Set(BAG_ORDER.slice(0, capacity).map((p) => p.join(',')));
+export const bagCells = (capacity = 42, legacy = false) =>
+  new Set((legacy ? LEGACY_BAG_ORDER : BAG_ORDER).slice(0, capacity).map((p) => p.join(',')));
 export const openBagCells = (kills: number) => bagCells(bagCapacity(kills));
 export function runBagCapacity(s: GameState) {
   if (s.run.legacyRoute) return bagCapacity(s.run.kills);
@@ -304,7 +335,8 @@ export function runBagCapacity(s: GameState) {
     battles = r.kinds.slice(0, r.normal).filter((k) => k === 'battle' || k === 'boss').length;
   return Math.min(42, 15 + Math.ceil((27 * s.run.kills) / Math.max(1, battles)));
 }
-export const runBagCells = (s: GameState) => bagCells(runBagCapacity(s));
+export const runBagCells = (s: GameState) =>
+  bagCells(runBagCapacity(s), s.run.packLayout === 'legacy');
 export const availableItems = (profession: Profession) =>
   PACK_ITEMS.filter((d) => d.profession === profession && d.available);
 export function definition(item: Pick<Equipment, 'templateId'>) {

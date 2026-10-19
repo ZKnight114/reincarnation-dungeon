@@ -83,6 +83,15 @@ export interface Minion extends Fighter {
   activeAt: number;
 }
 export interface BattleRuntime {
+  /** Persisted between individual sources within a single hero turn. */
+  heroTurn?: { index: number; tomeFired: boolean; supportFired: boolean } | null;
+  /** Frozen recipe inputs and active minions; each hit is resolved only when reached. */
+  enemyTurn?: {
+    index: number;
+    guard: boolean;
+    queenStrike: boolean;
+    minions: string[];
+  } | null;
   hero: Fighter;
   enemy: Fighter;
   sources: Source[];

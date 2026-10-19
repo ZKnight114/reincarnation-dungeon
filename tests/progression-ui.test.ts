@@ -37,10 +37,14 @@ test('stage elite gifts all drops inline and opens mandatory resonance; four slo
     count = game.state.inventory.length;
   game.state.enemy!.hp = 0;
   game.update(0.05);
-  game.finishAwakening();
+  assert.equal(game.state.phase, 'camp');
   ui.render();
   assert.equal(win.document.querySelectorAll('#field-items .offer').length, 3);
   assert.equal(game.state.inventory.length, count + 3);
+  if (game.state.run.pendingPromotion) assert.equal(game.continueCamp(), null);
+  game.finishAwakening();
+  ui.render();
+  assert.equal(win.document.querySelectorAll('#field-items .offer').length, 0);
   assert.equal(win.document.querySelector('[data-action="skip-reward"]'), null);
   assert.equal((el('#decision-sheet') as any).open, true);
   const key = game.state.run.rewards[0].resonances[0];
@@ -153,6 +157,8 @@ test('normal fight has three already-owned inline drops, no choice sheet and no 
   const count = game.state.inventory.length;
   game.state.enemy!.hp = 0;
   game.update(0.05);
+  assert.equal(game.state.phase, 'camp');
+  if (game.state.run.pendingPromotion) assert.equal(game.continueCamp(), null);
   game.finishAwakening();
   ui.render();
   assert.equal(game.state.phase, 'camp');

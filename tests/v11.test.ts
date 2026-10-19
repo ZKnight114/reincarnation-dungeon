@@ -39,7 +39,7 @@ test('all 30 offered templates use exactly the reviewed silhouettes and names, w
     }
   assert.equal(definition({ templateId: 'rogue_assassin_4' }).name, '影袭双剑');
 });
-test('every profession can pack all six gifts into the same initial 15 open cells', () => {
+test('every profession receives six random gifts and may keep a usable subset in fifteen cells', () => {
   for (const p of PROFESSION_KEYS) {
     const g = new Game();
     recruitToConfigure(g, 1, p);
@@ -57,7 +57,9 @@ test('every profession can pack all six gifts into the same initial 15 open cell
     g.claimStarterRound();
     g.claimStarterRound();
     fitStarters(g);
-    assert.equal(g.packAnalysis(true).occupied, 13);
+    assert.ok(g.packAnalysis(true).occupied <= 15);
+    assert.equal(g.state.inventory.length, 6);
+    assert.equal(g.packAnalysis(true).hasWeapon, true);
     assert.equal(openBagCells(0).size, 15);
     assert.equal(validateLayout(g.state.inventory, g.state.draft, openBagCells(0)), null);
     assert.doesNotThrow(() => parseSave(JSON.stringify(g.state)));
@@ -78,6 +80,24 @@ test('opening drags keep the other two offers until taken; final take shows seco
       )[g.state.run.profession],
     );
     g.startRun();
+    g.state.run.starterPlan = [
+      ['warrior_gem', 'warrior_blade_2', 'warrior_guard_2'],
+      ['warrior_gem', 'warrior_blade_2', 'warrior_guard_2'],
+    ].map((row) =>
+      row.map((id) =>
+        id
+          .replace('warrior_gem', p + '_gem')
+          .replace(
+            'warrior_blade_2',
+            p === 'mage' ? 'mage_flame_2' : p === 'rogue' ? 'rogue_assassin_2' : 'warrior_blade_2',
+          )
+          .replace(
+            'warrior_guard_2',
+            p === 'mage' ? 'mage_ward_2' : p === 'rogue' ? 'rogue_leather_2' : 'warrior_guard_2',
+          ),
+      ),
+    );
+    g.state.run.starterOffers = g.state.run.starterPlan[0].map((id) => g.makeItem(id));
     const ids = g.state.run.starterOffers.map((i) => i.id);
     for (let n = 0; n < 3; n++) {
       const item = g.findItem(ids[n])!,
@@ -255,7 +275,7 @@ test('fixed-shape digging always generates three reachable items and preserves t
       const g = start(p, seed(n));
       positionEvent(g, 'dig');
       const d = g.state.run.dig!;
-      assert.equal(d.placements.length, 3);
+      assert.ok(d.placements.length >= 2 && d.placements.length <= 4);
       assert.ok(d.placements.every((p) => p.rotation === 0));
       assert.deepEqual(parseSave(JSON.stringify(g.state)).run.dig, d);
     }

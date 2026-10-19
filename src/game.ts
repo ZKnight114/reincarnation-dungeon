@@ -19,7 +19,7 @@ import {
   runBagCells,
   validateLayout,
 } from './backpack';
-import { BattleEngine, battleRuntime, fighter, fighterSpeed } from './combat';
+import { BattleEngine, battleRuntime, fighter, fighterSpeed, isEnemySource } from './combat';
 import { generateEnemy } from './enemies';
 import {
   ATTRIBUTE_KEYS,
@@ -30,6 +30,7 @@ import {
   rollTalents,
 } from './hero';
 import { chapterRoute, eventStory, runRoute, stageGrowth, trialGain, TRIALS } from './journey';
+import { recruitAppearance } from './character-parts';
 import {
   emptyTomes,
   guildConditions,
@@ -44,6 +45,9 @@ import {
 import { PROFESSION_CATEGORIES, equipmentFamily } from './categories';
 import { resonanceAvailable } from './resonances';
 import { CHAPTER_CAP, GUILD_NODES, guildBenefits, medalReward } from './guild';
+import { normalizeActiveFootprints } from './footprints';
+import { COMBAT_PACING } from './combat-pacing';
+import { rollAptitude } from './aptitude';
 import type {
   Actor,
   AdventureEvent,
@@ -110,7 +114,9 @@ const emptyCombat = (): GameState['combat'] => ({
 export function createState(now = Date.now()): GameState {
   return {
     version: 15,
+    layoutRevision: 1,
     rulesRevision: 2,
+    footprintRevision: 1,
     phase: 'home',
     meta: {
       gold: 100,
@@ -145,6 +151,8 @@ export function createState(now = Date.now()): GameState {
       summary: null,
       starterRound: 0,
       starterOffers: [],
+      pendingPromotion: false,
+      resonanceAtNode: false,
       resonances: [],
       trainee: null,
       stages: 0,
@@ -198,7 +206,8 @@ export class Game {
   feedback: {
     serial: number;
     id: string;
-    kind: 'damage' | 'healing' | 'shield' | 'resource' | 'hurt' | 'blocked' | 'trigger';
+    kind:
+      'damage' | 'healing' | 'shield' | 'resource' | 'hurt' | 'blocked' | 'trigger' | 'activation';
     amount: number;
   }[] = [];
   private feedbackSerial = 0;
@@ -328,27 +337,22 @@ export class Game {
     s.run.chapter = chapter;
     s.lastReport = null;
     s.combat = emptyCombat();
-    const names = [
-      '艾琳',
-      '罗兰',
-      '莉娅',
-      '凯恩',
-      '米拉',
-      '洛克',
-      '薇拉',
-      '伊诺',
-      '希尔',
-      '诺亚',
-      '露娜',
-      '雷恩',
-    ];
+    const createdAt = this.clock(),
+      appearance = recruitAppearance(`${s.meta.heroSerial + 1}|${createdAt}|${profession}`),
+      names =
+        appearance.gender === 'female'
+          ? ['艾琳', '莉娅', '米拉', '薇拉', '希尔', '露娜']
+          : ['罗兰', '凯恩', '洛克', '伊诺', '诺亚', '雷恩'];
+    const aptitude = rollAptitude(this.random);
     s.run.trainee = {
       id: `hero-${++s.meta.heroSerial}`,
       name: names[Math.floor(this.random() * names.length)],
-      createdAt: this.clock(),
+      createdAt,
       profession,
       recruitment: target ? 'targeted' : 'random',
-      talents: rollTalents(this.random, profession),
+      aptitude,
+      talents: rollTalents(this.random, profession, aptitude),
+      appearance,
       allocation: emptyAllocation(),
       realmStart: startingRealm(chapter),
       guildBonus: guildBenefits(s.meta.guildPurchased),
@@ -454,7 +458,31 @@ export class Game {
     return null;
   }
   private starterRoundItems(round: number) {
-    return PROFESSIONS[this.state.run.profession].starter[round].map((id) => this.makeItem(id));
+    const r = this.state.run;
+    if (!r.starterPlan) {
+      const own = availableItems(r.profession),
+        weapon = own.filter((d) => d.slot === 'weapon' && d.shape === 'domino'),
+        book = r.boundTome ? tome(r.boundTome.id) : null,
+        directed = book
+          ? availableItems(book.profession).filter((d) => d.branch === tomeBranch(book.id))
+          : [];
+      const pick = (pool: typeof own) => pool[Math.floor(this.random() * pool.length)].id;
+      const plan = [pick(weapon)];
+      // One or two own-class tome items; a foreign tome contributes at most one of six.
+      const count = directed.length
+        ? book!.profession !== r.profession
+          ? 1
+          : 1 + Math.floor(this.random() * 2)
+        : 0;
+      for (let n = 0; n < count; n++) plan.push(pick(directed));
+      while (plan.length < 6) plan.push(pick(own));
+      for (let n = plan.length - 1; n > 0; n--) {
+        const j = Math.floor(this.random() * (n + 1));
+        [plan[n], plan[j]] = [plan[j], plan[n]];
+      }
+      r.starterPlan = [plan.slice(0, 3), plan.slice(3)];
+    }
+    return r.starterPlan[round].map((id) => this.makeItem(id));
   }
   private advanceStarter() {
     const s = this.state;
@@ -559,6 +587,12 @@ export class Game {
       'growth',
       s.run.resonances.length === 1 ? 0 : s.run.index + 1,
     );
+    if (s.run.resonanceAtNode && !s.run.rewards.length) {
+      s.run.resonanceAtNode = false;
+      s.isRunning = true;
+      s.run.peakStrength = Math.max(s.run.peakStrength, analysis(s, false, false).strength);
+      this.beginEvent();
+    }
     return null;
   }
   makeItem(templateId: string, level = 1): Equipment {
@@ -604,9 +638,13 @@ export class Game {
     const error = validateLayout(s.inventory, s.draft, runBagCells(s));
     if (error) return error;
     if (!this.packAnalysis(true).hasWeapon) return '至少放入一件武器';
-    this.clearLooseEquipment();
     s.placements = structuredClone(s.draft);
     this.recalculate();
+    if (s.run.pendingPromotion) {
+      this.promoteTrial();
+      return null;
+    }
+    this.clearLooseEquipment();
     if (
       this.currentEvent()?.completed &&
       (s.run.index === runRoute(s).ending ||
@@ -744,7 +782,7 @@ export class Game {
   }
   private engine() {
     return new BattleEngine(this.state.combat.runtime!, this.state.combat.round, (signal) => {
-      if (['damage', 'healing', 'shield'].includes(signal.kind))
+      if (['damage', 'healing', 'shield'].includes(signal.kind) && !isEnemySource(signal.source))
         this.contribute(
           signal.source,
           signal.kind as 'damage' | 'healing' | 'shield',
@@ -891,45 +929,61 @@ export class Game {
       e = this.currentEvent();
     if (!e || e.completed) return;
     e.completed = true;
-    if (runRoute(s).trials.includes(s.run.index)) {
-      const previous = { ...s.run.growth },
-        stage = runRoute(s).trials.indexOf(s.run.index),
-        tier = s.run.trials[stage] ?? 0;
-      s.run.trials[stage] = tier;
-      s.run.stages++;
-      s.run.realm = Math.min(20, s.run.realm + 1);
-      s.run.growth = stageGrowth(s.run.profession, s.run.trials, s.run.stages);
-      this.recalculate();
-      this.log(`试炼 ${s.run.stages}/3 完成：${trialGain(s.run.profession, tier)}`, 'reward');
-      this.chronicle(
-        `${realmName(s.run.realm)} · 试炼通过`,
-        `${TRIALS[tier].name}完成。境界：${realmName(s.run.realm - 1)} → ${realmName(s.run.realm)}。${trialGain(s.run.profession, tier)}。`,
-        'growth',
-      );
-      const healed = this.heal(s.player.maxHp * [0.25, 0.35, 0.45][tier]);
-      this.chronicle('晋阶恢复', `恢复 ${Math.round(healed)} 生命。`, 'rest');
-      s.awakening = {
-        stage: stage + 1,
-        tier,
-        attack: s.run.growth.attack - previous.attack,
-        hp: s.run.growth.hp - previous.hp,
-        defense: s.run.growth.defense - previous.defense,
-        healed: Math.round(healed),
-      };
-      rewards.push(this.resonanceReward());
-    }
+    s.run.pendingPromotion = runRoute(s).trials.includes(s.run.index);
     s.run.rewards = rewards.filter((r) => r.buffs.length || r.resonances.length);
     s.run.autoExplore = false;
-    s.phase = s.awakening ? 'awakening' : s.run.rewards.length ? 'reward' : 'camp';
+    s.phase = s.run.rewards.length ? 'reward' : 'camp';
     s.enemy = null;
     s.run.encounter = null;
     s.combat.runtime = null;
     s.player.shield = 0;
     s.revision++;
   }
+  private promoteTrial() {
+    const s = this.state;
+    if (!s.run.pendingPromotion) return;
+    // Clear before applying growth: saving the ritual cannot apply it a second time.
+    s.run.pendingPromotion = false;
+    const previous = { ...s.run.growth },
+      stage = runRoute(s).trials.indexOf(s.run.index),
+      tier = s.run.trials[stage] ?? 0;
+    s.run.trials[stage] = tier;
+    s.run.stages++;
+    s.run.realm = Math.min(20, s.run.realm + 1);
+    s.run.growth = stageGrowth(s.run.profession, s.run.trials, s.run.stages);
+    this.recalculate();
+    this.log(`试炼 ${s.run.stages}/3 完成：${trialGain(s.run.profession, tier)}`, 'reward');
+    this.chronicle(
+      `${realmName(s.run.realm)} · 试炼通过`,
+      `${TRIALS[tier].name}完成。境界：${realmName(s.run.realm - 1)} → ${realmName(s.run.realm)}。${trialGain(s.run.profession, tier)}。`,
+      'growth',
+    );
+    const healed = this.heal(s.player.maxHp * [0.25, 0.35, 0.45][tier]);
+    this.chronicle('晋阶恢复', `恢复 ${Math.round(healed)} 生命。`, 'rest');
+    s.awakening = {
+      stage: stage + 1,
+      tier,
+      attack: s.run.growth.attack - previous.attack,
+      hp: s.run.growth.hp - previous.hp,
+      defense: s.run.growth.defense - previous.defense,
+      healed: Math.round(healed),
+    };
+    s.run.rewards = [this.resonanceReward()];
+    s.phase = 'awakening';
+    s.revision++;
+  }
   finishAwakening() {
     const s = this.state;
     if (s.phase !== 'awakening' || !s.awakening) return false;
+    // Recycle exactly when crossing the small-node boundary, before resonance selection.
+    this.clearLooseEquipment();
+    s.run.index++;
+    s.run.lastLootIds = [];
+    s.run.encounter = null;
+    s.run.dig = null;
+    s.run.storyElapsed = 0;
+    s.enemy = null;
+    s.run.resonanceAtNode = true;
     s.awakening = null;
     s.phase = 'reward';
     s.revision++;
@@ -1128,6 +1182,7 @@ export class Game {
 
   private prepareDig() {
     const s = this.state,
+      count = 2 + Math.floor(this.random() * 3),
       open = new Set(Array.from({ length: 16 }, (_, n) => `${n % 4},${Math.floor(n / 4)}`));
     let equipment: Equipment[] = [],
       placements: GameState['placements'] | null = null;
@@ -1148,11 +1203,11 @@ export class Game {
       return null;
     };
     for (let attempt = 0; attempt < 20 && !placements; attempt++) {
-      equipment = Array.from({ length: 3 }, () => this.lootItem());
+      equipment = Array.from({ length: count }, () => this.lootItem());
       placements = fit(equipment);
     }
     if (!placements) {
-      equipment = Array.from({ length: 3 }, () =>
+      equipment = Array.from({ length: count }, () =>
         this.makeItem(s.run.profession + '_gem', this.lootLevel()),
       );
       placements = fit(equipment)!;
@@ -1170,6 +1225,7 @@ export class Game {
       index < 0 ||
       index >= 16 ||
       d.revealed.includes(index) ||
+      d.claimed.length === d.equipment.length ||
       d.shovels <= 0
     )
       return '此处无法继续挖掘';
@@ -1182,7 +1238,9 @@ export class Game {
         occupiedCells(item, p).every(([x, y]) => d.revealed.includes(y * 4 + x))
       ) {
         d.claimed.push(item.id);
-        s.inventory.push(structuredClone(item));
+        const claimed = structuredClone(item);
+        if (claimed.templateId === 'warrior_pole_4') delete claimed.legacyCells;
+        s.inventory.push(claimed);
         s.run.lastLootIds.push(item.id);
         s.run.highestItem = Math.max(s.run.highestItem, item.level);
         this.chronicle('挖出遗物', `获得 ${item.name} Lv.${item.level}。`, 'loot');
@@ -1342,12 +1400,14 @@ export class Game {
   }
   private signalFeedback(
     id: string,
-    kind: 'damage' | 'healing' | 'shield' | 'resource' | 'hurt' | 'blocked' | 'trigger',
+    kind:
+      'damage' | 'healing' | 'shield' | 'resource' | 'hurt' | 'blocked' | 'trigger' | 'activation',
     amount: number,
   ) {
     if (amount <= 0) return;
     this.feedback.push({ serial: ++this.feedbackSerial, id, kind, amount });
-    if (this.feedback.length > 16) this.feedback.shift();
+    // A full backpack can fire many skills per turn; retain the actual source signals.
+    if (this.feedback.length > 128) this.feedback.shift();
   }
   private contribute(id: string, key: 'damage' | 'healing' | 'shield', amount: number) {
     const rows = this.state.combat.contributions,
@@ -1366,7 +1426,7 @@ export class Game {
         triggers: 0,
       });
     row[key] += amount;
-    if (key !== 'shield') this.signalFeedback(id, key, amount);
+    this.signalFeedback(id, key, amount);
   }
   playerSpeed() {
     const r = this.state.combat.runtime;
@@ -1379,6 +1439,8 @@ export class Game {
     return r ? +fighterSpeed(r.enemy).toFixed(1) : (this.state.enemy?.speed ?? 0);
   }
   nextActor(): Actor {
+    if (this.state.combat.runtime?.heroTurn) return 'hero';
+    if (this.state.combat.runtime?.enemyTurn) return 'enemy';
     const c = this.state.combat;
     return c.order[c.actionIndex] ?? (this.playerSpeed() >= this.enemySpeed() ? 'hero' : 'enemy');
   }
@@ -1420,6 +1482,18 @@ export class Game {
     if (s.phase !== 'combat' || !s.enemy) return false;
     if (this.ended()) return false;
     const c = s.combat;
+    if (c.runtime?.heroTurn) {
+      this.heroTurn();
+      this.ended();
+      s.revision++;
+      return true;
+    }
+    if (c.runtime?.enemyTurn) {
+      this.enemyTurn();
+      this.ended();
+      s.revision++;
+      return true;
+    }
     if (c.actionIndex === 2) this.beginRound();
     const actor = c.order[c.actionIndex];
     c.lastActor = actor;
@@ -1431,7 +1505,43 @@ export class Game {
     s.revision++;
     return true;
   }
-  update(delta: number) {
+  private advanceCombatStep() {
+    const s = this.state,
+      c = s.combat;
+    const serial = this.feedbackSerial;
+    if (c.runtime?.heroTurn) {
+      this.engine().nextHeroBeat();
+      this.syncCombat();
+    } else if (c.runtime?.enemyTurn) {
+      this.engine().nextEnemyStep();
+      this.syncCombat();
+    } else {
+      if (c.actionIndex === 2) this.beginRound();
+      const actor = c.order[c.actionIndex++];
+      c.lastActor = actor;
+      this.log(`第 ${c.round} 回合 · ${actor === 'hero' ? '勇者' : '敌人'}行动`, 'battle');
+      if (actor === 'hero') {
+        const engine = this.engine();
+        engine.beginHeroTurn();
+        engine.nextHeroBeat();
+        this.syncCombat();
+      } else {
+        const engine = this.engine();
+        engine.beginEnemyTurn();
+        engine.nextEnemyStep();
+        this.syncCombat();
+      }
+    }
+    if (c.runtime)
+      c.runtime.flags.presentationBeat = this.feedback.some(
+        (f) => f.serial > serial && ['damage', 'hurt', 'blocked'].includes(f.kind) && f.amount > 0,
+      )
+        ? COMBAT_PACING.attack
+        : COMBAT_PACING.support;
+    this.ended();
+    s.revision++;
+  }
+  update(delta: number, maxCombatSteps = Infinity) {
     const s = this.state;
     if (!Number.isFinite(delta) || delta <= 0) return;
     if (s.phase === 'journey') {
@@ -1443,16 +1553,26 @@ export class Game {
     if (s.phase !== 'combat' || !s.isRunning) return;
     if (this.ended()) return;
     let remaining = Math.min(delta * (s.skipCombat ? 30 : 1), 60);
+    let steps = 0;
     while (remaining > 1e-8 && s.phase === 'combat') {
       const c = s.combat,
-        dt = Math.min(remaining, ACTION_SECONDS - c.elapsed);
+        interval =
+          c.runtime?.heroTurn || c.runtime?.enemyTurn
+            ? c.runtime.flags.presentationBeat === COMBAT_PACING.support
+              ? COMBAT_PACING.support
+              : COMBAT_PACING.attack
+            : c.lastActor
+              ? COMBAT_PACING.handoff
+              : ACTION_SECONDS,
+        dt = Math.min(remaining, Math.max(0, interval - c.elapsed));
       c.seconds += dt;
       s.run.seconds += dt;
       c.elapsed += dt;
       remaining -= dt;
-      if (c.elapsed + 1e-8 >= ACTION_SECONDS) {
+      if (c.elapsed + 1e-8 >= interval) {
         c.elapsed = 0;
-        this.advanceTurn();
+        this.advanceCombatStep();
+        if (++steps >= maxCombatSteps) break;
       }
     }
   }
@@ -1481,6 +1601,7 @@ export class Game {
     s.meta.totalKills++;
     this.grantLoot(e.isBoss || e.isElite ? '试炼战利品' : '战利品');
     this.resolved();
+    normalizeActiveFootprints(s);
   }
   selectTome(id: string): string | null {
     const s = this.state,
@@ -1656,6 +1777,7 @@ export class Game {
         equipment: structuredClone(a.active),
         placements: structuredClone(s.draft),
         capacity: runBagCapacity(s),
+        ...(s.run.packLayout ? { packLayout: s.run.packLayout } : {}),
       },
       trials: [...s.run.trials],
       graduatedAt: Math.max(trainee.createdAt, this.clock()),
@@ -1673,6 +1795,8 @@ export class Game {
   private finish(outcome: Outcome, reason: string) {
     const s = this.state;
     if (['summary', 'home', 'chapter', 'configure'].includes(s.phase)) return;
+    // A won trial is earned even if the player retires on its loot screen.
+    if (s.run.pendingPromotion) this.promoteTrial();
     const hero = this.heroPreview(outcome);
     if (!hero) return;
     const gold = outcome === 'win' ? (100 + s.run.chapter * 15) * (s.run.extreme ? 2 : 1) : 0;
@@ -1709,6 +1833,7 @@ export class Game {
       );
     }
     s.awakening = null;
+    s.run.resonanceAtNode = false;
     s.inventory = [];
     s.placements = [];
     s.draft = [];

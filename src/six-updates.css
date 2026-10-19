@@ -1,0 +1,489 @@
+/* v21: six approved changes. Scene/bag dimensions retain the existing layout. */
+#selection-screen:not(.dungeon-select):not(.tome-select) .compact-admission {
+  gap: 20px;
+  padding: 8px 14px 18px;
+}
+#selection-screen .compact-admission .admission-profile {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 14px;
+  height: 272px;
+  align-items: center;
+  background: linear-gradient(135deg, #1e353bd9, #102429a6);
+  border: 1px solid #657d727a;
+  border-radius: 6px;
+  padding: 12px 8px;
+}
+#selection-screen .compact-admission .file-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#selection-screen .compact-admission .file-heading h1 {
+  display: block;
+  position: static;
+  width: auto;
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: #c1aa77;
+}
+#selection-screen .compact-admission .file-stamp {
+  position: static;
+  padding: 0;
+  font-size: 10px;
+}
+#selection-screen .compact-admission .admission-avatar {
+  height: 226px;
+  position: relative;
+  display: flex;
+  align-items: end;
+}
+#selection-screen .compact-admission .admission-avatar img {
+  width: 120px;
+  height: 226px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+#selection-screen .compact-admission .admission-profile-info > small {
+  font-size: 10px;
+  color: #aaa894;
+}
+#selection-screen .compact-admission .admission-profile-info h2 {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 18px;
+  margin: 5px 0;
+}
+#selection-screen .compact-admission .admission-profile-info > p {
+  font-size: 10px;
+  color: #c3b48b;
+  margin: 0 0 12px;
+}
+#selection-screen .compact-admission .talent-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 0;
+  height: auto;
+  gap: 8px;
+  position: static;
+  width: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+#selection-screen .compact-admission .talent-badge {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+  padding: 6px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--talent-color);
+  box-shadow: inset 3px 0 var(--talent-color);
+}
+.quality-blue {
+  --talent-color: #72bdf0;
+}
+.quality-purple {
+  --talent-color: #cb9eff;
+}
+.quality-gold {
+  --talent-color: #ffcf70;
+}
+#selection-screen .compact-admission .talent-badge strong {
+  font-size: 11px;
+  color: var(--talent-color);
+}
+#selection-screen .compact-admission .talent-badge small {
+  font-size: 9px;
+  color: var(--talent-color);
+  white-space: nowrap;
+}
+#selection-screen .compact-admission .allocation-heading {
+  min-height: 44px;
+  font-size: 12px;
+  gap: 6px;
+}
+#selection-screen .compact-admission .allocation-heading button {
+  min-height: 36px;
+  padding: 5px 7px;
+}
+#selection-screen .compact-admission .attribute-rows {
+  gap: 12px;
+}
+#selection-screen .compact-admission .attribute-row {
+  min-height: 52px;
+  height: 52px;
+}
+#selection-screen .compact-admission .attribute-controls button {
+  width: 40px;
+  height: 40px;
+}
+.talent-detail-bubble {
+  position: fixed;
+  z-index: 200;
+  max-width: min(285px, calc(100vw - 16px));
+  background: #162c32;
+  color: #f0e4c8;
+  border: 1px solid var(--talent-color);
+  border-radius: 5px;
+  box-shadow: 0 7px 24px #0009;
+  padding: 12px 14px;
+  font:
+    13px/1.65 system-ui,
+    sans-serif;
+}
+.talent-detail-bubble strong {
+  color: var(--talent-color);
+}
+.talent-detail-bubble p {
+  margin: 4px 0 0;
+}
+
+.trial-dialog #decision {
+  text-align: center;
+}
+.trial-dialog #decision-title {
+  margin-bottom: 8px;
+}
+.trial-dialog .trial-stage {
+  margin: 3px 0 12px;
+  font-size: 11px;
+  color: #756340;
+}
+.trial-dialog .trial-boss {
+  height: clamp(85px, 20vh, 162px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.trial-dialog .trial-boss img {
+  width: 170px;
+  min-height: 0;
+  flex: 1;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.trial-dialog .trial-boss h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0 8px;
+  font-size: 15px;
+}
+.trial-dialog .trial-realm {
+  border: 1px solid #b8a57390;
+  padding: 6px;
+  background: #11272b;
+  margin: 8px 0 15px;
+  font-size: 14px;
+}
+.trial-dialog .trial-realm small {
+  display: block;
+  color: #b0b1a1;
+  font-size: 10px;
+  margin-bottom: 3px;
+}
+.trial-dialog .trial-realm i {
+  font-style: normal;
+  padding: 0 10px;
+  color: #d8b965;
+}
+.trial-dialog .trial-realm strong {
+  color: #f4d38a;
+}
+.trial-dialog .trial-realm > span {
+  color: #b6c0ad;
+}
+.trial-dialog .trial-tiers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.trial-dialog .trial-tiers button {
+  min-height: 52px;
+  padding: 6px 3px;
+  font-size: 14px;
+  border: 1px solid #778d8190;
+  background: #1c3439;
+  color: #c7c9b7;
+}
+.trial-dialog .trial-tiers button.selected {
+  border: 2px solid #e7bd69;
+  color: #ffe3a2;
+  background: #5c4a2e;
+}
+.trial-dialog .trial-tiers button small {
+  display: block;
+  font-size: 10px;
+  margin-top: 3px;
+}
+.trial-dialog .trial-details {
+  text-align: left;
+  margin: 15px 0;
+}
+.trial-dialog .trial-risk {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #70867660;
+}
+.trial-dialog .trial-risk span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #493b26;
+}
+.trial-dialog .trial-risk b {
+  margin-left: auto;
+  font-size: 14px;
+}
+.trial-dialog .trial-gains {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 10px;
+  padding-top: 12px;
+}
+.trial-dialog .trial-gains > span {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  column-gap: 6px;
+}
+.trial-dialog .trial-gains .ui-icon {
+  grid-row: 1 / 3;
+  width: 22px;
+  height: 22px;
+  align-self: center;
+}
+.trial-dialog .trial-gains small {
+  font-size: 10px;
+  color: #685639;
+}
+.trial-dialog .trial-gains b {
+  font-size: 16px;
+  color: #664511;
+}
+.trial-dialog .trial-gains em {
+  grid-column: 2;
+  font-style: normal;
+  font-size: 9px;
+  color: #766141;
+}
+.trial-dialog .primary-button {
+  width: 100%;
+  min-height: 44px;
+}
+
+#adventure-screen .in-combat .fighter > span {
+  display: none;
+}
+#adventure-screen .in-combat .fighter-health {
+  left: 16px;
+  right: 16px;
+  top: 5px;
+  height: 76px;
+  gap: 36px;
+}
+#adventure-screen .in-combat .fighter-health .health-side {
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+#adventure-screen .actor-fx-layer .combat-number.heal {
+  top: 33%;
+}
+#adventure-screen .in-combat .fighter-health > .health-side {
+  width: calc((100% - 36px) / 2);
+}
+#adventure-screen .in-combat .health-side > strong {
+  display: block;
+  text-align: left;
+  font-size: 10px;
+  line-height: 12px;
+  height: 12px;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+#adventure-screen .in-combat .fighter-health .health-side > span {
+  position: relative;
+  inset: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  line-height: 13px;
+  height: 12px;
+  margin: 0;
+  font-size: 9px;
+}
+#adventure-screen .in-combat .fighter-health .health-value {
+  position: static;
+  text-align: right;
+  width: auto;
+  line-height: 13px;
+}
+#adventure-screen .in-combat .fighter-health .bar {
+  height: 9px;
+  min-height: 9px;
+}
+#adventure-screen .in-combat .hero-effects,
+#adventure-screen .in-combat .enemy-effects {
+  position: static;
+  inset: auto;
+  display: block;
+  min-height: 24px;
+  margin: 2px 0 0;
+}
+#adventure-screen .in-combat .fighter-health .battle-status-button small {
+  position: static;
+  font-size: 9px;
+  width: auto;
+}
+#adventure-screen .in-combat .battle-status-button {
+  min-width: 50px;
+  min-height: 23px;
+  height: 23px;
+  padding: 2px 4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  background: #142b30cf;
+  border: 1px solid #71857460;
+  border-radius: 3px;
+}
+#adventure-screen .in-combat .battle-vitals {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 14px;
+  font-size: 9px;
+}
+#adventure-screen .in-combat .battle-vitals span {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  width: auto;
+  font-size: 9px;
+}
+#adventure-screen .in-combat .battle-vitals .ui-icon,
+#adventure-screen .in-combat .battle-vitals svg {
+  width: 11px;
+  height: 11px;
+  fill: #b6c3a7;
+}
+.status-symbol {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  color: #adc4b4;
+}
+.status-poison {
+  color: #98cc75;
+}
+.status-burn {
+  color: #f09a66;
+}
+.status-chill {
+  color: #88cbe9;
+}
+.status-shield {
+  color: #d4c58b;
+}
+.status-warning,
+.status-rage {
+  color: #f09176;
+}
+.status-tome {
+  color: #c3a9e9;
+}
+.battle-status-details {
+  text-align: left;
+}
+.battle-status-details > p {
+  color: #6a5739;
+  font-size: 12px;
+}
+.status-attributes {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+.status-attributes span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.battle-status-details ul {
+  padding: 0;
+  list-style: none;
+  margin: 18px 0;
+}
+.battle-status-details li {
+  display: flex;
+  gap: 9px;
+  margin: 10px 0;
+  border-top: 1px solid #7890834d;
+  padding-top: 9px;
+}
+.battle-status-details li > svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.battle-status-details li strong,
+.battle-status-details li b,
+.battle-status-details li small {
+  display: block;
+  font-size: 12px;
+  font-weight: normal;
+}
+.battle-status-details li strong {
+  color: #795114;
+  font-weight: bold;
+}
+.battle-status-details li small {
+  color: #6c654c;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.battle-status-details .status-symbol {
+  color: #496359;
+}
+.enemy-skill-details {
+  font-size: 11px;
+  line-height: 1.65;
+  color: #6a5e46;
+}
+
+@media (max-height: 660px) {
+  dialog.trial-dialog {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+  .trial-dialog .trial-stage {
+    margin-bottom: 7px;
+  }
+  .trial-dialog .trial-realm {
+    margin: 5px 0 9px;
+  }
+  .trial-dialog .trial-details {
+    margin: 10px 0;
+  }
+  .trial-dialog .trial-gains {
+    gap: 8px;
+    padding-top: 8px;
+  }
+}

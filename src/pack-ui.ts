@@ -1,3 +1,4 @@
+import { decorateStatusText } from './status-art';
 import {
   BRANCHES,
   cells,
@@ -17,9 +18,20 @@ import type { Game } from './game';
 import { adjacencyDescription, readableEffect, itemProposal, itemStageText } from './item-rules';
 import { itemPainting, shapePath } from './scene';
 import { itemSkills } from './skills';
+import { cooldownView } from './cooldown';
 import { itemBadge } from './item-badge';
 import { itemTalentText } from './talents';
+import type { Motion } from './motion';
 import type { Equipment, ResonanceKey } from './types';
+import {
+  PACK_WIDTH,
+  PACK_HEIGHT,
+  PACK_CELL,
+  PACK_PITCH,
+  shapeSize,
+  pieceStyle,
+  packPoint,
+} from './pack-geometry';
 export const esc = (s: string) =>
   s.replace(
     /[&<>"']/g,
@@ -69,11 +81,13 @@ export class PackUI {
   private details: HTMLDialogElement;
   private focusResonance: ResonanceKey | null = null;
   private lastOpen: Set<string> | null = null;
+  private lastItems: Map<string, { level: number; location: string }> | null = null;
   constructor(
     public game: Game,
     private changed: () => void,
     private toast: (s: string) => void,
     private prepareArrange: () => void = () => {},
+    private motion?: Motion,
   ) {
     this.root = document.getElementById('adventure-screen')!;
     document.getElementById('view-pack')!.innerHTML =
@@ -246,6 +260,7 @@ export class PackUI {
     this.focusResonance = null;
     this.key = '';
     this.lastOpen = null;
+    this.lastItems = null;
   }
   private refresh() {
     this.key = '';
@@ -309,7 +324,7 @@ export class PackUI {
           : '相邻效果';
     this.details.innerHTML = `<header class="item-description-header" style="--quality-color:${QUALITIES[item.quality].color}"><h2>${esc(item.name)} <small>【${item.level}阶】</small></h2><span>${placed ? '装备中' : owned ? '暂放中' : '起始补给'}</span><button data-pack-action="close" aria-label="关闭装备详情">×</button></header>
     <div class="item-description-overview"><div class="item-description-tags">${itemPainting(item, 0, 'detail')}<strong>${proposal.contributionTags.join(' · ')}</strong><small>共鸣值：${contributionPoints(item)}</small><small>${shapePreview(item)}</small></div><div class="item-description-attributes"><p>人物攻击 <b>+${item.attack}</b></p><p>人物防御 <b>+${item.defense}</b></p><p>人物生命 <b>+${item.hp}</b></p></div></div>
-    <section class="item-native-effect"><h3>当前效果</h3>${itemSkills(item.templateId, item.level).some((k) => k.cooldown) ? `<small>首次第 ${itemSkills(item.templateId, item.level).find((k) => k.cooldown)!.initialDelay ?? 1} 回合发动</small>` : ''}<p>${esc(readableEffect(itemStageText(item)))}</p><small>天赋增幅：${esc(itemTalentText(item, s.run.trainee?.talents ?? []))}</small></section>
+    <section class="item-native-effect"><h3>当前效果</h3>${itemSkills(item.templateId, item.level).some((k) => k.cooldown) ? `<small>首次第 ${itemSkills(item.templateId, item.level).find((k) => k.cooldown)!.initialDelay ?? 1} 回合发动</small>` : ''}<p>${decorateStatusText(esc(readableEffect(itemStageText(item))))}</p><small>天赋增幅：${esc(itemTalentText(item, s.run.trainee?.talents ?? []))}</small></section>
     <section class="item-adjacency-effect"><h3>${role}</h3><p>${esc(adjacencyDescription(item))}</p><small>相邻指物品格子边缘接触，斜角不算。</small>${
       links.length
         ? `<div class="item-active-links"><strong>当前已生效</strong>${links
@@ -321,7 +336,7 @@ export class PackUI {
             .join('')}</div>`
         : '<small class="muted">当前没有相邻增幅生效</small>'
     }</section>
-    <section class="item-stage-changes"><h3>升阶效果</h3>${proposal.stageEffects.map((text, n) => `<p class="${item.level === n + 1 ? 'reached' : 'muted'}"><b>【${n + 1}阶】</b>${esc(readableEffect(text))}</p>`).join('')}<details><summary>各阶人物属性</summary>${proposal.attributes.map((v, n) => `<p>${n + 1}阶 · 攻击 +${v.attack} · 生命 +${v.hp} · 防御 +${v.defense}</p>`).join('')}</details></section>
+    <section class="item-stage-changes"><h3>升阶效果</h3>${proposal.stageEffects.map((text, n) => `<p class="${item.level === n + 1 ? 'reached' : 'muted'}"><b>【${n + 1}阶】</b>${decorateStatusText(esc(readableEffect(text)))}</p>`).join('')}<details><summary>各阶人物属性</summary>${proposal.attributes.map((v, n) => `<p>${n + 1}阶 · 攻击 +${v.attack} · 生命 +${v.hp} · 防御 +${v.defense}</p>`).join('')}</details></section>
     <small class="item-contribution-note">贡献标签：${proposal.contributionTags.join(' + ')} · ${contributionPoints(item)} 点</small><div class="detail-actions">${owned ? `<button class="danger-button" data-pack-action="discard" ${this.game.editable() ? '' : 'disabled'}>弃用 · +1 点</button>` : ''}</div>`;
     if (!this.details.open) this.details.showModal();
   }
@@ -361,10 +376,10 @@ export class PackUI {
       clientY >= r.bottom
     )
       return null;
-    return {
-      x: Math.floor(((clientX - r.left) / r.width) * PACK_COLS),
-      y: Math.floor(((clientY - r.top) / r.height) * PACK_ROWS),
-    };
+    return packPoint(
+      ((clientX - r.left) / r.width) * PACK_WIDTH,
+      ((clientY - r.top) / r.height) * PACK_HEIGHT,
+    );
   }
   private inUpper(x: number, y: number) {
     const r = document.getElementById('battle-panel')!.getBoundingClientRect();
@@ -430,7 +445,8 @@ export class PackUI {
       d = dimensions(item, { rotation: this.rotation });
     this.floating = document.createElement('div');
     this.floating.className = 'drag-floating';
-    this.floating.style.cssText = `width:${(d.w * r.width) / PACK_COLS}px;height:${(d.h * r.height) / PACK_ROWS}px;left:${clientX - (this.anchor[0] * r.width) / PACK_COLS - r.width / (PACK_COLS * 2)}px;top:${clientY - (this.anchor[1] * r.height) / PACK_ROWS - r.height / (PACK_ROWS * 2)}px`;
+    const scale = r.width / PACK_WIDTH;
+    this.floating.style.cssText = `width:${shapeSize(d.w) * scale}px;height:${shapeSize(d.h) * scale}px;left:${clientX - (this.anchor[0] * PACK_PITCH + PACK_CELL / 2) * scale}px;top:${clientY - (this.anchor[1] * PACK_PITCH + PACK_CELL / 2) * scale}px`;
     this.floating.innerHTML = itemPainting(item, this.rotation, 'floating');
     document.body.append(this.floating);
     const recycle = this.recycleTarget(clientX, clientY);
@@ -458,16 +474,26 @@ export class PackUI {
     }
     const ghost = document.createElement('div');
     ghost.className = `pack-ghost ${plan.kind === 'invalid' ? 'invalid' : plan.kind}`;
-    ghost.style.cssText = `left:${(p.x / 7) * 100}%;top:${(p.y / 6) * 100}%;width:${(d.w / 7) * 100}%;height:${(d.h / 6) * 100}%`;
+    ghost.style.cssText = pieceStyle(p.x, p.y, d.w, d.h);
     ghost.innerHTML = `<svg viewBox="0 0 ${d.w * 100} ${d.h * 100}"><path d="${shapePath(cells(item, this.rotation))}"/></svg><span>${plan.kind === 'swap' ? '互换' : plan.kind === 'eject' ? '移到上方' : plan.kind === 'invalid' ? '无法放置' : '放置'}</span>`;
     this.grid.append(ghost);
   }
   pulse(id: string) {
     const el = this.grid.querySelector(`[data-pack-item="${id}"]`);
+    if (el && !el.querySelector('.item-activation-rim')) {
+      const rim = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      rim.setAttribute('class', 'item-activation-rim');
+      rim.setAttribute('d', el.querySelector('.item-outline')!.getAttribute('d')!);
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('class', 'item-activation-label');
+      const cell = cells(this.game.findItem(id)!)[0];
+      label.setAttribute('x', String(cell[0] * 100 + 50));
+      label.setAttribute('y', String(cell[1] * 100 + 58));
+      label.textContent = '发动';
+      el.append(rim, label);
+    }
     if (!el) return;
-    el.classList.remove('triggered');
-    void el.getBoundingClientRect();
-    el.classList.add('triggered');
+    this.motion?.pulse(el, 'triggered', 260);
   }
   render() {
     if (this.gesture) return;
@@ -496,7 +522,7 @@ export class PackUI {
             const item = this.game.findItem(p.id)!,
               d = dimensions(item, p),
               points = cells(item, p.rotation);
-            return `<svg class="pack-piece quality-${item.quality}" data-pack-item="${item.id}" role="button" tabindex="0" aria-label="${esc(item.name)}，等级${item.level}" style="left:${(p.x / 7) * 100}%;top:${(p.y / 6) * 100}%;width:${(d.w / 7) * 100}%;height:${(d.h / 6) * 100}%;--item-color:${QUALITIES[item.quality].color};--item-fill:${gradeFill[item.quality]}" viewBox="0 0 ${d.w * 100} ${d.h * 100}"><path class="item-outline" d="${shapePath(points)}"/>${itemPainting(item, p.rotation, 'board')}<path class="item-grade-rim" d="${shapePath(points)}"/>${itemBadge(item)}</svg>`;
+            return `<svg class="pack-piece quality-${item.quality}" data-pack-item="${item.id}" role="button" tabindex="0" aria-label="${esc(item.name)}，等级${item.level}" style="${pieceStyle(p.x, p.y, d.w, d.h)};--item-color:${QUALITIES[item.quality].color};--item-fill:${gradeFill[item.quality]}" viewBox="0 0 ${d.w * 100} ${d.h * 100}"><path class="item-outline" d="${shapePath(points)}"/>${itemPainting(item, p.rotation, 'board')}<path class="item-grade-rim" d="${shapePath(points)}"/>${itemBadge(item)}</svg>`;
           })
           .join('');
       document.getElementById('pack-space')!.textContent = `${a.occupied}/${runBagCapacity(s)} 格`;
@@ -512,13 +538,37 @@ export class PackUI {
         ? `<div class="field-shapes">${items.map((i) => this.fieldItem(i, offers.some((o) => o.id === i.id) || s.run.lastLootIds.includes(i.id))).join('')}</div>`
         : '';
       this.highlight();
+      this.itemFeedback();
     }
     this.cooldowns();
   }
   private fieldItem(i: Equipment, offer: boolean) {
     const d = dimensions(i, { rotation: 0 }),
       points = cells(i);
-    return `<svg class="field-piece field-item quality-${i.quality} ${offer ? 'offer' : ''}" data-pack-item="${i.id}" role="button" tabindex="0" aria-label="${esc(i.name)}，等级${i.level}，${cells(i).length}格" style="--shape-w:${d.w};--shape-h:${d.h};--item-color:${QUALITIES[i.quality].color};--item-fill:${gradeFill[i.quality]}" viewBox="0 0 ${d.w * 100} ${d.h * 100}"><title>${esc(i.name)} · Lv.${i.level} · ${BRANCHES[i.branch].name}</title><path class="item-outline" d="${shapePath(points)}"/>${itemPainting(i, 0, 'field')}<path class="item-grade-rim" d="${shapePath(points)}"/>${itemBadge(i)}</svg>`;
+    return `<svg class="field-piece field-item quality-${i.quality} ${offer ? 'offer' : ''}" data-pack-item="${i.id}" role="button" tabindex="0" aria-label="${esc(i.name)}，等级${i.level}，${cells(i).length}格" style="width:${shapeSize(d.w)}px;height:${shapeSize(d.h)}px;--shape-w:${d.w};--shape-h:${d.h};--item-color:${QUALITIES[i.quality].color};--item-fill:${gradeFill[i.quality]}" viewBox="0 0 ${d.w * 100} ${d.h * 100}"><title>${esc(i.name)} · Lv.${i.level} · ${BRANCHES[i.branch].name}</title><path class="item-outline" d="${shapePath(points)}"/>${itemPainting(i, 0, 'field')}<path class="item-grade-rim" d="${shapePath(points)}"/>${itemBadge(i)}</svg>`;
+  }
+  private itemFeedback() {
+    const next = new Map<string, { level: number; location: string }>();
+    let reveal = 0;
+    for (const el of this.root.querySelectorAll<SVGElement>('[data-pack-item]')) {
+      const id = el.dataset.packItem!,
+        item = this.game.findItem(id);
+      if (!item) continue;
+      const p = this.game.state.draft.find((p) => p.id === id);
+      const location = el.classList.contains('field-piece') ? 'field' : `${p?.x},${p?.y}`;
+      next.set(id, { level: item.level, location });
+      const previous = this.lastItems?.get(id);
+      if (!this.lastItems) continue;
+      if (previous && previous.level < item.level)
+        this.motion?.pulse(el, 'equipment-merged', 580, false);
+      else if (previous && previous.location !== location)
+        this.motion?.pulse(el, 'equipment-landed', 280, false);
+      else if (!previous && location === 'field') {
+        el.style.setProperty('--reveal-order', String(Math.min(2, reveal++)));
+        this.motion?.pulse(el, 'equipment-revealed', 460, false);
+      }
+    }
+    this.lastItems = next;
   }
   private cooldowns() {
     const s = this.game.state;
@@ -531,11 +581,11 @@ export class PackUI {
           runtime?.sources.find((source) => source.id === id)?.skills ??
           itemSkills(i.templateId, i.level),
         index = skills.findIndex((skill) => skill.cooldown > 0),
-        timer =
+        view =
           runtime && index >= 0
-            ? (runtime.timers[id + ':' + index] ?? skills[index].initialDelay ?? 1)
-            : (s.combat.timers[id] ?? 0),
-        remaining = Math.max(0, timer - 1),
+            ? cooldownView(runtime, id, index, skills[index])
+            : { remaining: 0, progress: 1 },
+        remaining = view.remaining,
         inCombat = s.phase === 'combat';
       let label = el.querySelector<SVGTextElement>('.cooldown-label');
       if (!label) {
@@ -547,6 +597,35 @@ export class PackUI {
         el.append(label);
       }
       label.textContent = inCombat && index >= 0 ? (remaining ? `${remaining} 回合` : '就绪') : '';
+      let mask = el.querySelector<SVGPathElement>('.item-cooldown-mask');
+      if (!mask) {
+        const clip = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+        clip.id = `cooldown-clip-${id}`;
+        clip.setAttribute('clipPathUnits', 'userSpaceOnUse');
+        clip.append(document.createElementNS('http://www.w3.org/2000/svg', 'rect'));
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        defs.append(clip);
+        el.prepend(defs);
+        mask = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        mask.setAttribute('class', 'item-cooldown-mask');
+        mask.setAttribute('clip-path', `url(#${clip.id})`);
+        mask.setAttribute(
+          'd',
+          shapePath(cells(i, s.placements.find((p) => p.id === id)?.rotation ?? 0)),
+        );
+        // Grade rim, badges and the timer are above the silhouette-shaped mask.
+        el.querySelector('.item-grade-rim')!.before(mask);
+      }
+      const size = dimensions(i, { rotation: 0 }),
+        progress = inCombat && index >= 0 ? view.progress : 1,
+        rect = el.querySelector('clipPath rect')!;
+      rect.setAttribute('x', '0');
+      rect.setAttribute('y', String(progress * size.h * 100));
+      rect.setAttribute('width', String(size.w * 100));
+      rect.setAttribute('height', String((1 - progress) * size.h * 100));
+      mask.style.opacity = inCombat && index >= 0 ? '0.78' : '0';
+      el.dataset.cooldownProgress = String(progress);
+      el.dataset.cooldown = inCombat ? String(remaining) : '';
     }
   }
 }

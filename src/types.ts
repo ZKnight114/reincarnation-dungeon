@@ -157,6 +157,7 @@ export interface HeroLoadout {
   equipment: Equipment[];
   placements: Placement[];
   capacity: number;
+  packLayout?: 'legacy';
 }
 export type BuffKey = 'power' | 'tempo' | 'vitality' | 'defense';
 export interface Reward {
@@ -179,6 +180,7 @@ export interface GuildBonus {
   points: number;
 }
 export type TalentQuality = 'blue' | 'purple' | 'gold';
+export type Aptitude = 'common' | 'gifted' | 'brilliant' | 'legendary';
 export type TalentKey =
   | `${string}:${TalentQuality}`
   | 'born_fighter'
@@ -194,13 +196,23 @@ export type TalentKey =
   | 'alert'
   | 'light_step';
 export type Actor = 'hero' | 'enemy';
+export interface HeroAppearance {
+  version: 1;
+  gender: 'male' | 'female';
+  head: number;
+  hair: number;
+  torso: number;
+  legs: number;
+}
 export interface Trainee {
   id: string;
   name: string;
   createdAt: number;
   profession: Profession;
+  appearance?: HeroAppearance;
   recruitment: 'random' | 'targeted';
   talents: TalentKey[];
+  aptitude?: Aptitude;
   allocation: Attributes;
   attributePoints?: number;
   guildBonus?: GuildBonus;
@@ -253,7 +265,9 @@ export interface DigState {
   claimed: string[];
 }
 export interface GameState {
+  layoutRevision?: 1;
   rulesRevision?: number;
+  footprintRevision?: number;
   version: 15;
   phase:
     | 'home'
@@ -288,6 +302,7 @@ export interface GameState {
     totalKills: number;
   };
   run: {
+    packLayout?: 'legacy';
     profession: Profession;
     chapter: number;
     index: number;
@@ -302,6 +317,12 @@ export interface GameState {
     summary: RunSummary | null;
     starterRound: number;
     starterOffers: Equipment[];
+    /** Pre-rolled template IDs for both supply rounds; never reroll on resume. */
+    starterPlan?: string[][];
+    /** Boss loot is being arranged; growth has not been applied yet. */
+    pendingPromotion?: boolean;
+    /** Promotion has advanced to a fresh node; choosing resonance resumes this same node. */
+    resonanceAtNode?: boolean;
     resonances: ResonanceKey[];
     trainee: Trainee | null;
     stages: number;

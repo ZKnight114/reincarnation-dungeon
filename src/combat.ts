@@ -34,10 +34,105 @@ export const statusValue = (f: Fighter, kind: StatusKind) =>
 export const fighterSpeed = (f: Fighter) => f.speed * (1 - statusValue(f, 'chill'));
 export interface BattleSignal {
   source: string;
-  kind: 'damage' | 'healing' | 'shield' | 'hurt' | 'blocked' | 'trigger';
+  kind: 'damage' | 'healing' | 'shield' | 'hurt' | 'blocked' | 'trigger' | 'activation';
   amount: number;
 }
 type Emit = (signal: BattleSignal) => void;
+
+export const isEnemySource = (id: string) => id.startsWith('enemy:') || id.startsWith('minion:');
+
+function enemyPlan(id: string, n: number, guard: boolean, queenStrike: boolean) {
+  const hit = (a = 1, type: DamageType = 'physical', ignore = 0): SkillAction => ({
+    kind: 'damage',
+    a,
+    type,
+    ignore,
+  });
+  const dot = (status: 'poison' | 'burn', a: number): SkillAction => ({
+    kind: 'status',
+    status,
+    a,
+    duration: 2,
+  });
+  let actions: SkillAction[] = [hit()],
+    warning = '',
+    summon = false;
+  if (id === 'slime' && guard) actions.unshift({ kind: 'shield', h: 0.04 });
+  if (id === 'skeleton' && n % 3 === 0)
+    actions = [hit(1.1), { kind: 'status', status: 'break', a: 0.1, duration: 2 }];
+  if (id === 'wolf' && n % 3 === 0) actions = [{ ...hit(0.65), hits: 2 }];
+  if (id === 'spider') actions = [hit(0.8), dot('poison', 0.08)];
+  if (id === 'wraith')
+    actions = n % 3 === 0 ? [hit(0.7, 'magic'), dot('burn', 0.1)] : [hit(0.9, 'magic')];
+  if (id === 'golem') {
+    actions = n % 3 === 0 ? [hit(1.3), dot('burn', 0.08)] : [hit()];
+    if (guard) actions.unshift({ kind: 'shield', h: 0.05 });
+  }
+  if (id === 'ogre') {
+    if (n >= 3 && n % 3 === 0) {
+      actions = [hit(0.5)];
+      warning = '下次行动：粉碎重击';
+    }
+    if (n >= 4 && n % 3 === 1) actions = [hit(2, 'physical', 0.15)];
+  }
+  if (id === 'dragon') {
+    actions = [hit(0.9)];
+    if (n % 3 === 2) {
+      actions = [hit(0.6)];
+      warning = '下次行动：月焰吐息';
+    }
+    if (n % 3 === 0) actions = [hit(1.5, 'magic'), dot('burn', 0.1)];
+  }
+  if (id === 'bone_king') {
+    if (n % 4 === 3) {
+      actions = [hit(0.6), { kind: 'shield', h: 0.04 }];
+      warning = '下次行动：白骨裁决';
+    }
+    if (n % 4 === 0) actions = [hit(1.9, 'physical', 0.2)];
+  }
+  if (id === 'queen') {
+    actions = [hit(0.9 * (queenStrike ? 1.3 : 1)), dot('poison', 0.08)];
+    if (n % 4 === 3) {
+      actions = [];
+      warning = '下次行动：孵化';
+    } else if (n % 4 === 0) {
+      actions = [hit(0.5)];
+      summon = true;
+    }
+  }
+  return { actions, warning, summon };
+}
+
+type EnemyStep = { actions: SkillAction[]; minion?: string; summon?: boolean };
+/** Rebuild a frozen template recipe instead of saving arbitrary executable skills. */
+export function enemySteps(r: BattleRuntime): EnemyStep[] {
+  const cursor = r.enemyTurn;
+  if (!cursor) return [];
+  const plan = enemyPlan(r.enemyId, r.enemyActions, cursor.guard, cursor.queenStrike);
+  const steps: EnemyStep[] = [];
+  for (const action of plan.actions) {
+    if (action.kind === 'damage') {
+      for (let hit = 0; hit < (action.hits ?? 1); hit++)
+        steps.push({ actions: [{ ...action, hits: 1 }] });
+    } else if (steps.length) steps[steps.length - 1].actions.push(action);
+    else steps.push({ actions: [action] });
+  }
+  if (plan.summon) steps.push({ actions: [], summon: true });
+  for (const minion of cursor.minions) steps.push({ actions: [], minion });
+  return steps;
+}
+
+export function orderedHeroSources(sources: Source[]) {
+  const priority = (s: Source) =>
+    s.kind === 'tome'
+      ? 2
+      : s.kind === 'resonance'
+        ? 3
+        : s.skills.some((k) => k.actions.some((a) => a.kind === 'damage'))
+          ? 1
+          : 0;
+  return [...sources].sort((a, b) => priority(a) - priority(b));
+}
 export function fighter(stats: Attributes, p: Profession, hp = stats.hp): Fighter {
   return {
     hp,
@@ -78,6 +173,7 @@ export function battleRuntime(
 }
 
 export class BattleEngine {
+  private lastSourceWorked = false;
   constructor(
     public r: BattleRuntime,
     public round: number,
@@ -127,7 +223,9 @@ export class BattleEngine {
     if (e.hp <= 0) return;
     if (id === 'ogre' && e.hp <= e.maxHp * 0.4 && !this.r.flags.ogreHeal) {
       this.r.flags.ogreHeal = 1;
+      const before = e.hp;
       e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.06);
+      this.emit({ source: 'enemy:ogre', kind: 'healing', amount: e.hp - before });
     }
     if (['bone_king', 'queen'].includes(id) && e.hp <= e.maxHp * 0.5 && !this.r.phase) {
       this.r.phase = true;
@@ -349,8 +447,10 @@ export class BattleEngine {
             self.hp < self.maxHp &&
             (this.r.charges.batHeal ?? 0) < 3
           ) {
+            const beforeHeal = self.hp;
             self.hp = Math.min(self.maxHp, self.hp + hpDamage * 0.2);
             this.r.charges.batHeal = (this.r.charges.batHeal ?? 0) + 1;
+            this.emit({ source: source.id, kind: 'healing', amount: self.hp - beforeHeal });
           }
         }
       } else if (action.kind === 'shield') {
@@ -366,7 +466,7 @@ export class BattleEngine {
         self.hp += restored;
         if (restored > 0) {
           this.r.charges[charge] = (this.r.charges[charge] ?? 0) + 1;
-          if (side === 'hero') this.emit({ source: source.id, kind: 'healing', amount: restored });
+          this.emit({ source: source.id, kind: 'healing', amount: restored });
         }
       } else if (action.kind === 'status') {
         if (lastTarget.hp > 0)
@@ -394,7 +494,10 @@ export class BattleEngine {
         self.shield -= consumed;
       }
     }
-    if (worked && side === 'hero') this.emit({ source: source.id, kind: 'trigger', amount: 1 });
+    if (worked && side === 'hero') {
+      this.lastSourceWorked = true;
+      this.emit({ source: source.id, kind: 'trigger', amount: 1 });
+    }
     return worked;
   }
   opening() {
@@ -442,30 +545,30 @@ export class BattleEngine {
         f.statuses = f.statuses.filter((s) => s.remaining > 0);
       }
   }
-  heroTurn() {
+  beginHeroTurn() {
+    if (this.r.heroTurn) return;
     this.statuses('hero');
     if (!this.alive()) return;
     this.r.heroActions++;
-    const sources = [...this.r.sources].sort((a, b) => {
-      const order = (s: Source) =>
-        s.kind === 'tome'
-          ? 2
-          : s.kind === 'resonance'
-            ? 3
-            : s.skills.some((k) => k.actions.some((a) => a.kind === 'damage'))
-              ? 1
-              : 0;
-      return order(a) - order(b);
-    });
-    let tomeFired = false,
-      supportFired = false;
-    for (const source of sources) {
+    this.r.heroTurn = { index: 0, tomeFired: false, supportFired: false };
+  }
+  private heroSources() {
+    return orderedHeroSources(this.r.sources);
+  }
+  /** Apply one source now, including its immediate reactions; never precompute later damage. */
+  nextHeroSource(): boolean {
+    this.lastSourceWorked = false;
+    const cursor = this.r.heroTurn;
+    if (!cursor) return false;
+    const sources = this.heroSources();
+    if (this.alive() && cursor.index < sources.length) {
+      const source = sources[cursor.index++];
       source.skills.forEach((skill, index) => {
-        if (skill.trigger === 'tome' && tomeFired && this.alive()) {
+        if (skill.trigger === 'tome' && cursor.tomeFired && this.alive()) {
           this.execute(source, skill, 'hero', index);
           return;
         }
-        if (skill.trigger === 'support' && supportFired && this.alive()) {
+        if (skill.trigger === 'support' && cursor.supportFired && this.alive()) {
           const roundKey = `${source.id}:${index}:supportRound`;
           if (this.r.flags[roundKey] !== this.round && this.execute(source, skill, 'hero', index))
             this.r.flags[roundKey] = this.round;
@@ -478,8 +581,10 @@ export class BattleEngine {
         const fired = this.execute(source, skill, 'hero', index);
         if (fired) {
           this.r.timers[key] = skill.cooldown;
-          if (source.kind === 'tome') tomeFired = true;
-          if (source.kind === 'item' && source.family === 'support') supportFired = true;
+          this.r.flags[key + ':firedAt'] = this.r.heroActions;
+          this.emit({ source: source.id, kind: 'activation', amount: 1 });
+          if (source.kind === 'tome') cursor.tomeFired = true;
+          if (source.kind === 'item' && source.family === 'support') cursor.supportFired = true;
           const itemKey = source.id;
           if (source.kind === 'item') {
             this.r.flags[itemKey + ':hits'] = (this.r.flags[itemKey + ':hits'] ?? 0) + 1;
@@ -490,87 +595,72 @@ export class BattleEngine {
           }
         }
       });
-      if (!this.alive()) break;
     }
-    this.expire('hero');
+    if (!this.alive() || cursor.index >= sources.length) {
+      this.expire('hero');
+      this.r.heroTurn = null;
+    }
+    return !!this.r.heroTurn;
   }
-  enemyTurn() {
+  /** Cooling/ineligible sources still tick exactly once, without consuming an animation beat. */
+  nextHeroBeat() {
+    do {
+      this.nextHeroSource();
+    } while (this.r.heroTurn && !this.lastSourceWorked);
+  }
+  /** Synchronous drain for estimates and internal tests, using exactly the same steps. */
+  heroTurn() {
+    this.beginHeroTurn();
+    while (this.r.heroTurn) this.nextHeroSource();
+  }
+  beginEnemyTurn() {
+    if (this.r.enemyTurn) return;
     this.statuses('enemy');
     if (!this.alive()) return;
     const n = ++this.r.enemyActions,
       id = this.r.enemyId,
-      e = this.r.enemy;
-    this.r.warning = '';
-    const hit = (a = 1, type: DamageType = 'physical', ignore = 0): SkillAction => ({
-      kind: 'damage',
-      a,
-      type,
-      ignore,
-    });
-    const dot = (kind: 'poison' | 'burn', a: number): SkillAction => ({
-      kind: 'status',
-      status: kind,
-      a,
-      duration: 2,
-    });
-    let actions: SkillAction[] = [hit()];
-    if (id === 'slime' && n % 3 === 0 && (this.r.charges.slimeShield ?? 0) < 3) {
-      actions.unshift({ kind: 'shield', h: 0.04 });
-      this.r.charges.slimeShield = (this.r.charges.slimeShield ?? 0) + 1;
-    }
-    if (id === 'skeleton' && n % 3 === 0)
-      actions = [hit(1.1), { kind: 'status', status: 'break', a: 0.1, duration: 2 }];
-    if (id === 'wolf' && n % 3 === 0) actions = [{ ...hit(0.65), hits: 2 }];
-    if (id === 'spider') actions = [hit(0.8), dot('poison', 0.08)];
-    if (id === 'wraith')
-      actions = n % 3 === 0 ? [hit(0.7, 'magic'), dot('burn', 0.1)] : [hit(0.9, 'magic')];
-    if (id === 'golem') {
-      actions = n % 3 === 0 ? [hit(1.3), dot('burn', 0.08)] : [hit()];
-      if (n % 4 === 0 && (this.r.charges.golemShield ?? 0) < 2) {
-        actions.unshift({ kind: 'shield', h: 0.05 });
-        this.r.charges.golemShield = (this.r.charges.golemShield ?? 0) + 1;
+      guard =
+        (id === 'slime' && n % 3 === 0 && (this.r.charges.slimeShield ?? 0) < 3) ||
+        (id === 'golem' && n % 4 === 0 && (this.r.charges.golemShield ?? 0) < 2);
+    this.r.enemyTurn = {
+      index: 0,
+      guard,
+      queenStrike: !!this.r.flags.queenStrike,
+      minions: this.r.minions.filter((m) => m.hp > 0 && m.activeAt <= n).map((m) => m.id),
+    };
+    if (guard && id === 'slime') this.r.charges.slimeShield = (this.r.charges.slimeShield ?? 0) + 1;
+    if (guard && id === 'golem') this.r.charges.golemShield = (this.r.charges.golemShield ?? 0) + 1;
+    this.r.warning = enemyPlan(id, n, guard, this.r.enemyTurn.queenStrike).warning;
+    if (id === 'queen' && n % 4 !== 3 && n % 4 !== 0) this.r.flags.queenStrike = 0;
+  }
+  nextEnemyStep() {
+    const cursor = this.r.enemyTurn;
+    if (!cursor) return;
+    const steps = enemySteps(this.r),
+      step = steps[cursor.index++];
+    const e = this.r.enemy,
+      n = this.r.enemyActions;
+    if (step && this.alive()) {
+      if (step.minion) {
+        const minion = this.r.minions.find((m) => m.id === step.minion && m.hp > 0);
+        if (minion) {
+          this.emit({ source: minion.id, kind: 'activation', amount: 1 });
+          this.damage(this.r.hero, e.attack * 0.3, 'physical', 'enemy', minion.id);
+        }
+      } else if (!step.summon) {
+        const source = {
+          id: 'enemy:' + this.r.enemyId,
+          name: this.r.enemyId,
+          kind: 'enemy' as const,
+          skills: [],
+        };
+        if (step.actions.some((a) => a.kind === 'damage'))
+          this.emit({ source: source.id, kind: 'activation', amount: 1 });
+        this.execute(source, { cooldown: 0, actions: step.actions }, 'enemy');
       }
     }
-    if (id === 'ogre') {
-      if (n >= 3 && n % 3 === 0) {
-        actions = [hit(0.5)];
-        this.r.warning = '下次行动：粉碎重击';
-      }
-      if (n >= 4 && n % 3 === 1) actions = [hit(2, 'physical', 0.15)];
-    }
-    if (id === 'dragon') {
-      actions = [hit(0.9)];
-      if (n % 3 === 2) {
-        actions = [hit(0.6)];
-        this.r.warning = '下次行动：月焰吐息';
-      }
-      if (n % 3 === 0) actions = [hit(1.5, 'magic'), dot('burn', 0.1)];
-    }
-    if (id === 'bone_king') {
-      if (n % 4 === 3) {
-        actions = [hit(0.6), { kind: 'shield', h: 0.04 }];
-        this.r.warning = '下次行动：白骨裁决';
-      }
-      if (n % 4 === 0) actions = [hit(1.9, 'physical', 0.2)];
-    }
-    let summon = false;
-    if (id === 'queen') {
-      actions = [hit(0.9 * (this.r.flags.queenStrike ? 1.3 : 1)), dot('poison', 0.08)];
-      if (n % 4 === 3) {
-        actions = [];
-        this.r.warning = '下次行动：孵化';
-      } else if (n % 4 === 0) {
-        actions = [hit(0.5)];
-        summon = true;
-      } else this.r.flags.queenStrike = 0;
-    }
-    this.execute(
-      { id: 'enemy:' + id, name: id, kind: 'enemy', skills: [] },
-      { cooldown: 0, actions },
-      'enemy',
-    );
     if (
-      summon &&
+      step?.summon &&
       this.alive() &&
       this.r.minions.filter((m) => m.hp > 0).length < 2 &&
       this.r.summons < 3
@@ -585,15 +675,58 @@ export class BattleEngine {
         activeAt: n + 1,
       });
     }
-    for (const m of this.r.minions)
-      if (m.hp > 0 && m.activeAt <= n && this.alive())
-        this.damage(this.r.hero, e.attack * 0.3, 'physical', 'enemy', m.id);
-    this.r.minions = this.r.minions.filter((m) => m.hp > 0);
-    this.expire('enemy');
+    if (!this.alive() || cursor.index >= steps.length) {
+      this.r.minions = this.r.minions.filter((m) => m.hp > 0);
+      this.expire('enemy');
+      this.r.enemyTurn = null;
+    }
+  }
+  enemyTurn() {
+    this.beginEnemyTurn();
+    while (this.r.enemyTurn) this.nextEnemyStep();
   }
 }
 
 const cache = new Map<string, { output: number; sustain: number; strength: number }>();
+const pressureCache = new Map<string, { output: number; protection: number }>();
+/** Neutral 12-round pressure sample, separate from the immutable graduation score. */
+export function estimatePressure(stats: Attributes, sources: Source[], mixed = false) {
+  const key = JSON.stringify([stats, sources, mixed]);
+  const cached = pressureCache.get(key);
+  if (cached) return cached;
+  let output = 0,
+    protection = 0;
+  for (const wounded of [false, true]) {
+    const hero = fighter(stats, 'warrior', stats.hp * (wounded ? 0.45 : 1));
+    const enemy = fighter(
+      { attack: stats.hp * 0.16 + stats.defense * 0.65, hp: 1e9, defense: 12, speed: 10 },
+      'warrior',
+    );
+    const r = battleRuntime(hero, enemy, structuredClone(sources), 'reference', mixed);
+    const engine = new BattleEngine(
+      r,
+      1,
+      (s) => {
+        if (s.kind === 'damage') output += s.amount;
+        if ((s.kind === 'shield' || s.kind === 'healing') && !isEnemySource(s.source))
+          protection += s.amount;
+      },
+      true,
+    );
+    engine.opening();
+    for (let round = 1; round <= 12; round++) {
+      engine.round = round;
+      hero.hp = Math.max(hero.hp, stats.hp * 0.25);
+      enemy.hp = wounded ? 2e8 : 1e9;
+      engine.heroTurn();
+      engine.enemyTurn();
+    }
+  }
+  const result = { output: output / 24, protection: Math.min(stats.hp * 0.3, protection / 24) };
+  if (pressureCache.size > 500) pressureCache.clear();
+  pressureCache.set(key, result);
+  return result;
+}
 export function estimateBuild(stats: Attributes, sources: Source[], mixed = false) {
   const key = JSON.stringify([stats, sources, mixed]);
   const found = cache.get(key);

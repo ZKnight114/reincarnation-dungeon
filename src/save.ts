@@ -1,4 +1,5 @@
 import {
+  availableItems,
   bagCells,
   BUFF_KEYS,
   buildSources,
@@ -13,19 +14,25 @@ import {
   runBagCells,
   validateLayout,
 } from './backpack';
-import { battleRuntime, fighter } from './combat';
+import { battleRuntime, enemySteps, fighter } from './combat';
 import { ENEMY_TEMPLATES } from './enemies';
 import { ACTION_SECONDS, createState, ENERGY_CAP, STORY_SECONDS } from './game';
 import { ATTRIBUTE_KEYS, allocationLimit, pointsSpent } from './hero';
 import { CHAPTER_CAP, GUILD_CAP, GUILD_NODES, emptyGuildBonus, medalReward } from './guild';
 import { validTalents } from './talents';
+import { APTITUDES } from './aptitude';
+import { TALENTS } from './talents';
+import { validAppearance } from './character-parts';
 import { runRoute, stageGrowth } from './journey';
 import { emptyTomes, heroRating, tome, tomeBranch, TOMES } from './progression';
 import { resonanceAvailable, validResonanceOrder } from './resonances';
 import { itemSkills } from './skills';
+import { migrateFootprints, OLD_SPEAR_CELLS } from './footprints';
 import type { Equipment, GameState, HeroRecord, Placement, Trainee } from './types';
+import type { BattleRuntime } from './skill-types';
 export const SAVE_KEY = 'recursion-dungeon-save-v15';
 const LEGACY_FOOTPRINTS: Record<string, [number, number][]> = {
+  warrior_pole_4: OLD_SPEAR_CELLS,
   mage_ice_4: [
     [0, 0],
     [1, 0],
@@ -325,6 +332,20 @@ function trainee(v: any): asserts v is Trainee {
       validTalents(v.talents, v.profession),
   );
   check(object(v.allocation) && Object.keys(v.allocation).length === 4);
+  check(v.appearance === undefined || validAppearance(v.appearance));
+  if (v.aptitude !== undefined) {
+    check(Object.hasOwn(APTITUDES, v.aptitude));
+    const a = APTITUDES[v.aptitude as keyof typeof APTITUDES];
+    check(
+      v.talents.filter((k: keyof typeof TALENTS) => TALENTS[k].quality === 'gold').length >= a.gold,
+    );
+    check(
+      v.talents.filter((k: keyof typeof TALENTS) =>
+        ['purple', 'gold'].includes(TALENTS[k].quality ?? ''),
+      ).length >=
+        a.gold + a.purple,
+    );
+  }
   check(v.attributePoints === undefined || integer(v.attributePoints, 12, 16));
   if (v.guildBonus !== undefined) guildBonus(v.guildBonus);
   for (const a of ATTRIBUTE_KEYS)
@@ -412,7 +433,8 @@ function hero(v: any): asserts v is HeroRecord {
         b.equipment.every((i: Equipment) => allowedEquipment(i, h.profession, h.tomeId)),
     );
     check(integer(b.capacity, 15, 42));
-    layout(b.placements, b.equipment, bagCells(b.capacity));
+    check(b.packLayout === undefined || b.packLayout === 'legacy');
+    layout(b.placements, b.equipment, bagCells(b.capacity, b.packLayout === 'legacy'));
     check(b.placements.length === b.equipment.length);
     for (const k of h.resonances)
       check(resonanceScore(b.equipment, b.placements, k).tier === h.resonanceTiers[k]);
@@ -484,6 +506,30 @@ export function parseSave(source: string): GameState {
     '不支持此规则版本的存档',
   );
   const s: any = migrateRules(raw.version === 14 ? migrateV14(raw) : (raw as GameState));
+  if (raw.layoutRevision === undefined || raw.version === 14) {
+    // Preserve an ongoing cultivation and frozen graduates; new recruits use the irregular bag.
+    s.run.packLayout = 'legacy';
+    for (const h of s.meta.heroes) if (h.loadout) h.loadout.packLayout = 'legacy';
+    s.layoutRevision = 1;
+  }
+  check(s.layoutRevision === 1, '不支持此背包布局版本');
+  check(s.run.packLayout === undefined || s.run.packLayout === 'legacy');
+  if (raw.footprintRevision === undefined) s.footprintRevision = undefined;
+  // Validate the historical layout first, before any automatic relocation.
+  if (s.footprintRevision === undefined) {
+    const previous = structuredClone(s);
+    previous.footprintRevision = 1;
+    for (const i of [
+      ...previous.inventory,
+      ...previous.run.starterOffers,
+      ...(previous.run.dig?.equipment ?? []),
+      ...previous.meta.heroes.flatMap((h: HeroRecord) => h.loadout?.equipment ?? []),
+    ])
+      if (i.templateId === 'warrior_pole_4') i.legacyCells = structuredClone(OLD_SPEAR_CELLS);
+    parseSave(JSON.stringify(previous));
+  }
+  migrateFootprints(s);
+  check(s.footprintRevision === 1, '不支持此占格版本的存档');
   safeKeys(s);
   if (object(s.meta) && object(s.meta.tomes) && s.meta.tomeGifts === undefined)
     s.meta.tomeGifts = PROFESSION_KEYS.filter((p) =>
@@ -584,6 +630,10 @@ export function parseSave(source: string): GameState {
       m.heroes.every((h: HeroRecord) => Number(h.id.slice(5)) <= m.heroSerial),
   );
   const r = s.run;
+  if (r.pendingPromotion === undefined) r.pendingPromotion = false;
+  check(typeof r.pendingPromotion === 'boolean');
+  if (r.resonanceAtNode === undefined) r.resonanceAtNode = false;
+  check(typeof r.resonanceAtNode === 'boolean');
   check(
     object(r) &&
       PROFESSION_KEYS.includes(r.profession) &&
@@ -690,7 +740,17 @@ export function parseSave(source: string): GameState {
     );
     for (let n = 0; n < runRoute(s as GameState).length; n++)
       check(n < r.index ? r.events[n].completed : n > r.index ? !r.events[n].completed : true);
-    check(r.stages === runRoute(s as GameState).trials.filter((n) => r.events[n].completed).length);
+    check(
+      r.stages + (r.pendingPromotion ? 1 : 0) ===
+        runRoute(s as GameState).trials.filter((n) => r.events[n].completed).length,
+    );
+    if (r.pendingPromotion)
+      check(
+        s.phase === 'camp' &&
+          r.events[r.index].completed &&
+          runRoute(s as GameState).trials[r.stages] === r.index &&
+          r.trials[r.stages] !== null,
+      );
   }
 
   check(Array.isArray(s.inventory) && s.inventory.length <= 500);
@@ -704,6 +764,34 @@ export function parseSave(source: string): GameState {
   layout(s.draft, s.inventory, runBagCells(s as GameState));
   check(Array.isArray(r.starterOffers) && r.starterOffers.length <= 3);
   r.starterOffers.forEach(item);
+  if (r.starterPlan !== undefined) {
+    check(Array.isArray(r.starterPlan) && r.starterPlan.length === 2);
+    const plan: string[] = [];
+    for (const batch of r.starterPlan) {
+      check(Array.isArray(batch) && batch.length === 3);
+      for (const id of batch) {
+        const d =
+          availableItems(r.profession).find((d) => d.id === id) ??
+          (r.boundTome
+            ? availableItems(tome(r.boundTome.id)!.profession).find(
+                (d) => d.id === id && d.branch === tomeBranch(r.boundTome.id),
+              )
+            : undefined);
+        check(d, '起始补给包含不可用的物品');
+        plan.push(id);
+      }
+    }
+    check(
+      plan.some(
+        (id) =>
+          definition({ templateId: id }).profession === r.profession &&
+          definition({ templateId: id }).slot === 'weapon',
+      ),
+    );
+    check(
+      plan.filter((id) => definition({ templateId: id }).profession !== r.profession).length <= 1,
+    );
+  }
   const hidden = r.dig?.equipment.filter((i: Equipment) => !r.dig.claimed.includes(i.id)) ?? [];
   const known = [
     ...ids,
@@ -711,13 +799,13 @@ export function parseSave(source: string): GameState {
     ...r.starterOffers.map((i: Equipment) => i.id),
   ];
   check(
-    r.starterOffers.every((i: Equipment) => i.profession === r.profession) &&
+    r.starterOffers.every((i: Equipment) => allowedEquipment(i, r.profession, r.boundTome?.id)) &&
       new Set(known).size === known.length,
   );
   check(integer(s.itemSerial) && known.every((id) => Number(id.slice(5)) <= s.itemSerial));
   check(
     Array.isArray(r.lastLootIds) &&
-      r.lastLootIds.length <= 3 &&
+      r.lastLootIds.length <= 4 &&
       new Set(r.lastLootIds).size === r.lastLootIds.length &&
       r.lastLootIds.every((id: string) => ids.has(id)),
   );
@@ -788,7 +876,9 @@ export function parseSave(source: string): GameState {
             ]),
         );
       check(
-        s.phase === 'initial' || (['elite', 'boss'].includes(current?.kind) && current.completed),
+        s.phase === 'initial' ||
+          r.resonanceAtNode ||
+          (['elite', 'boss'].includes(current?.kind) && current.completed),
       );
     }
   }
@@ -813,16 +903,17 @@ export function parseSave(source: string): GameState {
         new Set(d.revealed).size === d.revealed.length &&
         d.revealed.every((n: any) => integer(n, 0, 15)) &&
         Array.isArray(d.equipment) &&
-        d.equipment.length === 3 &&
+        d.equipment.length >= 2 &&
+        d.equipment.length <= 4 &&
         Array.isArray(d.claimed) &&
-        d.claimed.length <= 3,
+        d.claimed.length <= d.equipment.length,
     );
     d.equipment.forEach(item);
-    check(new Set(d.equipment.map((i: Equipment) => i.id)).size === 3);
+    check(new Set(d.equipment.map((i: Equipment) => i.id)).size === d.equipment.length);
     check(d.equipment.every((i: Equipment) => allowedEquipment(i, r.profession, r.boundTome?.id)));
     layout(d.placements, d.equipment);
     check(
-      d.placements.length === 3 &&
+      d.placements.length === d.equipment.length &&
         d.placements.every((p: Placement) =>
           occupiedCells(
             d.equipment.find((i: Equipment) => i.id === p.id),
@@ -960,6 +1051,46 @@ export function parseSave(source: string): GameState {
     }
     for (const map of [r.flags, r.timers, r.charges])
       check(Object.keys(map).length <= 1000 && Object.values(map).every((n) => number(n)));
+    if (r.heroTurn !== undefined && r.heroTurn !== null)
+      check(
+        object(r.heroTurn) &&
+          integer(r.heroTurn.index, 0, r.sources.length - 1) &&
+          typeof r.heroTurn.tomeFired === 'boolean' &&
+          typeof r.heroTurn.supportFired === 'boolean' &&
+          s.phase === 'combat' &&
+          c.lastActor === 'hero' &&
+          c.actionIndex >= 1 &&
+          c.order[c.actionIndex - 1] === 'hero' &&
+          r.heroActions >= 1,
+      );
+    if (r.enemyTurn !== undefined && r.enemyTurn !== null) {
+      const turn = r.enemyTurn;
+      check(
+        object(turn) &&
+          typeof turn.guard === 'boolean' &&
+          typeof turn.queenStrike === 'boolean' &&
+          Array.isArray(turn.minions) &&
+          turn.minions.length <= 2 &&
+          new Set(turn.minions).size === turn.minions.length &&
+          turn.minions.every(
+            (id: unknown) =>
+              typeof id === 'string' &&
+              r.minions.some((m: any) => m.id === id && m.activeAt <= r.enemyActions),
+          ) &&
+          s.phase === 'combat' &&
+          !r.heroTurn &&
+          c.lastActor === 'enemy' &&
+          c.actionIndex >= 1 &&
+          c.order[c.actionIndex - 1] === 'enemy' &&
+          r.enemyActions >= 1,
+      );
+      check(
+        !turn.guard ||
+          (r.enemyId === 'slime' && r.enemyActions % 3 === 0) ||
+          (r.enemyId === 'golem' && r.enemyActions % 4 === 0),
+      );
+      check(integer(turn.index, 0, enemySteps(r as BattleRuntime).length - 1));
+    }
     check(
       s.phase !== 'combat' ||
         JSON.stringify(r.sources) === JSON.stringify(buildSources(s as GameState)),
@@ -974,6 +1105,8 @@ export function parseSave(source: string): GameState {
       source.skills.forEach((skill: any, index: number) => {
         const timer = r.timers[source.id + ':' + index];
         if (timer !== undefined) check(integer(timer, 0, skill.cooldown));
+        const firedAt = r.flags[source.id + ':' + index + ':firedAt'];
+        if (firedAt !== undefined) check(integer(firedAt, 1, r.heroActions));
       });
     for (const minion of r.minions)
       check(
@@ -1108,7 +1241,22 @@ export function parseSave(source: string): GameState {
         r.rewards.length === 1,
     );
   } else check(s.phase !== 'awakening');
-  if (s.phase === 'reward') check(current.completed && r.rewards.length === 1);
+  if (r.resonanceAtNode)
+    check(
+      s.phase === 'reward' &&
+        !current.completed &&
+        r.stages >= 1 &&
+        r.index === runRoute(s as GameState).trials[r.stages - 1] + 1 &&
+        r.resonances.length === r.stages &&
+        r.rewards.length === 1 &&
+        r.rewards[0]?.kind === 'resonance' &&
+        r.lastLootIds.length === 0 &&
+        r.dig === null &&
+        r.encounter === null &&
+        s.awakening === null,
+    );
+  if (s.phase === 'reward')
+    check((current.completed || r.resonanceAtNode) && r.rewards.length === 1);
   if (s.phase === 'initial')
     check(
       r.resonances.length === 0 &&
@@ -1159,6 +1307,15 @@ export function saveGame(state: GameState) {
 export function loadSave() {
   const raw = localStorage.getItem(SAVE_KEY);
   if (raw) {
+    if (
+      JSON.parse(raw).footprintRevision === undefined &&
+      !localStorage.getItem(SAVE_KEY + '-before-vertical-spear')
+    )
+      try {
+        localStorage.setItem(SAVE_KEY + '-before-vertical-spear', raw);
+      } catch {
+        /* Preserve the primary key. */
+      }
     if (JSON.parse(raw).rulesRevision !== 2 && !localStorage.getItem(SAVE_KEY + '-before-15.2'))
       try {
         localStorage.setItem(SAVE_KEY + '-before-15.2', raw);

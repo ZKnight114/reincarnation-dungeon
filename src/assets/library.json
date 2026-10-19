@@ -377,6 +377,726 @@
       "sha256": "3249a67147a4d4d8374957af77a27b7f2256130fd9edca73f2bafaf5c5bbd4db"
     },
     {
+      "id": "characters/hair-back/0",
+      "path": "src/assets/characters/hair-back/0.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "0e3149ae30c090ca89ceab7313e195a7b37726c843e7f31cd546c690003ada74"
+    },
+    {
+      "id": "characters/hair-back/1",
+      "path": "src/assets/characters/hair-back/1.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "5a1518ee264c6171a8891262cae08878747f9b1e1b54de94cc236f97b9f7a13d"
+    },
+    {
+      "id": "characters/hair-back/2",
+      "path": "src/assets/characters/hair-back/2.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "7bc5876fe75e0ee48d075b0180d486f9b6ced7994a8f381314b68c27966a7a26"
+    },
+    {
+      "id": "characters/hair-back/3",
+      "path": "src/assets/characters/hair-back/3.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "c13e6011a4bd7b91d827a8709be7734a7eafd05b33683bd1b1a1b6cb512cc51a"
+    },
+    {
+      "id": "characters/hair-back/4",
+      "path": "src/assets/characters/hair-back/4.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "d46dcb72570a6bac66399ce4c16fc05555d5cff3a4b8c21d3993685c6332796c"
+    },
+    {
+      "id": "characters/hair-back/5",
+      "path": "src/assets/characters/hair-back/5.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "812cad27fb33a9be45b913256b712a03dc81c532dd0e6f61a9030159e4cd7909"
+    },
+    {
+      "id": "characters/hair-back/6",
+      "path": "src/assets/characters/hair-back/6.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "eae55ac79c4c74de58d88ba20536094d9f37be4a40d66cf57e44914b15186bf4"
+    },
+    {
+      "id": "characters/hair-back/7",
+      "path": "src/assets/characters/hair-back/7.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "0230e94044a64036057d920714abc277d4d80ff28ba9760b71ebd024e22f3d3b"
+    },
+    {
+      "id": "characters/hair/0",
+      "path": "src/assets/characters/hair/0.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "eddc9514047adb6fe3158a2acb36bf0cc4e9123704fc0d94ad24618cb6d8825e"
+    },
+    {
+      "id": "characters/hair/1",
+      "path": "src/assets/characters/hair/1.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "e39f3da668856765770184a5ffe24efe3d090ec58c8282c214827b147b8c35f9"
+    },
+    {
+      "id": "characters/hair/2",
+      "path": "src/assets/characters/hair/2.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "e935a8f0686480401f700f85f6cb53979641167dc47456b094223c99e65345ce"
+    },
+    {
+      "id": "characters/hair/3",
+      "path": "src/assets/characters/hair/3.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "c5300fa75e19ddde827810536c23e29d86be21ca97b620400dbc039d977ce61a"
+    },
+    {
+      "id": "characters/hair/4",
+      "path": "src/assets/characters/hair/4.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "842fb570d7e8bc663314b55d6be40c5a98d34c7315d0a8261fff224b37f93fd3"
+    },
+    {
+      "id": "characters/hair/5",
+      "path": "src/assets/characters/hair/5.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "62a6e5669f5d310bb2346639dbc2eeb6a7399bd80dcfaf0b88ddd3e6016f7394"
+    },
+    {
+      "id": "characters/hair/6",
+      "path": "src/assets/characters/hair/6.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "5dda5327fb35923a0dd0e0ea1b73e21824d17abde6071e69eea3459adf9fa8cb"
+    },
+    {
+      "id": "characters/hair/7",
+      "path": "src/assets/characters/hair/7.png",
+      "group": "人物发型",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head; source/request records art-direction/characters-v23",
+      "sha256": "4df26325498ce7a9fe9b81c1781a09e197ba045869cb24beba93cc18c5808a98"
+    },
+    {
+      "id": "characters/heads/female-0",
+      "path": "src/assets/characters/heads/female-0.png",
+      "group": "人物头部",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette; source/request records art-direction/characters-v23",
+      "sha256": "44ea26f877cacae9e929fa7b0c70d47e291c206395b56641fec6ad5aabe84c97"
+    },
+    {
+      "id": "characters/heads/female-1",
+      "path": "src/assets/characters/heads/female-1.png",
+      "group": "人物头部",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette; source/request records art-direction/characters-v23",
+      "sha256": "222c8c7e9f382b587d2edf850b575b72db7aa065a60063a98031d6f35e42a0d6"
+    },
+    {
+      "id": "characters/heads/female-2",
+      "path": "src/assets/characters/heads/female-2.png",
+      "group": "人物头部",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette; source/request records art-direction/characters-v23",
+      "sha256": "2029ecdbab28a5abfe7316d94de5e1e9ad7decd7ef0c3de6780b3e423f362112"
+    },
+    {
+      "id": "characters/heads/female-3",
+      "path": "src/assets/characters/heads/female-3.png",
+      "group": "人物头部",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette; source/request records art-direction/characters-v23",
+      "sha256": "7fa827125d84f56c477816e2f0adddb50925e9a3d34549e989526ecc61e9a943"
+    },
+    {
+      "id": "characters/heads/male-0",
+      "path": "src/assets/characters/heads/male-0.png",
+      "group": "人物头部",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette; source/request records art-direction/characters-v23",
+      "sha256": "f54f174b42f102e25413fafec64909ace6c5149e1a78dce4a7c7652af1a63afd"
+    },
+    {
+      "id": "characters/heads/male-1",
+      "path": "src/assets/characters/heads/male-1.png",
+      "group": "人物头部",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette; source/request records art-direction/characters-v23",
+      "sha256": "0dae74b1d4adf9f3b91695a55c20353dbe4352ec3f07f835e7d7a583c1ded463"
+    },
+    {
+      "id": "characters/heads/male-2",
+      "path": "src/assets/characters/heads/male-2.png",
+      "group": "人物头部",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette; source/request records art-direction/characters-v23",
+      "sha256": "3179effbbb0063e8d33babc73f722d17032db1b956463aa7ed3909be9b7e5ad6"
+    },
+    {
+      "id": "characters/heads/male-3",
+      "path": "src/assets/characters/heads/male-3.png",
+      "group": "人物头部",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette; source/request records art-direction/characters-v23",
+      "sha256": "acd43dcb5eede5c5919e4d37030b2cd13ab231d5949ad1fb02253f00e627047d"
+    },
+    {
+      "id": "characters/mage/back-0",
+      "path": "src/assets/characters/mage/back-0.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "No rear accessory in this complete robe; reserved owned rear layer; source/request records art-direction/characters-v23",
+      "sha256": "09a0bdd40458aafd01fcbeb8c8d5bfe094ae26d0cd2599a8c9aa5cdb26f85dd6"
+    },
+    {
+      "id": "characters/mage/back-1",
+      "path": "src/assets/characters/mage/back-1.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "No rear accessory in this complete robe; reserved owned rear layer; source/request records art-direction/characters-v23",
+      "sha256": "09a0bdd40458aafd01fcbeb8c8d5bfe094ae26d0cd2599a8c9aa5cdb26f85dd6"
+    },
+    {
+      "id": "characters/mage/back-2",
+      "path": "src/assets/characters/mage/back-2.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "No rear accessory in this complete robe; reserved owned rear layer; source/request records art-direction/characters-v23",
+      "sha256": "09a0bdd40458aafd01fcbeb8c8d5bfe094ae26d0cd2599a8c9aa5cdb26f85dd6"
+    },
+    {
+      "id": "characters/mage/back-3",
+      "path": "src/assets/characters/mage/back-3.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "No rear accessory in this complete robe; reserved owned rear layer; source/request records art-direction/characters-v23",
+      "sha256": "09a0bdd40458aafd01fcbeb8c8d5bfe094ae26d0cd2599a8c9aa5cdb26f85dd6"
+    },
+    {
+      "id": "characters/mage/legs-0",
+      "path": "src/assets/characters/mage/legs-0.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 mage boots cell 0; dark trousers under intact robe, no skirt; source/request records art-direction/characters-v23",
+      "sha256": "c7c5e954daac0219c1d7068c6d4c97738fb5f07eb5cf88fe89eb0c077dbe4885"
+    },
+    {
+      "id": "characters/mage/legs-1",
+      "path": "src/assets/characters/mage/legs-1.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 mage boots cell 1; dark trousers under intact robe, no skirt; source/request records art-direction/characters-v23",
+      "sha256": "4241e45225fd909dac848b6a1d336af86bb5761891c0340fced4a26fb35a6d12"
+    },
+    {
+      "id": "characters/mage/legs-2",
+      "path": "src/assets/characters/mage/legs-2.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 mage boots cell 2; dark trousers under intact robe, no skirt; source/request records art-direction/characters-v23",
+      "sha256": "92826a712fc405223ca6ad82190069ecbfb5da37475be99dd5ba89d98e7e8f6d"
+    },
+    {
+      "id": "characters/mage/legs-3",
+      "path": "src/assets/characters/mage/legs-3.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 mage boots cell 3; dark trousers under intact robe, no skirt; source/request records art-direction/characters-v23",
+      "sha256": "9fc66bd6c9fd0129823db12120fec32aefdf7d02292ce8e3ada20a3785b41971"
+    },
+    {
+      "id": "characters/mage/torso-0",
+      "path": "src/assets/characters/mage/torso-0.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 mage whole-body sheet cell 0; intact collar-to-hem robe, slit transparent; source/request records art-direction/characters-v23",
+      "sha256": "c72fa958f39055ecd38d0b8f536fcd41e7f1a18b9e667f2ea5f19a5fe99b4b26"
+    },
+    {
+      "id": "characters/mage/torso-1",
+      "path": "src/assets/characters/mage/torso-1.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 mage whole-body sheet cell 1; intact collar-to-hem robe, slit transparent; source/request records art-direction/characters-v23",
+      "sha256": "4a3f806fdd21ab56114934d007fc23d8df67e824ee1c3af1eaf79e3b7d50592c"
+    },
+    {
+      "id": "characters/mage/torso-2",
+      "path": "src/assets/characters/mage/torso-2.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 mage whole-body sheet cell 2; intact collar-to-hem robe, slit transparent; source/request records art-direction/characters-v23",
+      "sha256": "c994fe8d8118af295a1b3caef7ea5e5cb9cac4f2bb7498543bd48d2316928fd0"
+    },
+    {
+      "id": "characters/mage/torso-3",
+      "path": "src/assets/characters/mage/torso-3.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 mage whole-body sheet cell 3; intact collar-to-hem robe, slit transparent; source/request records art-direction/characters-v23",
+      "sha256": "1b4f732d42f4b13f4bdddc94cab579eba335392a054171b955522d611c538ed9"
+    },
+    {
+      "id": "characters/rogue/back-0",
+      "path": "src/assets/characters/rogue/back-0.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 rogue cell 0; owned rear flaps behind trousers; source/request records art-direction/characters-v23",
+      "sha256": "ce6983df23c1875c87ed35ade4257c37128664e7a83e5a0aeba16c8fac49566d"
+    },
+    {
+      "id": "characters/rogue/back-1",
+      "path": "src/assets/characters/rogue/back-1.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 rogue cell 1; owned rear flaps behind trousers; source/request records art-direction/characters-v23",
+      "sha256": "09a0bdd40458aafd01fcbeb8c8d5bfe094ae26d0cd2599a8c9aa5cdb26f85dd6"
+    },
+    {
+      "id": "characters/rogue/back-2",
+      "path": "src/assets/characters/rogue/back-2.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 rogue cell 2; owned rear flaps behind trousers; source/request records art-direction/characters-v23",
+      "sha256": "09a0bdd40458aafd01fcbeb8c8d5bfe094ae26d0cd2599a8c9aa5cdb26f85dd6"
+    },
+    {
+      "id": "characters/rogue/back-3",
+      "path": "src/assets/characters/rogue/back-3.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 rogue cell 3; owned rear flaps behind trousers; source/request records art-direction/characters-v23",
+      "sha256": "f9ae6632d398d32952d6450169c59cc3d7fd00a9393512fe7f5f291a3b93b8f8"
+    },
+    {
+      "id": "characters/rogue/legs-0",
+      "path": "src/assets/characters/rogue/legs-0.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 rogue cell 0; trouser-only hip recovery and central leg runs, no clothes/arms; source/request records art-direction/characters-v23",
+      "sha256": "b851119f04e0549c05a6a5f7891db0043af7576ea637eedc1b835f2384456dc4"
+    },
+    {
+      "id": "characters/rogue/legs-1",
+      "path": "src/assets/characters/rogue/legs-1.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 rogue cell 1; trouser-only hip recovery and central leg runs, no clothes/arms; source/request records art-direction/characters-v23",
+      "sha256": "58190e3640134c11391d1b2be3e66d87fe0c61d286feb1ac573577f52af91d8a"
+    },
+    {
+      "id": "characters/rogue/legs-2",
+      "path": "src/assets/characters/rogue/legs-2.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 rogue cell 2; trouser-only hip recovery and central leg runs, no clothes/arms; source/request records art-direction/characters-v23",
+      "sha256": "499a52f0d4b69f3485f4e4e4226439993261df1918a029f6907e50b6edea402f"
+    },
+    {
+      "id": "characters/rogue/legs-3",
+      "path": "src/assets/characters/rogue/legs-3.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 rogue cell 3; trouser-only hip recovery and central leg runs, no clothes/arms; source/request records art-direction/characters-v23",
+      "sha256": "c96eef24e44aa86a26d8f2de2f34fe50f409a2252a58c49fcf917071fd201290"
+    },
+    {
+      "id": "characters/rogue/torso-0",
+      "path": "src/assets/characters/rogue/torso-0.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 rogue cell 0; semantic shirt/arms mask, no old pants/neck; source/request records art-direction/characters-v23",
+      "sha256": "88e8e2bca0121158344fc0cf48a7a081e5c46fd8d932321b613f0bc7973d6f4f"
+    },
+    {
+      "id": "characters/rogue/torso-1",
+      "path": "src/assets/characters/rogue/torso-1.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 rogue cell 1; semantic shirt/arms mask, no old pants/neck; source/request records art-direction/characters-v23",
+      "sha256": "e57e7a322cb9b26cc15393aec0d99bb16f0c5f41abc601685c6c059dc0901b31"
+    },
+    {
+      "id": "characters/rogue/torso-2",
+      "path": "src/assets/characters/rogue/torso-2.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 rogue cell 2; semantic shirt/arms mask, no old pants/neck; source/request records art-direction/characters-v23",
+      "sha256": "e8343bd595e47a77e026450bdf2f96a8b943c49a0475426b0e3e89336b885625"
+    },
+    {
+      "id": "characters/rogue/torso-3",
+      "path": "src/assets/characters/rogue/torso-3.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 rogue cell 3; semantic shirt/arms mask, no old pants/neck; source/request records art-direction/characters-v23",
+      "sha256": "a2ed975070cf537be5c903e739bbbbd872d2c3ebef8099e318c7193a20a72004"
+    },
+    {
+      "id": "characters/warrior/back-0",
+      "path": "src/assets/characters/warrior/back-0.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 warrior cell 0; owned rear flaps behind trousers; source/request records art-direction/characters-v23",
+      "sha256": "9a2cad04d259d2b3feca74a1cb4f7d0d852764075d905d8b9a77a6d62066a073"
+    },
+    {
+      "id": "characters/warrior/back-1",
+      "path": "src/assets/characters/warrior/back-1.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 warrior cell 1; owned rear flaps behind trousers; source/request records art-direction/characters-v23",
+      "sha256": "09a0bdd40458aafd01fcbeb8c8d5bfe094ae26d0cd2599a8c9aa5cdb26f85dd6"
+    },
+    {
+      "id": "characters/warrior/back-2",
+      "path": "src/assets/characters/warrior/back-2.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 warrior cell 2; owned rear flaps behind trousers; source/request records art-direction/characters-v23",
+      "sha256": "09a0bdd40458aafd01fcbeb8c8d5bfe094ae26d0cd2599a8c9aa5cdb26f85dd6"
+    },
+    {
+      "id": "characters/warrior/back-3",
+      "path": "src/assets/characters/warrior/back-3.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 warrior cell 3; owned rear flaps behind trousers; source/request records art-direction/characters-v23",
+      "sha256": "066a043d683ad5b2d754cc96965854077daafe864a0f9d7cd97d8a1d1c67e739"
+    },
+    {
+      "id": "characters/warrior/legs-0",
+      "path": "src/assets/characters/warrior/legs-0.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 warrior cell 0; trouser-only hip recovery and central leg runs, no clothes/arms; source/request records art-direction/characters-v23",
+      "sha256": "1c481561e85692f489259b4e0d01a6c48184a6f51e52f2c1590e6b8ae58ff4be"
+    },
+    {
+      "id": "characters/warrior/legs-1",
+      "path": "src/assets/characters/warrior/legs-1.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 warrior cell 1; trouser-only hip recovery and central leg runs, no clothes/arms; source/request records art-direction/characters-v23",
+      "sha256": "5303b54aebf27391b837562598af7687ec34eaf46489d4e32166ad0041f37ff6"
+    },
+    {
+      "id": "characters/warrior/legs-2",
+      "path": "src/assets/characters/warrior/legs-2.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 warrior cell 2; trouser-only hip recovery and central leg runs, no clothes/arms; source/request records art-direction/characters-v23",
+      "sha256": "291af4382745e8352c578803c29ff4a9643e9882fee9fc1535ac9792c6a9d3dc"
+    },
+    {
+      "id": "characters/warrior/legs-3",
+      "path": "src/assets/characters/warrior/legs-3.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 warrior cell 3; trouser-only hip recovery and central leg runs, no clothes/arms; source/request records art-direction/characters-v23",
+      "sha256": "336f83afbe3a59af9bcd066ac7bfa24296b678de08ac10dd86cb026ac7996a25"
+    },
+    {
+      "id": "characters/warrior/torso-0",
+      "path": "src/assets/characters/warrior/torso-0.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 warrior cell 0; semantic shirt/arms mask, no old pants/neck; source/request records art-direction/characters-v23",
+      "sha256": "d151383ad5435f8bf603dbb0a183376a2fe27232db7357bf928c8ca1aeb837f9"
+    },
+    {
+      "id": "characters/warrior/torso-1",
+      "path": "src/assets/characters/warrior/torso-1.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 warrior cell 1; semantic shirt/arms mask, no old pants/neck; source/request records art-direction/characters-v23",
+      "sha256": "e8e1ca9edabbc565874acd7d6193f53deffc7e165458fd8508177216499b7ded"
+    },
+    {
+      "id": "characters/warrior/torso-2",
+      "path": "src/assets/characters/warrior/torso-2.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 warrior cell 2; semantic shirt/arms mask, no old pants/neck; source/request records art-direction/characters-v23",
+      "sha256": "0e78f414ba172d9eafe86f647195265180b26985f4fe626b9f95f54a31d7011e"
+    },
+    {
+      "id": "characters/warrior/torso-3",
+      "path": "src/assets/characters/warrior/torso-3.png",
+      "group": "人物服装",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true,
+      "source": "Maker v23 warrior cell 3; semantic shirt/arms mask, no old pants/neck; source/request records art-direction/characters-v23",
+      "sha256": "e56856caa52baef75304bbf2d2a431dcb68e87c9b434fcb268b981f20580d27c"
+    },
+    {
       "id": "enemy-bat-full",
       "path": "src/assets/enemy-bat-full.png",
       "group": "人物与怪物",
@@ -1265,6 +1985,198 @@
       "sha256": "673b0a1835aa85265922482075d22ad600530deba94274acf4199e84794149db"
     },
     {
+      "id": "ui/status/break",
+      "path": "src/assets/ui/status/break.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
+      "sha256": "1623011fc1b4e107453bb6b139e019f7044f68f1c4d90a71d0f5dc3153dcb06d"
+    },
+    {
+      "id": "ui/status/burn",
+      "path": "src/assets/ui/status/burn.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
+      "sha256": "cd830b9eccf31c203e228091583b808cdc48d0c0ba3c643e5647162132d0037e"
+    },
+    {
+      "id": "ui/status/chill",
+      "path": "src/assets/ui/status/chill.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
+      "sha256": "4d41a9cc4303d5d63238561fa35aec7b51a8a5690dba457d54ba2928557ab7ea"
+    },
+    {
+      "id": "ui/status/dig",
+      "path": "src/assets/ui/status/dig.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
+      "sha256": "0e907cfbb511afa455e8f80e5a0228db5cf5143c51e48bdb6cc5bc6923bb9ca0"
+    },
+    {
+      "id": "ui/status/info",
+      "path": "src/assets/ui/status/info.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
+      "sha256": "8e24cabed2b1b4306562cf7cad797f115208a1eb56834cb75e92785afb79eca2"
+    },
+    {
+      "id": "ui/status/mage",
+      "path": "src/assets/ui/status/mage.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "复用正式物品 M-A2 缩放",
+      "sha256": "9202ba632c120bece32bf256fdc9aad72bffa5582db0e10d0a3c0cf176325207"
+    },
+    {
+      "id": "ui/status/mark",
+      "path": "src/assets/ui/status/mark.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
+      "sha256": "a5937bb29f628ef673dd6b9f05433a54a5441301b96554509146b25abfe134c4"
+    },
+    {
+      "id": "ui/status/minions",
+      "path": "src/assets/ui/status/minions.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
+      "sha256": "fd0b43f3bec588674b7fb1a5bf664244d475a8a5c4a3c701d6e955e42dd731a4"
+    },
+    {
+      "id": "ui/status/poison",
+      "path": "src/assets/ui/status/poison.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
+      "sha256": "01fdcd0f57147a43f55af7a5cad1ddcdea745b654f1d8db1979ed008a7923751"
+    },
+    {
+      "id": "ui/status/rage",
+      "path": "src/assets/ui/status/rage.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
+      "sha256": "e5871686a3f689ef6db63b7c0efdbe3c5f3eb3cba5a3243a27445545a8de1186"
+    },
+    {
+      "id": "ui/status/rogue",
+      "path": "src/assets/ui/status/rogue.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "复用正式物品 R-A2 缩放",
+      "sha256": "a508eb0690bd825892cf85aae6f5349787645f6f583fb0f2d80e71d1cb1827e9"
+    },
+    {
+      "id": "ui/status/shield",
+      "path": "src/assets/ui/status/shield.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
+      "sha256": "8c48de60245af7685957e09701073c47cfef00746d588201a4964be68dd04f97"
+    },
+    {
+      "id": "ui/status/smoke",
+      "path": "src/assets/ui/status/smoke.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
+      "sha256": "37718f1265a69c41cdf687577bdc502f7096039a0c931180c2042b3347b14f3f"
+    },
+    {
+      "id": "ui/status/tome",
+      "path": "src/assets/ui/status/tome.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
+      "sha256": "f378726b0efd333e26502fe39df9af4c7f5cb4315a0511721fbe89a88cd75112"
+    },
+    {
+      "id": "ui/status/warning",
+      "path": "src/assets/ui/status/warning.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
+      "sha256": "e7742132135ca373af327c1e5a0255cb7877ff355cee33ce85898d0955114922"
+    },
+    {
+      "id": "ui/status/warrior",
+      "path": "src/assets/ui/status/warrior.png",
+      "group": "职业与战斗状态图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "复用正式物品 W-A2 缩放",
+      "sha256": "3ce5e79e9a9c4447cd6ae49b47c9fbf28bb7624cc712b91cb809cb208ebc9832"
+    },
+    {
       "id": "warrior-full",
       "path": "src/assets/warrior-full.png",
       "group": "人物与怪物",
@@ -1312,5 +2224,6 @@
       "source": "项目既有素材",
       "sha256": "41ec7ef180bbe7df4d792c40c0e407878194caed0c2d069356927cc5bd16cbbb"
     }
-  ]
+  ],
+  "characterSource": "art-direction/characters-v21"
 }

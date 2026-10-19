@@ -4,7 +4,7 @@ import { Window } from 'happy-dom';
 import { Game } from '../src/game';
 import { UI } from '../src/ui';
 import { cleanLegacyData, loadSave, parseSave, SAVE_KEY } from '../src/save';
-import { firstFree, validateLayout } from '../src/backpack';
+import { firstFree, validateLayout, PROFESSIONS } from '../src/backpack';
 import { positionEvent, prepare } from './helpers';
 let win: Window, game: Game, ui: UI, now: number;
 const realNow = Date.now;
@@ -37,10 +37,10 @@ const el = (q: string) => {
 const click = (q: string) => {
   const n = el(q);
   n.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
-  if (q === '[data-action="continue"]') {
-    win.document
-      .querySelector('[data-action="continue-story"]')
-      ?.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+  // These tests exercise downstream combat controls; story timing is covered separately.
+  if (q === '[data-action="continue"]' && game.state.phase === 'journey') {
+    game.continueJourney();
+    ui.render();
   }
 };
 const begin = () => {
@@ -67,6 +67,8 @@ const begin = () => {
 };
 const start = () => {
   begin();
+  game.state.run.starterPlan = structuredClone(PROFESSIONS.warrior.starter);
+  game.state.run.starterOffers = game.state.run.starterPlan[0].map((id) => game.makeItem(id));
   prepare(game);
   ui.render();
 };
@@ -353,16 +355,16 @@ test('point redemption is manual and discard uses the details action; neither cr
   assert.equal(loadSave()!.run.points, 0);
   assert.equal((el('#point-redeem') as any).disabled, true);
 });
-test('combat frames preserve backpack nodes and show cooldowns, starvation, projectiles and details', () => {
+test('combat frames preserve backpack nodes and show cooldowns, hit effects and details', () => {
   start();
   click('[data-action="continue"]');
-  const pause = el('[data-action="combat-tools"]'),
+  const skip = el('[data-action="skip-combat"]'),
     cell = el('.pack-cell');
   game.update(2);
   ui.render();
   assert.ok(el('.pack-cell') === cell, 'combat must retain board nodes');
-  assert.ok(el('[data-action="combat-tools"]') === pause, 'combat must retain pause button');
-  assert.ok(win.document.querySelector('.combat-projectile'));
+  assert.ok(el('[data-action="skip-combat"]') === skip, 'combat must retain skip button');
+  assert.ok(win.document.querySelector('.effect-impact'));
   assert.ok(win.document.querySelector('.triggered'));
   assert.ok(
     [...win.document.querySelectorAll('.cooldown-label')].some(
@@ -374,9 +376,9 @@ test('combat frames preserve backpack nodes and show cooldowns, starvation, proj
   assert.equal((el('#equipment-detail') as any).open, true);
   assert.equal(win.document.querySelector('[data-pack-action="rotate"]'), null);
   click('#equipment-detail [data-pack-action="close"]');
-  click('[data-action="combat-tools"]');
-  click('[data-action="pause"]');
-  assert.equal(game.state.isRunning, false);
+  click('[data-action="skip-combat"]');
+  assert.equal(game.state.skipCombat, true);
+  assert.equal(game.state.isRunning, true);
 });
 test('opening gifts and upper equipment survive reload and continue into next round without capacity restriction', () => {
   begin();
@@ -482,7 +484,7 @@ test('equipment no longer depends on stamina or mana', () => {
   ui.render();
   assert.equal(el(`[data-pack-item="${i.id}"]`).classList.contains('resource-starved'), false);
 });
-test('footer touch pointer-up starts combat and pauses without waiting for a compatibility click', () => {
+test('footer touch pointer-up starts combat and skips without waiting for a compatibility click', () => {
   start();
   const tap = (selector: string) => {
     const b = el(selector);
@@ -500,15 +502,18 @@ test('footer touch pointer-up starts combat and pauses without waiting for a com
   };
   tap('[data-action="continue"]');
   assert.equal(game.state.phase, 'journey');
+  assert.equal((el('[data-action="continue-story"]') as any).disabled, true);
   tap('[data-action="continue-story"]');
+  assert.equal(game.state.phase, 'journey');
+  game.continueJourney();
+  ui.render();
   assert.equal(game.state.phase, 'combat');
   assert.equal(game.state.run.index, 0);
-  tap('[data-action="combat-tools"]');
-  click('[data-action="pause"]');
-  click('[data-action="close"]');
-  assert.equal(game.state.isRunning, false);
+  tap('[data-action="skip-combat"]');
+  assert.equal(game.state.skipCombat, true);
+  assert.equal(game.state.isRunning, true);
   tap('[data-action="cycle-speed"]');
   assert.equal(game.state.speed, 2);
-  assert.equal(game.state.isRunning, false);
+  assert.equal(game.state.isRunning, true);
   assert.doesNotThrow(() => parseSave(JSON.stringify(game.state)));
 });

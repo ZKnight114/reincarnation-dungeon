@@ -4,7 +4,8 @@ import { Window } from 'happy-dom';
 import { Game } from '../src/game';
 import { UI } from '../src/ui';
 import { foeSprite } from '../src/pixel';
-import { start, positionEvent } from './helpers';
+import { start, positionEvent, seed } from './helpers';
+import { PROFESSIONS } from '../src/backpack';
 
 function setup(g: Game) {
   const w = new Window({ url: 'http://localhost/' });
@@ -72,7 +73,6 @@ test('drag recycling accepts equipped gear even while redeem is disabled, withou
   const g = start(),
     { w, node, drag } = setup(g);
   try {
-    node('[data-action="open-pack"]').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
     const item = g.state.inventory.find((i) => i.slot === 'armor')!;
     const before = g.state.inventory.length;
     assert.equal((node('#point-redeem') as any).disabled, true);
@@ -109,7 +109,6 @@ test('bag cells take precedence even if a future layout overlaps the reforge tar
   const g = start(),
     { w, node, drag } = setup(g);
   try {
-    node('[data-action="open-pack"]').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
     const item = g.state.inventory.find((i) => i.slot === 'armor')!;
     assert.equal(drag(item.id, [32, 225], false, [0, 200]), false);
     assert.ok(g.findItem(item.id));
@@ -124,9 +123,6 @@ test('recycling is restricted to the button; cancellation and last weapon protec
     const g = start(),
       { w, ui, drag } = setup(g);
     try {
-      w.document
-        .querySelector('[data-action="open-pack"]')!
-        .dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
       let item = g.state.inventory.find((i) => i.slot === 'armor')!;
       if (mode === 'weapon') {
         item = g.state.inventory.find((i) => i.slot === 'weapon')!;
@@ -146,7 +142,7 @@ test('recycling is restricted to the button; cancellation and last weapon protec
 });
 
 test('starter offers recycle into points and move to the next batch only after that batch is handled', () => {
-  const g = new Game();
+  const g = new Game(undefined, seed(3));
   g.enterChapters();
   g.recruit('warrior');
   g.balanceAllocation();
@@ -161,8 +157,11 @@ test('starter offers recycle into points and move to the next batch only after t
     )[g.state.run.profession],
   );
   g.startRun();
+  // This test exercises batch recycling with an explicit weapon-first supply fixture.
+  g.state.run.starterPlan = structuredClone(PROFESSIONS.warrior.starter);
+  g.state.run.starterOffers = g.state.run.starterPlan[0].map((id) => g.makeItem(id));
   const weapon = g.state.run.starterOffers[0];
-  assert.equal(g.moveItem(weapon.id, 1, 1), null);
+  assert.equal(g.moveItem(weapon.id, 2, 1), null);
   const first = g.state.run.starterOffers[0];
   assert.equal(g.recycleItem(first.id), true);
   assert.equal(g.state.run.starterRound, 0);
@@ -176,9 +175,8 @@ test('journey exposes only backpack utility; opening bag holds playback until co
   const g = start(),
     { w, ui, node } = setup(g);
   try {
-    assert.equal(w.document.querySelector('#point-redeem'), null);
+    assert.ok(w.document.querySelector('#point-redeem'));
     assert.equal(w.document.querySelector('[data-action="toggle-pack"]'), null);
-    node('[data-action="open-pack"]').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
     assert.equal((node('#view-pack') as any).hidden, false);
     assert.ok(w.document.querySelector('#point-redeem'));
     g.continueCamp();
@@ -188,7 +186,10 @@ test('journey exposes only backpack utility; opening bag holds playback until co
     node('[data-action="continue-story"]').dispatchEvent(
       new w.MouseEvent('click', { bubbles: true }),
     );
-    assert.equal(ui.holdingJourney, false);
+    assert.equal(g.state.phase, 'journey');
+    assert.equal((node('#view-pack') as any).hidden, true);
+    g.continueJourney();
+    ui.render();
     assert.equal(g.state.phase, 'combat');
     assert.equal((node('#view-pack') as any).hidden, false);
     positionEvent(g, 'rest');

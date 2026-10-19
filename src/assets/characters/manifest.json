@@ -1,0 +1,367 @@
+{
+  "version": 4,
+  "appearanceIdVersion": 1,
+  "canvas": [
+    128,
+    192
+  ],
+  "order": [
+    "hair-back",
+    "outfit-back",
+    "legs",
+    "head",
+    "torso",
+    "hair"
+  ],
+  "headCount": 4,
+  "hairCount": 8,
+  "torsoCount": 4,
+  "legsCount": 4,
+  "source": "TapTap Maker v23, 2026-10-19, 3 complete-body sheets based on v22; clear v21 faces/hair reused",
+  "sourceSheets": [
+    "warrior-原图.png",
+    "mage-原图.png",
+    "rogue-原图.png"
+  ],
+  "baseline": "v22 complete body: collar(62.5,43), waist(62.5,78), floor182",
+  "neckY": 43,
+  "waistY": 78,
+  "floorY": 182,
+  "headDropY": 3,
+  "neckTreatment": "retain native jaw/root shadows; six-pixel shaded transition to source chest lighting; no flat-color extension",
+  "neckOpeningMasks": {
+    "warrior": [
+      [
+        [
+          [
+            61,
+            41
+          ],
+          [
+            62,
+            41
+          ],
+          [
+            62,
+            42
+          ]
+        ]
+      ],
+      [
+        [
+          [
+            61,
+            41
+          ],
+          [
+            62,
+            41
+          ],
+          [
+            62,
+            42
+          ]
+        ]
+      ],
+      [
+        [
+          [
+            62,
+            41
+          ],
+          [
+            62,
+            42
+          ]
+        ]
+      ],
+      [
+        [
+          [
+            60,
+            41
+          ],
+          [
+            62,
+            41
+          ],
+          [
+            61,
+            43
+          ]
+        ]
+      ]
+    ],
+    "mage": [
+      [
+        [
+          [
+            62,
+            41
+          ],
+          [
+            64,
+            41
+          ]
+        ]
+      ],
+      [],
+      [],
+      [
+        [
+          [
+            62,
+            41
+          ],
+          [
+            65,
+            41
+          ]
+        ]
+      ]
+    ],
+    "rogue": [
+      [
+        [
+          [
+            59,
+            41
+          ],
+          [
+            63,
+            41
+          ],
+          [
+            63,
+            48
+          ],
+          [
+            60,
+            52
+          ],
+          [
+            58,
+            47
+          ]
+        ]
+      ],
+      [
+        [
+          [
+            59,
+            41
+          ],
+          [
+            63,
+            41
+          ],
+          [
+            63,
+            47
+          ],
+          [
+            60,
+            51
+          ],
+          [
+            59,
+            46
+          ]
+        ]
+      ],
+      [
+        [
+          [
+            58,
+            41
+          ],
+          [
+            63,
+            41
+          ],
+          [
+            63,
+            46
+          ],
+          [
+            60,
+            51
+          ],
+          [
+            58,
+            46
+          ]
+        ]
+      ],
+      [
+        [
+          [
+            57,
+            41
+          ],
+          [
+            63,
+            41
+          ],
+          [
+            66,
+            45
+          ],
+          [
+            64,
+            48
+          ],
+          [
+            61,
+            52
+          ],
+          [
+            59,
+            51
+          ],
+          [
+            56,
+            46
+          ]
+        ]
+      ]
+    ]
+  },
+  "ownership": {
+    "hair": "no skin, ears, jaw outlines or neck",
+    "heads": "one owned neck, rendered behind collars",
+    "outfit-back": "belongs to torso ID, drawn behind lower garments",
+    "legs": "no shirt/flaps/arms; upper hip restored from pants-only rows"
+  },
+  "longRobe": {
+    "profession": "mage",
+    "garmentSlot": "torso",
+    "hemY": 155,
+    "underlyingSlot": "legs",
+    "rule": "one robe covers underlying trousers; boots remain visible; no waist split"
+  },
+  "layers": [
+    "heads/male-0",
+    "heads/male-1",
+    "heads/male-2",
+    "heads/male-3",
+    "heads/female-0",
+    "heads/female-1",
+    "heads/female-2",
+    "heads/female-3",
+    "hair-back/0",
+    "hair/0",
+    "hair-back/1",
+    "hair/1",
+    "hair-back/2",
+    "hair/2",
+    "hair-back/3",
+    "hair/3",
+    "hair-back/4",
+    "hair/4",
+    "hair-back/5",
+    "hair/5",
+    "hair-back/6",
+    "hair/6",
+    "hair-back/7",
+    "hair/7",
+    "warrior/back-0",
+    "warrior/torso-0",
+    "warrior/legs-0",
+    "warrior/back-1",
+    "warrior/torso-1",
+    "warrior/legs-1",
+    "warrior/back-2",
+    "warrior/torso-2",
+    "warrior/legs-2",
+    "warrior/back-3",
+    "warrior/torso-3",
+    "warrior/legs-3",
+    "rogue/back-0",
+    "rogue/torso-0",
+    "rogue/legs-0",
+    "rogue/back-1",
+    "rogue/torso-1",
+    "rogue/legs-1",
+    "rogue/back-2",
+    "rogue/torso-2",
+    "rogue/legs-2",
+    "rogue/back-3",
+    "rogue/torso-3",
+    "rogue/legs-3",
+    "mage/back-0",
+    "mage/torso-0",
+    "mage/legs-0",
+    "mage/back-1",
+    "mage/torso-1",
+    "mage/legs-1",
+    "mage/back-2",
+    "mage/torso-2",
+    "mage/legs-2",
+    "mage/back-3",
+    "mage/torso-3",
+    "mage/legs-3"
+  ],
+  "provenance": {
+    "heads/male-0": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette",
+    "heads/male-1": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette",
+    "heads/male-2": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette",
+    "heads/male-3": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette",
+    "heads/female-0": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette",
+    "heads/female-1": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette",
+    "heads/female-2": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette",
+    "heads/female-3": "V21 native jaw/neck shadows; head and hair lowered 3px; v23 rogue chest lighting remapped to native skin palette",
+    "hair-back/0": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head",
+    "hair/0": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head",
+    "hair-back/1": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head",
+    "hair/1": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head",
+    "hair-back/2": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head",
+    "hair/2": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head",
+    "hair-back/3": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head",
+    "hair/3": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head",
+    "hair-back/4": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head",
+    "hair/4": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head",
+    "hair-back/5": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head",
+    "hair/5": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head",
+    "hair-back/6": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head",
+    "hair/6": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head",
+    "hair-back/7": "V21 hair sheet reused; rear hair before clothing/head; same 3px correction as head",
+    "hair/7": "V21 hair sheet reused; forelocks above head, no neck overlay; same 3px correction as head",
+    "warrior/back-0": "Maker v23 warrior cell 0; owned rear flaps behind trousers",
+    "warrior/torso-0": "Maker v23 warrior cell 0; semantic shirt/arms mask, no old pants/neck",
+    "warrior/legs-0": "Maker v23 warrior cell 0; trouser-only hip recovery and central leg runs, no clothes/arms",
+    "warrior/back-1": "Maker v23 warrior cell 1; owned rear flaps behind trousers",
+    "warrior/torso-1": "Maker v23 warrior cell 1; semantic shirt/arms mask, no old pants/neck",
+    "warrior/legs-1": "Maker v23 warrior cell 1; trouser-only hip recovery and central leg runs, no clothes/arms",
+    "warrior/back-2": "Maker v23 warrior cell 2; owned rear flaps behind trousers",
+    "warrior/torso-2": "Maker v23 warrior cell 2; semantic shirt/arms mask, no old pants/neck",
+    "warrior/legs-2": "Maker v23 warrior cell 2; trouser-only hip recovery and central leg runs, no clothes/arms",
+    "warrior/back-3": "Maker v23 warrior cell 3; owned rear flaps behind trousers",
+    "warrior/torso-3": "Maker v23 warrior cell 3; semantic shirt/arms mask, no old pants/neck",
+    "warrior/legs-3": "Maker v23 warrior cell 3; trouser-only hip recovery and central leg runs, no clothes/arms",
+    "rogue/back-0": "Maker v23 rogue cell 0; owned rear flaps behind trousers",
+    "rogue/torso-0": "Maker v23 rogue cell 0; semantic shirt/arms mask, no old pants/neck",
+    "rogue/legs-0": "Maker v23 rogue cell 0; trouser-only hip recovery and central leg runs, no clothes/arms",
+    "rogue/back-1": "Maker v23 rogue cell 1; owned rear flaps behind trousers",
+    "rogue/torso-1": "Maker v23 rogue cell 1; semantic shirt/arms mask, no old pants/neck",
+    "rogue/legs-1": "Maker v23 rogue cell 1; trouser-only hip recovery and central leg runs, no clothes/arms",
+    "rogue/back-2": "Maker v23 rogue cell 2; owned rear flaps behind trousers",
+    "rogue/torso-2": "Maker v23 rogue cell 2; semantic shirt/arms mask, no old pants/neck",
+    "rogue/legs-2": "Maker v23 rogue cell 2; trouser-only hip recovery and central leg runs, no clothes/arms",
+    "rogue/back-3": "Maker v23 rogue cell 3; owned rear flaps behind trousers",
+    "rogue/torso-3": "Maker v23 rogue cell 3; semantic shirt/arms mask, no old pants/neck",
+    "rogue/legs-3": "Maker v23 rogue cell 3; trouser-only hip recovery and central leg runs, no clothes/arms",
+    "mage/back-0": "No rear accessory in this complete robe; reserved owned rear layer",
+    "mage/torso-0": "Maker v23 mage whole-body sheet cell 0; intact collar-to-hem robe, slit transparent",
+    "mage/legs-0": "Maker v23 mage boots cell 0; dark trousers under intact robe, no skirt",
+    "mage/back-1": "No rear accessory in this complete robe; reserved owned rear layer",
+    "mage/torso-1": "Maker v23 mage whole-body sheet cell 1; intact collar-to-hem robe, slit transparent",
+    "mage/legs-1": "Maker v23 mage boots cell 1; dark trousers under intact robe, no skirt",
+    "mage/back-2": "No rear accessory in this complete robe; reserved owned rear layer",
+    "mage/torso-2": "Maker v23 mage whole-body sheet cell 2; intact collar-to-hem robe, slit transparent",
+    "mage/legs-2": "Maker v23 mage boots cell 2; dark trousers under intact robe, no skirt",
+    "mage/back-3": "No rear accessory in this complete robe; reserved owned rear layer",
+    "mage/torso-3": "Maker v23 mage whole-body sheet cell 3; intact collar-to-hem robe, slit transparent",
+    "mage/legs-3": "Maker v23 mage boots cell 3; dark trousers under intact robe, no skirt"
+  }
+}

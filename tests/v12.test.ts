@@ -35,7 +35,7 @@ test('opening gifts stay available across the two supply batches; unplaced gear 
   g.startRun();
   g.claimStarterRound();
   const weapon = g.state.inventory.find((i) => i.slot === 'weapon')!;
-  g.placeItem(weapon.id, 1, 1);
+  g.placeItem(weapon.id, 2, 1);
   g.claimStarterRound();
   assert.equal(g.state.inventory.length, 6);
   assert.equal(g.finishOpening(), null);
@@ -62,10 +62,10 @@ test('failed continuation does not expire anything; successful continuation remo
 test('open cells have a bright contour exactly where they meet closed cells', () => {
   const open = openBagCells(0);
   assert.equal(bagCellClass(open, 0, 0), 'closed');
-  assert.match(bagCellClass(open, 1, 1), /edge-top/);
-  assert.match(bagCellClass(open, 1, 1), /edge-left/);
+  assert.match(bagCellClass(open, 2, 1), /edge-top/);
+  assert.match(bagCellClass(open, 2, 1), /edge-left/);
   assert.equal(bagCellClass(open, 3, 2), 'open ');
-  assert.match(bagCellClass(open, 5, 3), /edge-bottom.*edge-right/);
+  assert.match(bagCellClass(open, 4, 4), /edge-bottom.*edge-right/);
 });
 test('active phases keep bag or reforge left and speed right; event equipment reveals bag', () => {
   const win = new Window({ url: 'http://localhost/' });

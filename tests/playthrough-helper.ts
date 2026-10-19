@@ -55,7 +55,7 @@ export function play(
   options: {
     guildLevel?: number;
     trialTier?: 0 | 1 | 2;
-    fights?: { index: number; boss: boolean; rounds: number; survived: boolean }[];
+    fights?: FightSample[];
   } = {},
 ) {
   const g = new Game(undefined, seed(n), () => 1700000000000);
@@ -71,6 +71,7 @@ export function play(
   }
   g.startRun();
   prepare(g);
+  let fight: Omit<FightSample, 'rounds' | 'survived' | 'enemyActions' | 'lifeAfter'> | null = null;
   let loops = 0,
     previousPhase = g.state.phase;
   while (g.state.phase !== 'summary' && loops++ < 1200) {
@@ -90,14 +91,27 @@ export function play(
       case 'combat': {
         const r = g.state.combat.round,
           boss = !!s.enemy?.isBoss;
-        g.advanceTurn();
-        if (s.phase !== 'combat')
-          options.fights?.push({
+        if (!fight)
+          fight = {
             index: s.run.index + 1,
             boss,
+            heroMaxHp: s.player.maxHp,
+            lifeBefore: s.player.hp,
+            enemyMaxHp: s.enemy!.maxHp,
+            enemyAttack: s.enemy!.attack,
+          };
+        const enemyActions = s.combat.runtime!.enemyActions;
+        g.advanceTurn();
+        if (s.phase !== 'combat') {
+          options.fights?.push({
+            ...fight,
             rounds: r,
             survived: s.phase !== 'summary',
+            lifeAfter: s.player.hp,
+            enemyActions: s.combat.runtime?.enemyActions ?? enemyActions,
           });
+          fight = null;
+        }
         if (verbose && s.phase !== 'combat')
           console.log(
             'fight',
@@ -156,4 +170,17 @@ export function play(
   }
   parseSave(JSON.stringify(g.state));
   return g;
+}
+
+export interface FightSample {
+  index: number;
+  boss: boolean;
+  rounds: number;
+  survived: boolean;
+  heroMaxHp: number;
+  lifeBefore: number;
+  lifeAfter: number;
+  enemyMaxHp: number;
+  enemyAttack: number;
+  enemyActions: number;
 }

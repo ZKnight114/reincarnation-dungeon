@@ -38,7 +38,7 @@ export function archiveDetails(h: HeroRecord, tab: ArchiveTab) {
           }</div>`
         : `<section class="hero-equipment-section"><h3>最终绑定装备 <small>${b?.equipment.length ?? 0} 件</small></h3>${
             b
-              ? `<div class="pack-grid graduate-pack" aria-label="${esc(h.name)}的专属装备">${Array.from({ length: 42 }, (_, n) => `<span class="pack-cell ${bagCells(b.capacity).has(`${n % 7},${Math.floor(n / 7)}`) ? 'open' : 'closed'}"></span>`).join('')}${b.placements
+              ? `<div class="pack-grid graduate-pack" aria-label="${esc(h.name)}的专属装备">${Array.from({ length: 42 }, (_, n) => `<span class="pack-cell ${bagCells(b.capacity, b.packLayout === 'legacy').has(`${n % 7},${Math.floor(n / 7)}`) ? 'open' : 'closed'}"></span>`).join('')}${b.placements
                   .map((p) => {
                     const item = b.equipment.find((i) => i.id === p.id)!,
                       d = dimensions(item, p);
@@ -49,5 +49,5 @@ export function archiveDetails(h: HeroRecord, tab: ArchiveTab) {
                   )}</div><div class="bound-item-detail" data-bound-detail><strong>仅供 ${esc(h.name)} 使用</strong><p>计入最终战力</p></div>`
               : '<p>没有绑定装备</p>'
           }</section>`;
-  return `<article class="archive-frame"><header class="archive-heading"><h2>勇者档案</h2></header><div class="archive-identity">${heroArt(h.profession)}</div><h2 class="archive-name">${esc(h.name)}</h2><p class="archive-power">${PROFESSIONS[h.profession].name} · <span class="rating-${h.rating}">${h.rating} 级</span> · 战力 ${h.power}</p><nav class="archive-tabs" aria-label="档案页面">${(['profile', 'resonances', 'equipment'] as const).map((t, n) => `<button data-archive-tab="${t}" aria-pressed="${t === tab}" class="${t === tab ? 'selected' : ''}">${['档案', '共鸣', '装备'][n]}</button>`).join('')}</nav><div class="archive-content">${content}</div><footer>第 ${h.chapter} 关 · ${h.completed}/${h.routeLength} 步 · ${archiveOutcome(h)}</footer></article>`;
+  return `<article class="archive-frame"><header class="archive-heading"><h2>勇者档案</h2></header><div class="archive-identity">${heroArt(h.profession, h.appearance)}</div><h2 class="archive-name">${esc(h.name)}</h2><p class="archive-power">${PROFESSIONS[h.profession].name} · <span class="rating-${h.rating}">${h.rating} 级</span> · 战力 ${h.power}</p><nav class="archive-tabs" aria-label="档案页面">${(['profile', 'resonances', 'equipment'] as const).map((t, n) => `<button data-archive-tab="${t}" aria-pressed="${t === tab}" class="${t === tab ? 'selected' : ''}">${['档案', '共鸣', '装备'][n]}</button>`).join('')}</nav><div class="archive-content">${content}</div><footer>第 ${h.chapter} 关 · ${h.completed}/${h.routeLength} 步 · ${archiveOutcome(h)}</footer></article>`;
 }

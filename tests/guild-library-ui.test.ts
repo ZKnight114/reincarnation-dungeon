@@ -38,10 +38,16 @@ test('book shelf is a full page; filtered secondary details preserve the shelf a
   assert.equal(win.document.querySelectorAll('.library-book').length, 9);
   click('[data-library-filter="mage"]');
   assert.equal(win.document.querySelectorAll('.library-book').length, 3);
-  const shelf = el('#guild-feature-screen').innerHTML;
+  const shelf = el('#guild-feature-screen'),
+    book = el('[data-inspect-tome="mage_flame_tome"]');
   click('[data-inspect-tome="mage_flame_tome"]');
   assert.equal((el('#modal') as any).open, true);
-  assert.equal(el('#guild-feature-screen').innerHTML, shelf);
+  assert.equal(el('#guild-feature-screen'), shelf);
+  assert.equal(
+    el('[data-inspect-tome="mage_flame_tome"]'),
+    book,
+    'details retain the original shelf controls, including their live feedback',
+  );
   click('[data-tome-rank="3"]');
   assert.match(el('.tome-detail-body').textContent, /3阶效果/);
   assert.doesNotMatch(el('.tome-detail').textContent, /构筑配合/);

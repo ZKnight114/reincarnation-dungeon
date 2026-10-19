@@ -29,6 +29,8 @@ async function boot(entries = [], failFirst = false) {
     requestAnimationFrame: () => 0,
     getComputedStyle: win.getComputedStyle.bind(win),
     Image: class {
+      naturalWidth = 128;
+      naturalHeight = 192;
       set src(url) {
         queueMicrotask(() => {
           if (fail) {

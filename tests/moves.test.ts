@@ -2,9 +2,16 @@ import { advanceCamp } from './helpers';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Game } from '../src/game';
-import { planMove, resonanceScore, validateLayout, cells } from '../src/backpack';
+import {
+  planMove,
+  resonanceScore,
+  validateLayout,
+  cells,
+  firstFree,
+  runBagCells,
+} from '../src/backpack';
 import { parseSave } from '../src/save';
-import { start, add, positionEvent, recruitToConfigure } from './helpers';
+import { start, add, positionEvent, recruitToConfigure, seed } from './helpers';
 function board(templates: string[], positions: [number, number, number][]) {
   const g = start();
   g.state.run.kills = 20;
@@ -196,7 +203,7 @@ test('points/discard/movement freeze during combat; final weapon cannot be disca
   assert.equal(h.state.run.points, 0);
 });
 test('starter drag claims only its item; next batch requires all three or explicit continue', () => {
-  const g = new Game();
+  const g = new Game(undefined, seed(19));
   recruitToConfigure(g);
   if (g.state.phase === 'configure' && !g.state.run.trainee?.tomeId) g.confirmAllocation();
   g.selectTome(
@@ -210,7 +217,11 @@ test('starter drag claims only its item; next batch requires all three or explic
   );
   g.startRun();
   const first = g.state.run.starterOffers.map((i) => i.id);
-  assert.equal(g.moveItem(first[0], 1, 1), null);
+  const fitting = first
+    .map((id) => firstFree(g.state.run.starterOffers, [], id, runBagCells(g.state)))
+    .find(Boolean)!;
+  assert.ok(fitting, 'at least one opening gift fits the small starting bag');
+  assert.equal(g.moveItem(fitting.id, fitting.x, fitting.y), null);
   assert.equal(g.state.run.starterRound, 0);
   assert.equal(g.state.inventory.length, 1);
   assert.equal(g.state.run.starterOffers.length, 2);

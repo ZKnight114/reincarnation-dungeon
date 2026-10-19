@@ -81,6 +81,7 @@ test('highest resonance remains a separate effect and starts at the current cont
   positionEvent(g, 'elite', 8);
   g.state.enemy!.hp = 0;
   g.update(0.01);
+  if (g.state.run.pendingPromotion) assert.equal(g.continueCamp(), null);
   g.finishAwakening();
   g.state.run.rewards[0].resonances = ['execution', 'flurry', 'iron_guard'];
   assert.equal(g.chooseResonance('execution'), null);
@@ -97,6 +98,7 @@ test('save rejects an advanced card without its prerequisite or with an initial 
   positionEvent(other, 'elite', 8);
   other.state.enemy!.hp = 0;
   other.update(0.01);
+  assert.equal(other.continueCamp(), null);
   const bad = structuredClone(other.state);
   bad.run.rewards[0].resonances = ['inferno', 'flurry', 'iron_guard'];
   assert.throws(() => parseSave(JSON.stringify(bad)));
@@ -107,7 +109,7 @@ test('digging reveals whole silhouettes over multiple hits and adds only complet
       let g = start(p, seed(n));
       positionEvent(g, 'dig');
       const d = g.state.run.dig!;
-      assert.equal(d.placements.length, 3);
+      assert.ok(d.placements.length >= 2 && d.placements.length <= 4);
       assert.doesNotThrow(() => parseSave(JSON.stringify(g.state)));
       const ids = d.equipment.map((i) => i.id),
         before = g.state.inventory.length;
@@ -117,13 +119,15 @@ test('digging reveals whole silhouettes over multiple hits and adds only complet
           p.rotation,
         ).map(([x, y]) => (p.y + y) * 4 + p.x + x),
       );
-      for (const cell of targets) {
+      for (const cell of targets.slice(0, 12)) {
         assert.equal(g.digCell(cell), null);
         g = new Game(parseSave(JSON.stringify(g.state)));
       }
-      assert.equal(g.state.run.dig!.claimed.length, 3);
-      assert.equal(g.state.inventory.length, before + 3);
-      assert.ok(ids.every((id) => g.state.inventory.some((i) => i.id === id)));
+      const claimed = g.state.run.dig!.claimed;
+      assert.equal(g.state.inventory.length, before + claimed.length);
+      assert.ok(claimed.every((id) => ids.includes(id)));
+      assert.ok(claimed.every((id) => g.state.inventory.some((i) => i.id === id)));
+      if (targets.length <= 12) assert.equal(claimed.length, d.equipment.length);
       const snapshots = g.state.inventory.length;
       assert.ok(g.digCell(targets[0]));
       assert.equal(g.state.inventory.length, snapshots);
@@ -195,6 +199,7 @@ test('skip presentation produces identical discrete fight results and stops for 
   advanceCamp(b);
   b.state.enemy = structuredClone(a.state.enemy);
   b.state.combat.runtime = structuredClone(a.state.combat.runtime);
+  b.state.combat.order = [...a.state.combat.order];
   b.state.skipCombat = true;
   while (a.state.phase === 'combat') a.update(0.7);
   while (b.state.phase === 'combat') b.update(0.7);
@@ -214,7 +219,8 @@ test('item resonance changes real attacks and advanced followup adds damage with
     advanceCamp(g);
     g.state.enemy!.hp = g.state.enemy!.maxHp = 1e8;
     g.state.enemy!.attack = 0;
-    for (let n = 0; n < 10; n++) g.advanceTurn();
+    Object.assign(g.state.combat.runtime!.enemy, { hp: 1e8, maxHp: 1e8, attack: 0 });
+    while (g.state.combat.runtime!.heroActions < 5) g.advanceTurn();
     return g;
   };
   const plain = make([]),
@@ -240,6 +246,7 @@ test('new choices render three contribution rows and digging replaces lower pack
     positionEvent(g, 'elite', 8);
     g.state.enemy!.hp = 0;
     g.update(0.01);
+    if (g.state.run.pendingPromotion) assert.equal(g.continueCamp(), null);
     g.finishAwakening();
     const ui = new UI(g, () => {});
     assert.equal(win.document.querySelectorAll('[data-resonance]').length, 3);

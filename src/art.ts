@@ -1,5 +1,6 @@
 import { ENEMIES, QUALITIES } from './data';
 import type { Equipment, Quality, Profession } from './types';
+import { spriteUrl } from './assets';
 export function icon(name: string, size = 20) {
   const paths: Record<string, string> = {
     dungeon:
@@ -46,8 +47,7 @@ export function icon(name: string, size = 20) {
 }
 export function professionIcon(profession: Profession) {
   const names = { warrior: '战士', mage: '法师', rogue: '盗贼' };
-  const shapes = { warrior: 'sword', mage: 'wand', rogue: 'dagger' };
-  return `<span class="profession-icon profession-${profession}" role="img" aria-label="${names[profession]}" title="${names[profession]}">${icon(shapes[profession], 16)}</span>`;
+  return `<span class="profession-icon profession-${profession}" role="img" aria-label="${names[profession]}" title="${names[profession]}"><img src="${spriteUrl('ui/status/' + profession)}" alt="" aria-hidden="true"></span>`;
 }
 export const brand = `<svg viewBox="0 0 44 44" fill="none" aria-hidden="true"><path d="m22 3 19 19-19 19L3 22 22 3Z" stroke="currentColor"/><path d="m22 9 13 13-13 13L9 22 13-13Z" stroke="currentColor" opacity=".4"/><path d="M16 29V19a6 6 0 0 1 12 0v10M13 29h18M20 29v-7a2 2 0 0 1 4 0v7" stroke="currentColor" stroke-width="1.3"/><path d="M22 3v4m19 15h-4M22 41v-4M3 22h4" stroke="currentColor"/></svg>`;
 

@@ -45,9 +45,12 @@ test('trial difficulty raises the same enemy health and attack, grants more grow
     g.state.player.hp = 30;
     g.state.enemy!.hp = 0;
     g.update(0.01);
+    if (g.state.run.pendingPromotion) assert.equal(g.continueCamp(), null);
     assert.ok(g.state.player.hp > 30);
     assert.deepEqual(g.state.run.growth, stageGrowth('warrior', g.state.run.trials, 1));
+    if (g.state.run.pendingPromotion) assert.equal(g.continueCamp(), null);
     assert.equal(g.state.phase, 'awakening');
+    if (g.state.run.pendingPromotion) assert.equal(g.continueCamp(), null);
     g.finishAwakening();
     assert.equal(g.state.run.rewards[0].kind, 'resonance');
     assert.doesNotThrow(() => parseSave(JSON.stringify(g.state)));
@@ -161,6 +164,7 @@ test('monthly spring offers actual healing versus a permanent basic max-health g
   assert.equal(g.state.player.hp, 40);
   assert.ok(g.state.player.maxHp > before);
   assert.equal(g.state.run.buffs.vitality, 1);
+  assert.equal(g.continueCamp(), null);
   assert.ok(g.state.run.journey.some((j) => j.kind === 'growth' && j.title === '凝聚泉华'));
   assert.doesNotThrow(() => parseSave(JSON.stringify(g.state)));
 });
@@ -175,6 +179,7 @@ test('journey retains event results even after many combat turns; loot and miles
   assert.ok(g.state.run.journey.some((j) => j.title === '公会启程'));
   assert.ok(g.state.run.journey.some((j) => j.title === '战斗胜利'));
   assert.ok(g.state.run.journey.some((j) => j.kind === 'loot'));
+  assert.equal(g.continueCamp(), null);
   assert.ok(g.state.run.journey.some((j) => j.kind === 'growth' && j.event === 9));
 });
 
@@ -239,9 +244,11 @@ test('three trial options live in the event dialog, select a real battle and exp
   g.state.enemy = null;
   g.state.run.trials[0] = null;
   ui.render();
-  assert.equal(win.document.querySelectorAll('[data-event^="trial-"]').length, 3);
+  assert.equal(win.document.querySelectorAll('[data-trial-tier]').length, 3);
   assert.equal(el('#view-pack').hidden, true);
-  click('[data-event="trial-2"]');
+  click('[data-trial-tier="2"]');
+  assert.equal(g.state.phase, 'event');
+  click('[data-action="challenge-trial"]');
   assert.equal(g.state.phase, 'combat');
   assert.equal(g.state.run.trials[0], 2);
   assert.equal(el('#view-pack').hidden, false);

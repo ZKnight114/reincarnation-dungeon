@@ -1,6 +1,8 @@
 import catalogue from './enemy-catalogue.json';
 import { runRoute } from './journey';
 import type { Enemy, GameState } from './types';
+import { nonGuildAttributes, buildSources } from './backpack';
+import { estimatePressure } from './combat';
 
 const professions = { 战士: 'warrior', 法师: 'mage', 盗贼: 'rogue' } as const;
 export const ENEMY_TEMPLATES = catalogue.enemies.map((e) => ({
@@ -22,7 +24,7 @@ const species: Record<string, number> = {
 };
 // Limited adaptation cannot erase improved equipment or purchased guild attributes.
 export const growthMultiplier = (ratio: number) =>
-  Math.max(0.8, Math.min(1.3, 1 + 0.25 * (ratio - 1)));
+  ratio <= 1 ? Math.max(0.8, 1 + 0.25 * (ratio - 1)) : 1 + 0.5 * Math.log(ratio);
 export const referenceStrength = (progress: number) =>
   140 + 420 * progress + 700 * progress * progress;
 export function generateEnemy(s: GameState, strength: number, random: () => number): Enemy {
@@ -62,17 +64,37 @@ export function generateEnemy(s: GameState, strength: number, random: () => numb
     extreme = s.run.index >= route.extremeStart;
   const chapterHp = (1 + 0.13 * (c - 1)) ** 1.3;
   const stageHp = (c <= 3 ? [1.8, 2, 2.2] : [1.35, 1.5, 1.65])[Math.max(0, stage)];
-  const hp = Math.max(
+  const baseHp = Math.max(
     1,
     Math.round(
       (180 + 450 * p + 2100 * p * p) *
         chapterHp *
-        g *
+        Math.sqrt(g) *
         (boss ? (extreme ? 2.2 : stageHp) : 1.35) *
         t.multipliers.hp *
         (c === 1 ? 0.9 : 1),
     ),
   );
+  const stats = nonGuildAttributes(s),
+    sources = buildSources(s);
+  const budget = estimatePressure(
+    stats,
+    sources,
+    s.placements.some((p) => s.inventory.find((i) => i.id === p.id)?.branch === 'assassin') &&
+      s.placements.some((p) => s.inventory.find((i) => i.id === p.id)?.branch === 'archer'),
+  );
+  // Partly follow a neutral build, rather than its score or current life. Guild bonuses stay advantageous.
+  const targetRounds = boss ? (extreme ? 11 : 6.5 + Math.max(0, stage) * 1.5) : 3.6 + p * 1.1;
+  const follow = c <= 3 ? 0.12 : 0.58;
+  const hp = Math.round(
+    baseHp * (1 - follow) + Math.max(baseHp * 0.7, budget.output * targetRounds) * follow,
+  );
+  const baseAttack = (9 + 12 * p + 5 * p * p) * (1 + 0.08 * (c - 1)) * g ** 0.65;
+  const pressureAttack =
+    stats.hp * (boss ? 0.095 : 0.055) + budget.protection * (boss ? 0.75 : 0.55);
+  const attackFollow = c <= 3 ? 0 : c === 4 ? 0.16 : 0.55;
+  const attack =
+    baseAttack * (1 - attackFollow) + Math.max(baseAttack, pressureAttack) * attackFollow;
   return {
     templateId: id,
     profession: t.profession,
@@ -81,9 +103,7 @@ export function generateEnemy(s: GameState, strength: number, random: () => numb
     hp,
     maxHp: hp,
     attack:
-      (9 + 12 * p + 5 * p * p) *
-      (1 + 0.08 * (c - 1)) *
-      g ** 0.35 *
+      attack *
       (boss ? (extreme ? 1.5 : 1.18 + 0.08 * Math.max(0, stage)) : 1) *
       t.multipliers.attack *
       (c === 1 ? 0.85 : 1),

@@ -30,9 +30,9 @@ test('all three professions can finish the short tutorial with real combat, pack
     assert.doesNotThrow(() => parseSave(JSON.stringify(g.state)));
   }
 });
-test('three professions can finish actual extreme Boss encounters and keep the bound tome and final layout', () => {
+test('three professions with accumulated guild investments can finish extreme Boss encounters and keep the final layout', () => {
   for (const p of ['warrior', 'mage', 'rogue'] as const) {
-    const g = play(p, 4, 19, true),
+    const g = play(p, 4, 19, true, false, undefined, { guildLevel: 20 }),
       h = g.state.meta.heroes[0];
     assert.equal(h.outcome, 'win');
     assert.equal(h.completed, chapterRoute(4).length);

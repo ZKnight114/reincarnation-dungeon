@@ -1,0 +1,303 @@
+/* October playtest: preserve the 390 × 844 canvas and equipment foreground. */
+#adventure-screen .field-shapes {
+  min-height: 100%;
+  align-items: center;
+  box-sizing: border-box;
+}
+.item-cooldown-mask {
+  fill: #28343d;
+  pointer-events: none;
+}
+.item-activation-rim,
+.item-activation-label {
+  opacity: 0;
+  pointer-events: none;
+}
+.item-activation-rim {
+  fill: #fff0b62b;
+  stroke: #fff3bd;
+  stroke-width: 7;
+  stroke-linejoin: round;
+}
+.item-activation-label {
+  fill: #fff8d9;
+  stroke: #18272f;
+  stroke-width: 7;
+  paint-order: stroke;
+  font-size: 27px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+#adventure-screen .pack-piece.triggered .item-activation-rim,
+#adventure-screen .pack-piece.triggered .item-activation-label {
+  animation: item-activate calc(0.26s * var(--motion-factor, 1)) ease-out both;
+}
+#adventure-screen .pack-piece.triggered .item-cooldown-mask,
+#adventure-screen .pack-piece.triggered .cooldown-label {
+  visibility: hidden;
+}
+@keyframes item-activate {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+/* Wind-up, item flash, projectile and impact use the same actual source signal. */
+#adventure-screen .in-combat .combat-projectile {
+  animation-delay: calc(0.04s * var(--motion-factor, 1));
+  animation-duration: calc(0.1s * var(--motion-factor, 1));
+  animation-fill-mode: both;
+}
+#adventure-screen .in-combat .effect-impact,
+#adventure-screen .in-combat .combat-number.damage,
+#adventure-screen .in-combat .combat-number.hurt,
+#adventure-screen .in-combat .fighter.hurt .actor-art,
+#adventure-screen .in-combat .fighter.hurt:not(.acting) .actor-body {
+  animation-delay: calc(0.1s * var(--motion-factor, 1));
+  animation-fill-mode: both;
+}
+#adventure-screen .pack-piece.triggered .item-outline {
+  animation-duration: calc(0.26s * var(--motion-factor, 1));
+}
+.actor-flying .actor-shadow {
+  display: none;
+}
+.actor-flying .actor-body {
+  animation: motion-hover 2.4s ease-in-out infinite;
+}
+.actor-flying .actor-art {
+  translate: 0 var(--actor-body-offset);
+}
+@keyframes motion-hover {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Content rows replace independent absolute coordinates, leaving room for long talents. */
+#selection-screen:not(.dungeon-select):not(.tome-select) .admission-file {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 748px;
+  padding: 0 8px 18px;
+}
+#selection-screen .admission-file > .file-heading,
+#selection-screen .admission-file > .admission-identity,
+#selection-screen .admission-file > .talent-heading,
+#selection-screen .admission-file > .talent-grid,
+#selection-screen .admission-file > .allocation-heading,
+#selection-screen .admission-file > .attribute-rows,
+#selection-screen .admission-file > .allocation-guild,
+#selection-screen .admission-file > .admission-submit {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  margin: 0;
+  flex-shrink: 0;
+}
+#selection-screen .admission-file .file-heading {
+  height: 18px;
+}
+#selection-screen .admission-file .admission-identity {
+  height: 145px;
+}
+#selection-screen .admission-identity:before {
+  width: 100%;
+  height: 100px;
+}
+#selection-screen .admission-file .talent-heading {
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+#selection-screen .admission-file .talent-grid {
+  height: auto;
+  min-height: 148px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+#selection-screen .admission-file .talent-badge {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 7px;
+  background: #14292ee6;
+}
+#selection-screen .admission-file .talent-badge strong {
+  font-size: 12px;
+  line-height: 1.35;
+}
+#selection-screen .admission-file .talent-badge small {
+  font-size: 11px;
+  line-height: 1.4;
+}
+#selection-screen .admission-file .allocation-heading {
+  min-height: 34px;
+}
+#selection-screen .admission-file .attribute-rows {
+  gap: 9px;
+}
+#selection-screen .admission-file .attribute-row {
+  min-height: 40px;
+  height: 40px;
+}
+#selection-screen .admission-file .allocation-guild {
+  font-size: 10px;
+  line-height: 1.4;
+}
+#selection-screen .admission-file .admission-submit {
+  margin-top: auto;
+  min-height: 48px;
+  height: 48px;
+}
+
+#adventure-screen .journey-group {
+  margin-bottom: 14px;
+}
+#adventure-screen .journey-group:not(:has(.journey-entry:not(.journey-pending))) {
+  display: none;
+}
+#adventure-screen .journey-entry-frame {
+  border: 1px solid #78968c80;
+  border-left: 3px solid #a18d60;
+  border-radius: 4px;
+  background: #12252be0;
+  padding: 10px 12px;
+}
+#adventure-screen #journey-history .journey-entry {
+  margin: 0 0 9px;
+  animation: none;
+  translate: none;
+  transform: none;
+  opacity: 1;
+}
+#adventure-screen .journey-entry:last-child {
+  margin-bottom: 0;
+}
+#adventure-screen .journey-entry .journey-paper {
+  margin: 0;
+  padding: 0;
+}
+#adventure-screen .journey-paper p,
+#adventure-screen .playing-story .journey-paper p {
+  color: #cbd3c0;
+  font-size: 12px;
+  line-height: 1.7;
+}
+#adventure-screen #journey-history .journey-entry.journey-pending {
+  display: none;
+}
+#adventure-screen #journey-history .journey-entry.journey-new {
+  animation: journey-reveal 0.22s ease-out both;
+}
+@keyframes journey-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The ritual occupies its own page; the Boss node remains unchanged underneath. */
+#adventure-screen.ritual-screen #battle-panel,
+#adventure-screen.ritual-screen #shared-board {
+  visibility: hidden;
+  pointer-events: none;
+}
+#adventure-screen #awakening-result {
+  position: absolute;
+  inset: 110px 16px 94px !important;
+  height: auto;
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  padding: 20px 15px;
+  background: radial-gradient(ellipse at 50% 36%, #62683c55, #13292eee 70%);
+  border: 1px solid #b69c6480;
+  border-radius: 7px;
+  text-align: center;
+  overflow: hidden;
+}
+#adventure-screen #awakening-result h2 {
+  font-size: 24px;
+  margin: 10px 0;
+}
+.ritual-hero {
+  position: relative;
+  height: 190px;
+  width: 150px;
+  align-self: center;
+}
+.ritual-hero .actor-art > img {
+  height: 166px;
+  width: 128px;
+  object-fit: contain;
+}
+.ritual-hero .actor-sprite {
+  display: none;
+}
+.ritual-hero .hero-portrait {
+  display: block !important;
+}
+.ritual-light {
+  position: absolute;
+  inset: -15px -30px 0;
+  background: conic-gradient(
+    from 0deg,
+    transparent,
+    #ffdb8644,
+    transparent,
+    #ffdb8644,
+    transparent
+  );
+  border-bottom: 3px solid #e8c981;
+  border-radius: 50%;
+  animation: ritual-rise calc(1.4s * var(--motion-factor, 1)) ease-out both;
+}
+#adventure-screen #awakening-result .realm-promotion {
+  min-height: 80px;
+  margin: 8px 0 16px;
+}
+#adventure-screen #awakening-result .awakening-gains {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 8px;
+}
+@keyframes ritual-rise {
+  from {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  55% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .item-cooldown-mask {
+    transition: none;
+  }
+  #adventure-screen #journey-history .journey-entry.journey-new,
+  #adventure-screen .pack-piece.triggered .item-activation-rim,
+  #adventure-screen .pack-piece.triggered .item-activation-label,
+  .actor-flying .actor-body,
+  .ritual-light {
+    animation: none;
+  }
+}

@@ -220,7 +220,10 @@ test('enemy adaptation has bounded growth and purchasing guild perks never incre
   g.state.run.index = 20;
   const low = generateEnemy(g.state, 200, () => 0.2),
     high = generateEnemy(g.state, 20000, () => 0.2);
-  assert.ok(high.maxHp / low.maxHp < 1.7);
+  assert.ok(high.maxHp > low.maxHp);
+  assert.ok(high.maxHp / low.maxHp < Math.sqrt(20000 / 200));
+  assert.ok(high.attack > low.attack);
+  assert.ok(generateEnemy(g.state, 40000, () => 0.2).attack > high.attack);
   g.state.meta.guildLevel = 30;
   g.state.meta.guildPurchased = 94;
   assert.deepEqual(
