@@ -343,6 +343,7 @@ test('short chapters retain three trial breakthroughs, four resonance choices an
   for (const chapter of [1, 2, 3, 4]) {
     const s = createState();
     s.run.chapter = chapter;
+    s.run.routeRevision = 16;
     const r = chapterRoute(chapter);
     assert.equal(r.trials.length, 3);
     assert.ok(r.trials.every((n) => r.kinds[n] === 'boss'));
@@ -375,6 +376,7 @@ test('five/twenty recruitment tracks cumulative energy; guild upgrades require a
   recruitToConfigure(g);
   assert.equal(g.state.meta.staminaSpent, 20);
   g.startRun();
+  g.continueJourney();
   prepare(g);
   g.retreat();
   g.returnToSelection();
@@ -414,6 +416,7 @@ test('graduation creates no tome pages while previously earned rewards persist a
   recruitToConfigure(g, 1, 'mage');
   assert.deepEqual(g.state.meta.pendingPages[0], original);
   g.startRun();
+  g.continueJourney();
   prepare(g);
   g.retreat();
   g.returnToSelection();
@@ -615,6 +618,7 @@ test('free tome selection is a single grant per recruited profession and only co
   assert.equal(g.state.meta.tomes.rogue_poison_tome.level, 0);
   const restored = new Game(parseSave(JSON.stringify(g.state)));
   assert.equal(restored.startRun(), null);
+  restored.continueJourney();
   assert.equal(restored.state.meta.tomes.rogue_poison_tome.level, 1);
   assert.equal(restored.state.meta.tomes.mage_flame_tome.level, 0);
   restored.retreat();

@@ -17,6 +17,7 @@ function fresh(n = 19) {
   g.state.meta.highestChapter = 4;
   recruitToConfigure(g, 4);
   g.startRun();
+  g.continueJourney();
   prepare(g);
   return g;
 }
@@ -159,7 +160,7 @@ test('visible story playback holds continuation, voluntary backpack inspection c
     ui.render();
     assert.ok(el('#battle-panel').classList.contains('encounter-approach'));
     assert.equal(ui.holdingJourney, true);
-    now += 551;
+    now += 681;
     ui.render();
     assert.equal(ui.holdingJourney, false);
     g.update(0.5);

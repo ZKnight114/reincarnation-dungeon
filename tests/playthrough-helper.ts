@@ -4,8 +4,8 @@ import { seed, recruitToConfigure, prepare } from './helpers';
 import { parseSave } from '../src/save';
 import { GUILD_NODES } from '../src/guild';
 import type { Profession } from '../src/types';
-export function manage(g: Game) {
-  let pair = true;
+export function manage(g: Game, attempts = 25, merge = true) {
+  let pair = merge;
   while (pair) {
     pair = false;
     for (const a of [...g.state.inventory]) {
@@ -20,7 +20,7 @@ export function manage(g: Game) {
     rnd = seed(g.state.run.index + 17);
   let best = g.state.draft,
     bestScore = 0;
-  for (let attempt = 0; attempt < 25; attempt++) {
+  for (let attempt = 0; attempt < attempts; attempt++) {
     g.state.draft = [];
     const sorted = [...items].sort((a, b) => {
       const value = (i: typeof a) =>
@@ -56,6 +56,8 @@ export function play(
     guildLevel?: number;
     trialTier?: 0 | 1 | 2;
     fights?: FightSample[];
+    packingAttempts?: number;
+    merge?: boolean;
   } = {},
 ) {
   const g = new Game(undefined, seed(n), () => 1700000000000);
@@ -71,7 +73,10 @@ export function play(
   }
   g.startRun();
   prepare(g);
-  let fight: Omit<FightSample, 'rounds' | 'survived' | 'enemyActions' | 'lifeAfter'> | null = null;
+  let fight: Omit<
+    FightSample,
+    'rounds' | 'survived' | 'enemyActions' | 'lifeAfter' | 'lifeAtEnd' | 'recovery'
+  > | null = null;
   let loops = 0,
     previousPhase = g.state.phase;
   while (g.state.phase !== 'summary' && loops++ < 1200) {
@@ -82,7 +87,7 @@ export function play(
     const s = g.state;
     switch (s.phase) {
       case 'camp':
-        manage(g);
+        manage(g, options.packingAttempts, options.merge);
         g.continueCamp();
         break;
       case 'journey':
@@ -108,6 +113,8 @@ export function play(
             rounds: r,
             survived: s.phase !== 'summary',
             lifeAfter: s.player.hp,
+            lifeAtEnd: s.lastReport!.lifeAtEnd ?? s.player.hp,
+            recovery: s.lastReport!.recovery ?? 0,
             enemyActions: s.combat.runtime?.enemyActions ?? enemyActions,
           });
           fight = null;
@@ -147,20 +154,32 @@ export function play(
       }
       case 'event': {
         const e = g.currentEvent()!;
+        if (e.kind === 'supply' && s.run.supply) {
+          g.update(1);
+          break;
+        }
+        if (e.kind === 'chance' && s.run.routeRevision === 16) {
+          g.chooseEvent('spin');
+          g.update(4);
+          g.finishWheel();
+          break;
+        }
         g.chooseEvent(
           e.kind === 'boss'
             ? `trial-${options.trialTier ?? 0}`
-            : e.kind === 'rest'
-              ? 'heal'
-              : e.kind === 'dig'
-                ? 'dig-finish'
-                : e.kind === 'graduation'
-                  ? extreme
-                    ? 'extreme'
-                    : 'graduate'
-                  : e.kind === 'ending'
-                    ? 'finish'
-                    : 'skip',
+            : e.kind === 'treasure'
+              ? 'open'
+              : e.kind === 'rest'
+                ? 'heal'
+                : e.kind === 'dig'
+                  ? 'dig-finish'
+                  : e.kind === 'graduation'
+                    ? extreme
+                      ? 'extreme'
+                      : 'graduate'
+                    : e.kind === 'ending'
+                      ? 'finish'
+                      : 'skip',
         );
         break;
       }
@@ -180,6 +199,8 @@ export interface FightSample {
   heroMaxHp: number;
   lifeBefore: number;
   lifeAfter: number;
+  lifeAtEnd: number;
+  recovery: number;
   enemyMaxHp: number;
   enemyAttack: number;
   enemyActions: number;

@@ -1,8 +1,20 @@
 import assert from 'node:assert/strict';
-import { Game } from '../src/game';
-import { TRIAL_NODES, stageGrowth, chapterRoute } from '../src/journey';
+import { Game, generateEvents } from '../src/game';
+import { TRIAL_NODES, stageGrowth, chapterRoute, runRoute } from '../src/journey';
 import { firstFree, runBagCells, validateLayout, PROFESSIONS } from '../src/backpack';
 import type { EventKind, Profession } from '../src/types';
+import type { UI } from '../src/ui';
+
+/** Let the UI finish result narration before assertions about the loot view. */
+export async function settleJourneyUI(ui: UI) {
+  for (let n = 0; n < 40; n++) {
+    ui.render();
+    const next = document.querySelector<HTMLButtonElement>('[data-action="continue"]');
+    if (!document.querySelector('.journey-pending') && !next?.disabled) return;
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  }
+  assert.fail('Result narration did not finish');
+}
 export const seed = (initial: number) => {
   let n = initial;
   return () => {
@@ -62,10 +74,12 @@ export function recruitToConfigure(g: Game, chapter = 1, profession: Profession 
   return g;
 }
 export function prepare(g: Game) {
+  if (g.state.run.prologue === 'departure') g.continueJourney();
   for (let n = 0; n < 2; n++) assert.equal(g.claimStarterRound(), null);
   fitStarters(g);
   assert.equal(g.finishOpening(), null);
   assert.equal(g.chooseResonance(g.state.run.rewards[0].resonances[0]), null);
+  if (g.state.run.prologue === 'ready') g.continueJourney();
   return g;
 }
 export function start(profession: Profession = 'warrior', random = seed(19)) {
@@ -75,6 +89,10 @@ export function start(profession: Profession = 'warrior', random = seed(19)) {
   assert.equal(g.startRun(profession), null);
   // Mechanics fixtures retain the historical rectangle for tests with explicit coordinates.
   // Fresh-run layout, randomized loot and real playthroughs are tested independently.
+  delete g.state.run.routeRevision;
+  delete g.state.run.prologue;
+  g.state.phase = 'opening';
+  g.state.run.events = generateEvents(random, 4, true);
   g.state.run.packLayout = 'legacy';
   // A known build fixture isolates downstream mechanics from opening loot randomness.
   // Opening random generation itself is tested using startRun directly.
@@ -92,9 +110,8 @@ export function positionEvent(g: Game, kind: EventKind, index?: number) {
   s.run.index = index;
   s.run.events.forEach((e, i) => (e.completed = i < index!));
   s.run.realm =
-    (s.run.trainee?.realmStart ?? 0) +
-    chapterRoute(s.run.chapter).trials.filter((i) => i < index!).length;
-  s.run.stages = chapterRoute(s.run.chapter).trials.filter((i) => i < index!).length;
+    (s.run.trainee?.realmStart ?? 0) + runRoute(s).trials.filter((i) => i < index!).length;
+  s.run.stages = runRoute(s).trials.filter((i) => i < index!).length;
   s.run.trials = Array.from({ length: 3 }, (_, i) => (i < s.run.stages ? 0 : null));
   s.run.growth = stageGrowth(s.run.profession, s.run.trials, s.run.stages);
   while (s.run.resonances.length < 1 + s.run.stages) s.run.resonances.push(g.resonanceChoices()[0]);
@@ -102,7 +119,7 @@ export function positionEvent(g: Game, kind: EventKind, index?: number) {
   s.run.rewards = [];
   s.run.dig = null;
   assert.equal(advanceCamp(g), null);
-  if (g.state.phase === 'event' && chapterRoute(s.run.chapter).trials.includes(s.run.index))
+  if (g.state.phase === 'event' && runRoute(s).trials.includes(s.run.index))
     assert.equal(g.chooseTrial(0), null);
   return index;
 }

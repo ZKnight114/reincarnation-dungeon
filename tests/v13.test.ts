@@ -138,6 +138,7 @@ test('unclaimed starter offers merge in the upper area and advance batches once 
     )[g.state.run.profession],
   );
   g.startRun();
+  g.continueJourney();
   const target = g.state.run.starterOffers[0],
     donor = add(g, target.templateId);
   assert.equal(g.mergeItems(donor.id, target.id), null);

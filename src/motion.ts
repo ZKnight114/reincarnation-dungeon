@@ -78,10 +78,16 @@ export class Motion {
     );
     this.classes.set(el, pending);
   }
-  private spawn(parent: Element | null, className: string, milliseconds: number, text = '') {
-    if (!parent || this.reduced) return null;
+  private spawn(
+    parent: Element | null,
+    className: string,
+    milliseconds: number,
+    text = '',
+    essential = false,
+  ) {
+    if (!parent || (this.reduced && !essential)) return null;
     // Bound DOM/effect work when many equipment skills fire in the same turn at 4x.
-    if (this.transients.size >= 28) return null;
+    if (this.transients.size >= 28 && !essential) return null;
     const el = document.createElement('span');
     el.className = className;
     el.setAttribute('aria-hidden', 'true');
@@ -160,6 +166,7 @@ export class Motion {
   }
   number(side: ActorSide, kind: string, amount: number) {
     if (!['damage', 'hurt', 'heal', 'healing'].includes(kind)) return;
+    if (amount <= 0) return;
     if (kind === 'healing') kind = 'heal';
     const layer = this.rig(side)?.querySelector('.actor-fx-layer');
     const prefix =
@@ -180,8 +187,9 @@ export class Motion {
     this.spawn(
       layer ?? null,
       `combat-number ${kind}`,
-      COMBAT_PACING.number,
+      Math.max(COMBAT_PACING.number, 650 * this.speed),
       prefix + Math.round(amount),
+      true,
     );
   }
   projectile(source: Element | null, side: ActorSide, style: AttackStyle) {

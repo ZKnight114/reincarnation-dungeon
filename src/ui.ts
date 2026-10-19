@@ -1,3 +1,4 @@
+import { WHEEL_SECONDS, WHEEL_SECTORS, lifeAmount, chanceName } from './event-rules';
 import { itemTalentText } from './talents';
 import { archiveDetails, archiveOutcome, type ArchiveTab } from './archive-ui';
 import { icon, professionIcon } from './art';
@@ -93,6 +94,7 @@ export class UI {
   private journeyVisible = false;
   private lastFeedback = 0;
   private journeyFollow = true;
+  private journeyFlow = '';
   private journeyScroll = 0;
   private journeyRendered: string[] = [];
   private journeyQueue: HTMLElement[] = [];
@@ -100,6 +102,7 @@ export class UI {
   private journeyActiveUntil = 0;
   private transitionUntil = 0;
   private transitionNode = -1;
+  private resultNode = -1;
   private footerReady = false;
   private reforgeReady = false;
   private digFeedbackCell = -1;
@@ -489,6 +492,7 @@ export class UI {
       this.keys.roster = '';
     }
     if (action === 'wheel-confirm' && this.wheel?.ready) {
+      if (this.game.state.run.routeRevision === 16 && !this.game.finishWheel()) return;
       this.wheel = null;
       this.keys.decision = '';
     }
@@ -524,7 +528,7 @@ export class UI {
       this.result(error, '快速探险');
     }
     if (action === 'skip-combat') {
-      s.skipCombat = !s.skipCombat;
+      if (s.phase === 'combat') s.combat.skip = true;
       s.revision++;
     }
     if (action === 'continue-story') {
@@ -578,7 +582,25 @@ export class UI {
   }
   render() {
     this.game.recoverEnergy();
-    if (this.wheel && !this.wheel.ready && Date.now() - this.wheel.started >= 3600)
+    if (this.game.state.run.routeRevision === 16) {
+      const w = this.game.state.run.wheel;
+      this.wheel = w
+        ? {
+            sector: w.sector,
+            result: `${WHEEL_SECTORS[w.sector].label} +${WHEEL_SECTORS[w.sector].value * 100}%`,
+            started: this.wheel?.started ?? Date.now(),
+            node: this.game.state.run.index,
+            angle: 2160 - (w.sector * 60 + 30),
+            ready: w.elapsed >= WHEEL_SECONDS,
+          }
+        : null;
+    }
+    if (
+      this.game.state.run.routeRevision !== 16 &&
+      this.wheel &&
+      !this.wheel.ready &&
+      Date.now() - this.wheel.started >= 3600
+    )
       this.wheel.ready = true;
     const s = this.game.state;
     if (this.statusSide && !(document.getElementById('modal') as HTMLDialogElement).open)
@@ -589,14 +611,27 @@ export class UI {
     if (this.phase !== s.phase) {
       const previous = this.phase;
       this.phase = s.phase;
+      this.resultNode =
+        s.phase === 'camp' &&
+        !!this.game.currentEvent()?.completed &&
+        (previous === 'combat' || (previous === 'event' && s.run.routeRevision === 16))
+          ? s.run.index
+          : -1;
+      if (
+        previous === 'event' &&
+        s.phase === 'combat' &&
+        ['boss', 'elite'].includes(this.game.currentEvent()!.kind)
+      )
+        this.transitionUntil = Date.now() + (this.motion.reduced ? 0 : 680 / s.speed);
       this.showPack =
         ['opening', 'combat'].includes(s.phase) ||
-        (s.phase === 'camp' && (previous === 'combat' || !this.game.currentEvent()?.completed));
+        (s.phase === 'camp' && !this.game.currentEvent()?.completed);
       if (s.phase === 'awakening') this.ritualStarted = Date.now();
     }
     const equipmentVisible =
       s.phase !== 'combat' && (s.run.starterOffers.length > 0 || this.game.looseItems().length > 0);
-    if (equipmentVisible && s.phase !== 'awakening') this.showPack = true;
+    if (this.resultPlaying) this.showPack = false;
+    else if (equipmentVisible && s.phase !== 'awakening') this.showPack = true;
     if (s.phase === 'awakening') this.showPack = false;
     if (s.phase === 'camp' && this.game.currentEvent()?.completed && safelyGraduated(s))
       this.showPack = true;
@@ -654,8 +689,11 @@ export class UI {
     if (s.phase === 'summary') this.summary();
     if (active) {
       document.getElementById('chapter-label')!.textContent = `第 ${s.run.chapter} 关`;
-      document.getElementById('event-label')!.textContent =
-        s.phase === 'opening'
+      document.getElementById('event-label')!.textContent = s.run.prologue
+        ? s.run.prologue === 'departure'
+          ? '公会启程'
+          : '整备完成'
+        : s.phase === 'opening'
           ? `起始补给 ${Math.min(2, s.run.starterRound + 1)}/2`
           : s.phase === 'initial'
             ? '选择初始共鸣'
@@ -667,6 +705,8 @@ export class UI {
       this.battle();
       this.route();
       this.pack.render();
+      const field = document.getElementById('field-items');
+      if (field) field.hidden = !!s.run.prologue || this.resultPlaying;
       this.resonance();
       this.feedback();
     }
@@ -686,6 +726,18 @@ export class UI {
       (this.showPack || this.journeyPlaying || Date.now() < this.transitionUntil)
     );
   }
+  get holdingCombat() {
+    return this.game.state.phase === 'combat' && Date.now() < this.transitionUntil;
+  }
+  private get resultPlaying() {
+    const s = this.game.state;
+    return (
+      this.resultNode === s.run.index &&
+      s.phase === 'camp' &&
+      !!this.game.currentEvent()?.completed &&
+      (s.run.journey.length > this.journeyRendered.length || this.journeyPlaying)
+    );
+  }
   private get journeyPlaying() {
     return !this.showPack && (this.journeyQueue.length > 0 || Date.now() < this.journeyActiveUntil);
   }
@@ -694,18 +746,20 @@ export class UI {
     const panel = document.getElementById('battle-panel')!;
     if (
       s.phase === 'journey' &&
+      !s.run.prologue &&
       !this.showPack &&
       !this.journeyPlaying &&
-      ['battle', 'boss', 'elite'].includes(this.game.currentEvent()!.kind) &&
-      s.run.storyElapsed >= storyDuration(this.game.currentEvent()!) - 0.55 &&
+      this.game.currentEvent()!.kind === 'battle' &&
+      s.run.storyElapsed >= storyDuration(this.game.currentEvent()!) - 0.68 &&
       this.transitionNode !== s.run.index
     ) {
       this.transitionNode = s.run.index;
-      this.transitionUntil = Date.now() + (this.motion.reduced ? 0 : 550 / s.speed);
+      s.run.storyElapsed = storyDuration(this.game.currentEvent()!);
+      this.transitionUntil = Date.now() + (this.motion.reduced ? 0 : 680 / s.speed);
     }
     panel.classList.toggle(
       'encounter-approach',
-      s.phase === 'journey' && Date.now() < this.transitionUntil,
+      ['journey', 'combat'].includes(s.phase) && Date.now() < this.transitionUntil,
     );
   }
   private energyText() {
@@ -817,6 +871,7 @@ export class UI {
       e = s.enemy,
       el = document.getElementById('battle-panel')!,
       key = `${s.phase === 'combat' ? 'combat' : 'explore'}|${s.run.profession}|${s.run.trainee?.id}|${e?.species}`;
+    el.dataset.profession = s.run.profession;
     if (this.changed('battle', key)) {
       const defeated =
         el.classList.contains('in-combat') && !e && s.player.hp > 0 && s.phase === 'camp'
@@ -829,6 +884,7 @@ export class UI {
       'has-offers',
       s.phase !== 'combat' &&
         s.phase !== 'awakening' &&
+        !this.resultPlaying &&
         (s.run.starterOffers.length > 0 || this.game.looseItems().length > 0),
     );
     el.classList.toggle('in-combat', s.phase === 'combat');
@@ -850,7 +906,10 @@ export class UI {
       this.motion.alignFlight(flight.imageCenter);
     this.motion
       .rig('hero')
-      ?.setAttribute('data-motion', el.classList.contains('exploring') ? 'explore' : 'idle');
+      ?.setAttribute(
+        'data-motion',
+        s.phase === 'combat' ? 'combat' : el.classList.contains('exploring') ? 'explore' : 'idle',
+      );
     el.classList.toggle('shielded', s.player.shield > 0);
     el.dataset.profession = s.run.profession;
     document.getElementById('player-hp')!.innerHTML =
@@ -905,16 +964,16 @@ export class UI {
     }
     const p = finalAttributes(s, this.game.editable());
     document.getElementById('combat-hud')!.innerHTML =
-      `<strong>${esc(s.run.trainee?.name ?? '勇者')} ${professionIcon(s.run.profession)}<small>${realmName(s.run.realm)}</small></strong><div class="hud-values"><span aria-label="生命">${uiIcon('hp')}${Math.ceil(s.player.hp)}/${Math.ceil(s.player.maxHp)}</span><span aria-label="攻击">${uiIcon('attack')}${Math.round(p.attack)}</span><span aria-label="防御">${uiIcon('defense')}${p.defense.toFixed(0)}</span><span aria-label="速度">${uiControl('speed')}${this.game.playerSpeed()}</span></div>`;
+      `<strong>${esc(s.run.trainee?.name ?? '勇者')} ${professionIcon(s.run.profession)}<small>${realmName(s.run.realm)}</small></strong><div class="hud-life"><span aria-label="生命">${uiIcon('hp')}${Math.ceil(s.player.hp)}/${Math.ceil(s.player.maxHp)}</span><div class="hud-health-track"><i style="width:${Math.max(0, Math.min(100, (s.player.hp / s.player.maxHp) * 100))}%"></i></div></div><div class="hud-values"><span aria-label="攻击">${uiIcon('attack')}<b>${Math.round(p.attack)}</b></span><span aria-label="防御">${uiIcon('defense')}<b>${p.defense.toFixed(0)}</b></span><span aria-label="速度">${uiControl('speed')}<b>${this.game.playerSpeed()}</b></span></div>`;
   }
   private route() {
     const s = this.game.state;
     if (!this.changed('route', s.phase + '|' + s.revision)) return;
-    const starting = ['opening', 'initial'].includes(s.phase);
+    const starting = !!s.run.prologue || ['opening', 'initial'].includes(s.phase);
     document.getElementById('stage-route')!.innerHTML = s.run.events
       .map(
         (e, n) =>
-          `<span class="route-step ${e.completed ? 'complete' : ''} ${!starting && s.run.index === n ? 'current' : ''} ${['boss', 'elite', 'graduation', 'ending'].includes(e.kind) ? 'milestone' : ''} node-${e.kind} ${n > runRoute(s).graduation ? 'optional' : ''}" data-node="${n + 1}" aria-label="第 ${n + 1} 步 · ${EVENT_NAMES[e.kind]} · ${e.completed ? '已完成' : !starting && s.run.index === n ? '进行中' : '未到达'}" ${!starting && s.run.index === n ? 'aria-current="step"' : ''} title="${n + 1} · ${EVENT_NAMES[e.kind]}">${({ battle: '·', boss: '✦', elite: '✦', rest: '+', dig: '⌑', graduation: '◆', ending: '◆', choice: '?', chance: '?', supply: '□', treasure: '□' } as Record<string, string>)[e.kind] ?? '·'}</span>`,
+          `<span class="route-step ${e.completed ? 'complete' : ''} ${!starting && s.run.index === n ? 'current' : ''} ${['boss', 'elite', 'promotion', 'graduation', 'ending'].includes(e.kind) ? 'milestone' : ''} node-${e.kind} ${n > runRoute(s).graduation ? 'optional' : ''}" data-node="${n + 1}" aria-label="第 ${n + 1} 步 · ${EVENT_NAMES[e.kind]} · ${e.completed ? '已完成' : !starting && s.run.index === n ? '进行中' : '未到达'}" ${!starting && s.run.index === n ? 'aria-current="step"' : ''} title="${n + 1} · ${EVENT_NAMES[e.kind]}">${({ battle: '·', boss: '✦', elite: '✦', rest: '+', dig: '⌑', graduation: '◆', ending: '◆', choice: '?', chance: '?', promotion: '✧', supply: '□', treasure: '□' } as Record<string, string>)[e.kind] ?? '·'}</span>`,
       )
       .join('');
   }
@@ -956,7 +1015,7 @@ export class UI {
     if (
       !this.changed(
         'footer',
-        `${s.phase}|${s.run.index}|${s.run.starterRound}|${this.game.completed()}|${s.speed}|${s.isRunning}|${this.showPack}|${s.skipCombat}|${s.run.autoExplore}|${s.run.points}|${this.game.looseItems().length}|${s.run.pendingPromotion}|${this.ritualReady}|${waiting}`,
+        `${s.phase}|${s.run.index}|${s.run.starterRound}|${this.game.completed()}|${s.speed}|${s.isRunning}|${this.showPack}|${this.game.skippingCombat()}|${s.run.autoExplore}|${s.run.points}|${this.game.looseItems().length}|${s.run.pendingPromotion}|${this.ritualReady}|${waiting}`,
       )
     )
       return;
@@ -983,13 +1042,13 @@ export class UI {
           ? `<button class="primary-button" data-action="claim-starters">继续补给 ${s.run.starterRound + 1}/2</button>`
           : '<button class="primary-button" data-action="finish-opening">选择初始共鸣</button>';
     else if (s.phase === 'camp')
-      html = `<button class="primary-button" data-action="continue" ${waiting ? 'disabled' : ''}>${waiting ? '历程播放中' : s.run.pendingPromotion ? '进入晋阶' : safelyGraduated(s) && this.game.currentEvent()?.completed ? '确认毕业' : this.game.completed() ? '继续探险' : '开始冒险'}</button>`;
+      html = `<button class="primary-button" data-action="continue" ${waiting ? 'disabled' : ''}>${waiting ? '历程播放中' : s.run.pendingPromotion && (s.run.routeRevision !== 16 || s.run.events[s.run.index + 1]?.kind === 'promotion') ? '进入晋阶' : safelyGraduated(s) && this.game.currentEvent()?.completed ? '确认毕业' : this.game.completed() ? '继续探险' : '开始冒险'}</button>`;
     else if (s.phase === 'journey')
       html = `<button class="primary-button" data-action="continue-story" ${waiting ? 'disabled' : ''}>${waiting ? '历程播放中' : '继续'}</button>`;
     else if (s.phase === 'awakening')
       html = `<button class="primary-button" data-action="finish-awakening" ${this.ritualReady ? '' : 'disabled'}>${this.ritualReady ? '继续' : '境界觉醒'}</button>`;
     else if (s.phase === 'combat')
-      html = `<button data-action="skip-combat" aria-pressed="${s.skipCombat}">${s.skipCombat ? '快速战斗' : '跳过战斗'}</button>`;
+      html = `<button class="primary-button" data-action="skip-combat" aria-pressed="${this.game.skippingCombat()}">${this.game.skippingCombat() ? '快速结算' : '跳过战斗'}</button>`;
     const utility =
       s.phase === 'awakening'
         ? ''
@@ -1014,8 +1073,13 @@ export class UI {
     )
       return;
     document.getElementById('journey-status')!.textContent =
-      `${Math.min(3, runRoute(s).trials.filter((n) => n < s.run.index).length + 1)} 阶段 · ${this.game.completed()}/${s.run.events.length}`;
+      `${Math.min(3, s.run.stages + 1)} 阶段 · ${this.game.completed()}/${s.run.events.length}`;
     const el = document.getElementById('journey-history')!;
+    const flow = `${s.run.index}|${s.run.prologue ?? ''}|${!!this.game.currentEvent()?.completed}`;
+    if (flow !== this.journeyFlow) {
+      this.journeyFlow = flow;
+      this.journeyFollow = true;
+    }
     el.classList.toggle('playing-story', s.phase === 'journey');
     const firstVisible = !this.journeyVisible && !this.showPack;
     this.journeyVisible = !this.showPack;
@@ -1078,7 +1142,7 @@ export class UI {
     const a = s.awakening!;
     if (el.dataset.stage === String(a.stage)) return;
     el.dataset.stage = String(a.stage);
-    el.innerHTML = `<small>${TRIALS[a.tier].name} · 通过</small><h2>境界晋升</h2><div class="ritual-hero"><div class="ritual-light"></div>${heroRig(s.run.profession, s.run.trainee?.appearance)}</div><div class="realm-promotion" role="status" aria-label="境界晋升"><span>${realmName(s.run.realm - 1)}</span><i aria-hidden="true">→</i><strong>${realmName(s.run.realm)}</strong></div><div class="awakening-gains"><b>攻击 +${+(a.attack * 100).toFixed(1)}%</b><b>生命上限 +${a.hp}</b><b>防御 +${+a.defense.toFixed(2)}</b><b>恢复生命 ${a.healed}</b></div>`;
+    el.innerHTML = `<small>${TRIALS[a.tier].name} · 通过</small><h2>境界晋升</h2><div class="ritual-hero"><div class="ritual-light"></div>${heroRig(s.run.profession, s.run.trainee?.appearance)}</div><div class="realm-promotion" role="status" aria-label="境界晋升"><span>${realmName(s.run.realm - 1)}</span><i aria-hidden="true">→</i><strong>${realmName(s.run.realm)}</strong></div><div class="awakening-gains"><b>攻击 +${+(a.attack * 100).toFixed(1)}%</b><b>最大生命 +${a.hp}</b><b>防御 +${+a.defense.toFixed(2)}</b>${a.healed > 0 ? `<b>恢复生命 ${a.healed}</b>` : ''}</div>`;
     this.motion.pulse(el, 'motion-awakening', 1300);
   }
   private get ritualReady() {
@@ -1090,7 +1154,14 @@ export class UI {
     if (!entry) return;
     entry.classList.remove('journey-pending');
     entry.classList.add('journey-new');
-    this.journeyActiveUntil = Date.now() + (this.motion.reduced ? 0 : 240 / this.game.state.speed);
+    const result = this.game.state.phase === 'camp' && !!this.game.currentEvent()?.completed;
+    this.journeyActiveUntil =
+      Date.now() +
+      (result
+        ? Math.max(450, 900 / this.game.state.speed)
+        : this.motion.reduced
+          ? 0
+          : 240 / this.game.state.speed);
     entry.addEventListener('animationend', () => entry.classList.remove('journey-new'), {
       once: true,
     });
@@ -1104,9 +1175,15 @@ export class UI {
       this.wheel ||
       s.phase !== 'event' ||
       this.game.currentEvent()?.kind !== 'chance' ||
-      this.game.currentEvent()?.variant !== 0
+      (s.run.routeRevision !== 16 && this.game.currentEvent()?.variant !== 0)
     )
       return;
+    if (s.run.routeRevision === 16) {
+      this.result(this.game.chooseEvent('spin'), '');
+      this.keys.decision = '';
+      this.persist();
+      return;
+    }
     const start = s.run.journey.length,
       error = this.game.chooseEvent('spin');
     if (error) {
@@ -1137,10 +1214,15 @@ export class UI {
     this.keys.decision = '';
     this.persist();
   }
-  private wheelGraphic(angle = 0) {
-    const sizes = [180, 108, 54, 18],
-      labels = ['装备', '点数', '治疗', '反噬'],
-      colors = ['#a88a53', '#608277', '#7a91aa', '#a46860'];
+  private wheelGraphic(angle = 0, elapsed = 0) {
+    const revised = this.game.state.run.routeRevision === 16;
+    const sizes = revised ? [60, 60, 60, 60, 60, 60] : [180, 108, 54, 18],
+      labels = revised
+        ? WHEEL_SECTORS.map((x) => `${x.label} +${x.value * 100}%`)
+        : ['装备', '点数', '治疗', '反噬'],
+      colors = revised
+        ? ['#668374', '#987346', '#637e9b', '#668374', '#987346', '#637e9b']
+        : ['#a88a53', '#608277', '#7a91aa', '#a46860'];
     let start = -90;
     const segments = sizes
       .map((size, n) => {
@@ -1149,21 +1231,36 @@ export class UI {
           b = (end * Math.PI) / 180,
           m = ((start + size / 2) * Math.PI) / 180,
           path = `M150 150L${150 + 132 * Math.cos(a)} ${150 + 132 * Math.sin(a)}A132 132 0 ${size > 180 ? 1 : 0} 1 ${150 + 132 * Math.cos(b)} ${150 + 132 * Math.sin(b)}Z`,
-          text = `<text x="${150 + 95 * Math.cos(m)}" y="${154 + 95 * Math.sin(m)}" text-anchor="middle" fill="#f2e2bc" font-size="${size < 30 ? 11 : 14}">${labels[n]}</text>`;
+          tx = 150 + 88 * Math.cos(m),
+          ty = 154 + 88 * Math.sin(m),
+          text = revised
+            ? `<text x="${tx}" y="${ty}" text-anchor="middle" fill="#f2e2bc" font-size="13"><tspan x="${tx}" dy="-6">${WHEEL_SECTORS[n].label}</tspan><tspan x="${tx}" dy="16">+${WHEEL_SECTORS[n].value * 100}%</tspan></text>`
+            : `<text x="${tx}" y="${ty}" text-anchor="middle" fill="#f2e2bc" font-size="${size < 30 ? 11 : 14}">${labels[n]}</text>`;
         start = end;
         return `<path d="${path}" fill="${colors[n]}" stroke="#e0c58b" stroke-width="2"/>${text}`;
       })
       .join('');
-    return `<svg class="fate-wheel-art" viewBox="0 0 300 300" aria-label="命运轮盘，装备50%，点数30%，治疗15%，反噬5%"><g class="wheel-rotor" style="--wheel-angle:${angle}deg">${segments}</g><circle cx="150" cy="150" r="28" fill="#24373b" stroke="#d7b66d" stroke-width="3"/><text x="150" y="155" text-anchor="middle" font-size="16" fill="#e2c684">命运</text><path d="M139 4H161L150 29Z" fill="#372c1c" stroke="#ead4a4" stroke-width="2"/></svg>`;
+    const timed = revised && !!this.wheel;
+    return `<svg class="fate-wheel-art" viewBox="0 0 300 300" aria-label="${revised ? '命运轮盘，生命攻击防御交替排列，六格等概率' : '命运轮盘，装备50%，点数30%，治疗15%，反噬5%'}"><g class="wheel-rotor" ${timed ? 'data-timed-wheel' : ''} style="--wheel-angle:${angle}deg;${timed ? `transform:rotate(${this.wheelAngle(angle, elapsed)}deg);--wheel-counter-angle:${-this.wheelAngle(angle, elapsed)}deg` : ''}">${segments}</g><circle cx="150" cy="150" r="28" fill="#24373b" stroke="#d7b66d" stroke-width="3"/><text x="150" y="155" text-anchor="middle" font-size="16" fill="#e2c684">命运</text><path d="M139 4H161L150 29Z" fill="#372c1c" stroke="#ead4a4" stroke-width="2"/></svg>`;
+  }
+  private wheelAngle(angle: number, elapsed: number) {
+    const progress = Math.min(1, Math.max(0, elapsed / WHEEL_SECONDS));
+    return angle * (this.motion.reduced ? 1 : 1 - (1 - progress) ** 3);
   }
   private wheelDecision() {
     const w = this.wheel!;
     const dialog = document.getElementById('decision-sheet') as HTMLDialogElement;
     if (!dialog.open) dialog.showModal();
     dialog.classList.add('wheel-dialog');
-    if (this.changed('decision', `wheel|${w.started}|${w.ready}`))
+    if (this.changed('decision', `wheel|${w.started}|${w.ready}|${this.game.state.speed}`))
       document.getElementById('decision')!.innerHTML =
-        `<h2 id="decision-title">命运轮盘</h2>${this.wheelGraphic(w.angle)}<p class="wheel-result" role="status">${w.ready ? esc(w.result) : '转动中…'}</p><button class="primary-button" data-action="wheel-confirm" ${w.ready ? '' : 'disabled'}>${w.ready ? '收下馈赠' : '命运流转'}</button>`;
+        `<h2 id="decision-title">命运轮盘</h2>${this.wheelGraphic(w.angle, this.game.state.run.wheel?.elapsed ?? 0)}<p class="wheel-result" role="status">${w.ready ? esc(w.result) : '转动中…'}</p><button class="primary-button" data-action="wheel-confirm" ${w.ready ? '' : 'disabled'}>${w.ready ? '领取祝福' : '命运流转'}</button>`;
+    const rotor = dialog.querySelector<SVGElement>('[data-timed-wheel]');
+    if (rotor) {
+      const angle = this.wheelAngle(w.angle, this.game.state.run.wheel!.elapsed);
+      rotor.style.transform = `rotate(${angle}deg)`;
+      rotor.style.setProperty('--wheel-counter-angle', `${-angle}deg`);
+    }
   }
   private resonancePulse(id: string) {
     // Contribution tags do not mean a resonance skill fired. Only pulse the actual source.
@@ -1289,7 +1386,9 @@ export class UI {
       this.trialNode = s.run.index;
       this.selectedTrial = 0;
     }
-    const needed = ['event', 'reward', 'initial'].includes(s.phase);
+    const needed =
+      ['event', 'reward', 'initial'].includes(s.phase) &&
+      (s.run.routeRevision !== 16 || !this.journeyPlaying);
     if (!needed) {
       if (container.open) container.close();
       return;
@@ -1325,15 +1424,19 @@ export class UI {
     if (s.phase === 'event') {
       const e = this.game.currentEvent()!;
       title = EVENT_NAMES[e.kind];
-      if (e.kind === 'treasure' || e.kind === 'supply')
+      if (e.kind === 'supply' && s.run.routeRevision === 16)
+        body = `<div class="supply-reveal" role="status"><span class="supply-runes">✦</span>${s.run.supply!.result === 'low' ? '' : '<div class="supply-reel" aria-hidden="true"><span>旅人补给<br>大吉<br>旅人补给<br>大吉<br>旅人补给</span></div>'}<strong>旅人的馈赠正在揭晓</strong></div>`;
+      else if (e.kind === 'treasure' && s.run.routeRevision === 16)
+        body = `<div class="event-actions"><button class="danger-button" data-event="open">消耗 ${lifeAmount(s.player.hp * 0.1)} 生命，取出装备</button><button data-event="skip">离开</button></div>`;
+      else if (e.kind === 'treasure' || e.kind === 'supply')
         body = `<button class="primary-button" data-event="${e.kind === 'treasure' ? 'open' : 'take'}">${e.kind === 'treasure' ? '打开宝箱' : '接受补给'}</button>`;
       if (e.kind === 'rest')
-        body = `<div class="choice-grid"><button class="reward-card" data-event="heal"><strong>饮下月泉</strong><p>恢复 ${Math.round(Math.min(s.player.maxHp - s.player.hp, s.player.maxHp * 0.35))} 生命</p></button><button class="reward-card" data-event="vigor" ${s.run.buffs.vitality >= 3 ? 'disabled' : ''}><strong>凝聚泉华</strong><p>${BUFFS.vitality.description}</p></button></div>`;
+        body = `<div class="choice-grid"><button class="reward-card" data-event="heal"><strong>饮下月泉</strong><p>恢复 ${Math.round(Math.min(s.player.maxHp - s.player.hp, s.player.maxHp * 0.35))} 生命</p></button><button class="reward-card" data-event="vigor" ${s.run.routeRevision !== 16 && s.run.buffs.vitality >= 3 ? 'disabled' : ''}><strong>凝聚泉华</strong><p>最大生命 +12%</p></button></div>`;
       if (e.kind === 'dig') body = this.digBoard();
       if (e.kind === 'choice')
         body =
           e.variant === 2
-            ? `<div class="choice-grid"><button class="reward-card" data-event="heal"><strong>饮用泉水</strong><p>恢复生命上限的30%</p></button><button class="reward-card" data-event="vigor"><strong>锻炼体魄</strong><p>生命上限 +18</p></button></div>`
+            ? `<div class="choice-grid"><button class="reward-card" data-event="heal"><strong>饮用泉水</strong><p>恢复最大生命的30%</p></button><button class="reward-card" data-event="vigor"><strong>锻炼体魄</strong><p>最大生命 +18</p></button></div>`
             : `<div class="choice-grid"><button class="reward-card" data-event="risk" ${s.player.hp <= Math.ceil(s.player.hp * 0.15) ? 'disabled' : ''}><strong>${e.variant === 1 ? '取出遗物' : '解开封印'}</strong><p>消耗15%当前生命，${e.variant === 1 ? '获得三件装备' : e.variant === 3 ? '防御 +2' : e.variant === 4 ? '随机基础属性成长' : '攻击 +8%'}</p></button><button class="reward-card" data-event="skip"><strong>安全离开</strong><p>继续前行</p></button></div>`;
       if (e.kind === 'graduation')
         body = `<div class="choice-grid"><button class="reward-card" data-event="graduate"><strong>完成培养</strong><p>保存当前勇者，成功结业</p></button>${runRoute(s).hasExtreme ? '<button class="reward-card" data-event="extreme"><strong>挑战极限</strong><p>继续迎战更强魔物，成功后额外战力与双倍金币</p></button>' : ''}</div>`;
@@ -1341,7 +1444,10 @@ export class UI {
         body = '<button class="primary-button" data-event="learn">接受传授</button>';
       if (e.kind === 'ending')
         body = '<button class="primary-button" data-event="finish">整理最终行囊</button>';
-      if (e.kind === 'chance')
+      if (e.kind === 'chance' && s.run.routeRevision === 16) {
+        title = chanceName(e.variant);
+        body = `${this.wheelGraphic()}<div class="event-actions"><button class="danger-button" data-event="spin">献祭 ${lifeAmount(s.player.hp * 0.15)} 生命</button><button data-event="skip">离开</button></div>`;
+      } else if (e.kind === 'chance')
         body =
           e.variant === 0
             ? `${this.wheelGraphic()}<p>50% 高阶装备 · 30% 点数 · 15% 治疗 · 5% 反噬</p><div class="event-actions"><button class="primary-button" data-event="spin">转动轮盘</button><button data-event="skip">离开</button></div>`
@@ -1582,10 +1688,12 @@ export class UI {
     this.journeyNext = 0;
     this.journeyActiveUntil = 0;
     this.transitionUntil = 0;
+    this.resultNode = -1;
     this.transitionNode = -1;
     this.footerReady = false;
     this.reforgeReady = false;
     this.journeyFollow = true;
+    this.journeyFlow = '';
     this.resonanceTiers = {};
     this.journeyVisible = false;
     this.lastFeedback = 0;

@@ -138,6 +138,9 @@ const drag = (id: string, from: [number, number], to: [number, number], end = 'p
 test('guild to targeted recruit and configured hero flow has one entry; no removed controls remain', () => {
   assert.equal(win.document.querySelectorAll('#home-screen button').length, 5);
   begin();
+  assert.equal(game.state.phase, 'journey');
+  game.continueJourney();
+  ui.render();
   assert.equal(game.state.phase, 'opening');
   assert.equal(game.state.run.trainee!.talents.length, 4);
   assert.equal(win.document.querySelectorAll('.resonance-slot').length, 4);
@@ -200,6 +203,9 @@ test('allocation precedes an independent nine-book screen, with class filters an
   assert.equal(win.document.querySelector('[data-tome]'), null);
   click('[data-action="confirm-allocation"]');
   click('[data-action="start"]');
+  assert.equal(game.state.phase, 'journey');
+  game.continueJourney();
+  ui.render();
   assert.equal(game.state.phase, 'opening');
   assert.equal(game.state.run.profession, 'warrior');
   assert.deepEqual(game.state.run.boundTome, { id: 'mage_flame_tome', level: 1 });
@@ -377,11 +383,14 @@ test('combat frames preserve backpack nodes and show cooldowns, hit effects and 
   assert.equal(win.document.querySelector('[data-pack-action="rotate"]'), null);
   click('#equipment-detail [data-pack-action="close"]');
   click('[data-action="skip-combat"]');
-  assert.equal(game.state.skipCombat, true);
+  assert.equal(game.state.combat.skip, true);
+  assert.equal(game.state.skipCombat, false);
   assert.equal(game.state.isRunning, true);
 });
 test('opening gifts and upper equipment survive reload and continue into next round without capacity restriction', () => {
   begin();
+  game.continueJourney();
+  ui.render();
   click('[data-action="claim-starters"]');
   const ids = game.state.inventory.map((i) => i.id),
     offers = game.state.run.starterOffers.map((i) => i.id);
@@ -510,7 +519,8 @@ test('footer touch pointer-up starts combat and skips without waiting for a comp
   assert.equal(game.state.phase, 'combat');
   assert.equal(game.state.run.index, 0);
   tap('[data-action="skip-combat"]');
-  assert.equal(game.state.skipCombat, true);
+  assert.equal(game.state.combat.skip, true);
+  assert.equal(game.state.skipCombat, false);
   assert.equal(game.state.isRunning, true);
   tap('[data-action="cycle-speed"]');
   assert.equal(game.state.speed, 2);

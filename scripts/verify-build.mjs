@@ -85,6 +85,14 @@ try {
     assert.ok(el, q);
     el.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
   };
+  const playbackUntil = (phase) => {
+    for (let n = 0; n < 100 && save().phase !== phase; n++) {
+      now += 100;
+      frameTime += 100;
+      frameCallback(frameTime);
+    }
+    assert.equal(save().phase, phase);
+  };
   assert.equal(save().version, 15);
   assert.equal(save().phase, 'home');
   assert.ok(win.document.querySelector('.guild-art'));
@@ -117,6 +125,9 @@ try {
   assert.equal(save().phase, 'tome');
   click('[data-tome="warrior_sword_tome"]');
   click('[data-action="start"]');
+  assert.equal(save().phase, 'journey');
+  assert.equal(save().run.prologue, 'departure');
+  playbackUntil('opening');
   assert.equal(save().phase, 'opening');
   const gridStyle = win.getComputedStyle(win.document.getElementById('pack-grid'));
   assert.equal(gridStyle.width, '327px');
@@ -202,6 +213,8 @@ try {
   assert.equal(save().phase, 'initial');
   assert.equal(win.document.querySelectorAll('[data-resonance]').length, 3);
   click('[data-resonance]');
+  assert.equal(save().run.prologue, 'ready');
+  playbackUntil('camp');
   assert.equal(save().phase, 'camp');
   assert.equal(save().run.resonances.length, 1);
   click('[data-action="continue"]');
@@ -228,7 +241,8 @@ try {
   assert.equal(win.document.querySelector('[data-action="combat-tools"]'), null);
   assert.equal(win.document.querySelector('[data-action="pause"]'), null);
   click('[data-action="skip-combat"]');
-  assert.equal(save().skipCombat, true);
+  assert.equal(save().combat.skip, true);
+  assert.equal(save().skipCombat, false);
   assert.ok(win.document.querySelector('#turn-order').textContent.includes('回合'));
   click('[data-action="cycle-speed"]');
   assert.equal(save().speed, 2);

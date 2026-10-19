@@ -1433,7 +1433,8 @@ dialog.event-dialog {
   transform-box: view-box;
 }
 .wheel-dialog .wheel-rotor {
-  animation: spin-fate 3.6s cubic-bezier(0.12, 0.75, 0.16, 1) forwards;
+  animation: spin-fate var(--wheel-duration, 3.6s) cubic-bezier(0.12, 0.75, 0.16, 1)
+    var(--wheel-delay, 0s) forwards;
 }
 .wheel-dialog:has([data-action='wheel-confirm']:not(:disabled)) .wheel-rotor {
   animation: none;

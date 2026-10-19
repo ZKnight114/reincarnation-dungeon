@@ -5,7 +5,14 @@ import { Window } from 'happy-dom';
 import { Game } from '../src/game';
 import { UI } from '../src/ui';
 import { availableItems, dimensions, openBagCells, RESONANCES } from '../src/backpack';
-import { start, positionEvent, recruitToConfigure, advanceCamp, prepare } from './helpers';
+import {
+  start,
+  positionEvent,
+  recruitToConfigure,
+  advanceCamp,
+  prepare,
+  settleJourneyUI,
+} from './helpers';
 import { realmName } from '../src/progression';
 import { parseSave } from '../src/save';
 
@@ -93,7 +100,7 @@ test('enlarged seven-by-six pack fits below resonances and above controls with s
   }
 });
 
-test('exploring, combat and loot share the left hero position and baseline; decisions pause walking', () => {
+test('exploring, combat and loot share the left hero position and baseline; decisions pause walking', async () => {
   const g = start(),
     { w, ui, el, css } = setup(g);
   try {
@@ -124,6 +131,8 @@ test('exploring, combat and loot share the left hero position and baseline; deci
     ui.render();
     assert.equal(g.state.phase, 'camp');
     assert.deepEqual(fighter(), origin);
+    assert.equal(el('#battle-panel').classList.contains('has-offers'), false);
+    await settleJourneyUI(ui);
     assert.equal(el('#battle-panel').classList.contains('has-offers'), true);
     assert.equal(el('#battle-panel').classList.contains('exploring'), true);
     positionEvent(g, 'rest');
@@ -367,7 +376,7 @@ test('guild scenery cannot intercept taps and progression controls sit above the
   }
 });
 
-test('footer colors follow exploration, loot, resonance and graduation without changing continuation rules', () => {
+test('footer colors follow exploration, loot, resonance and graduation without changing continuation rules', async () => {
   const g = start(),
     { w, ui, el, css } = setup(g);
   try {
@@ -387,6 +396,7 @@ test('footer colors follow exploration, loot, resonance and graduation without c
     g.state.enemy!.hp = 0;
     g.advanceTurn();
     ui.render();
+    await settleJourneyUI(ui);
     color('loot');
     positionEvent(g, 'boss');
     g.state.enemy!.hp = 0;
@@ -480,6 +490,7 @@ test('tutorial graduation offers only completion and does not advertise an unava
   const g = new Game();
   recruitToConfigure(g, 1, 'warrior');
   g.startRun();
+  g.continueJourney();
   prepare(g);
   positionEvent(g, 'graduation');
   const { w, el, click } = setup(g);

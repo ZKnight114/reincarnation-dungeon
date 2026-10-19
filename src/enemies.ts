@@ -1,3 +1,4 @@
+import { enemyAttackMultiplier } from './event-rules';
 import catalogue from './enemy-catalogue.json';
 import { runRoute } from './journey';
 import type { Enemy, GameState } from './types';
@@ -106,7 +107,8 @@ export function generateEnemy(s: GameState, strength: number, random: () => numb
       attack *
       (boss ? (extreme ? 1.5 : 1.18 + 0.08 * Math.max(0, stage)) : 1) *
       t.multipliers.attack *
-      (c === 1 ? 0.85 : 1),
+      (c === 1 ? 0.85 : 1) *
+      (s.run.routeRevision === 16 ? enemyAttackMultiplier(c, boss) : 1),
     defense: (4 + 6 * p + 2.2 * (c - 1)) * t.multipliers.defense,
     speed: Math.max(
       1,

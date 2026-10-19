@@ -14,6 +14,7 @@ test('random starters persist both batches, allow duplicates and overflow, and g
       const g = new Game(undefined, seed(n));
       recruitToConfigure(g, 1, profession);
       assert.equal(g.startRun(), null);
+      g.continueJourney();
       const plan = g.state.run.starterPlan!;
       plans.add(JSON.stringify(plan));
       assert.equal(plan.flat().length, 6);
@@ -41,6 +42,7 @@ test('random starters persist both batches, allow duplicates and overflow, and g
   const same = new Game(undefined, () => 0);
   recruitToConfigure(same);
   same.startRun();
+  same.continueJourney();
   assert.ok(new Set(same.state.run.starterPlan!.flat()).size < 6);
 });
 
@@ -50,6 +52,7 @@ test('a foreign tome supplies just one of six starting gifts, without changing t
     recruitToConfigure(g);
     g.selectTome('mage_flame_tome');
     g.startRun();
+    g.continueJourney();
     g.claimStarterRound();
     g.claimStarterRound();
     assert.equal(g.state.inventory.filter((i) => i.profession === 'mage').length, 1);

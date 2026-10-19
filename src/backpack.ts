@@ -92,7 +92,7 @@ export const BRANCHES: Record<Branch, { name: string; color: string }> = {
 export const BUFFS: Record<BuffKey, { name: string; description: string }> = {
   power: { name: '力量', description: '人物攻击 +12%' },
   tempo: { name: '敏捷', description: '基础速度 +2' },
-  vitality: { name: '体魄', description: '生命上限 +12%（不恢复当前生命）' },
+  vitality: { name: '体魄', description: '最大生命 +12%' },
   defense: { name: '护甲', description: '防御 +3' },
 };
 export const BUFF_KEYS = Object.keys(BUFFS) as BuffKey[];
@@ -630,7 +630,7 @@ export function nonGuildAttributes(state: GameState, draft = false) {
       (t.attack ?? 1),
     hp:
       (base.hp + state.run.growth.hp + state.run.eventGrowth.hp + a.attributes.hp) *
-      (1 + state.run.buffs.vitality * 0.12) *
+      (1 + state.run.buffs.vitality * 0.12 + (state.run.eventGrowth.hpPercent ?? 0)) *
       (t.hp ?? 1),
     defense:
       (base.defense +
@@ -638,7 +638,8 @@ export function nonGuildAttributes(state: GameState, draft = false) {
         state.run.eventGrowth.defense +
         a.attributes.defense +
         state.run.buffs.defense * 3) *
-      (t.defense ?? 1),
+      (t.defense ?? 1) *
+      (1 + (state.run.eventGrowth.defensePercent ?? 0)),
     speed: base.speed + state.run.buffs.tempo * 2 + state.run.eventGrowth.speed,
   };
 }

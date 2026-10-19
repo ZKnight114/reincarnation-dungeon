@@ -207,7 +207,8 @@ test('combat has skip and speed but no player pause, stepping or control dialog'
     assert.equal(win.document.querySelector('[data-action="pause"]'), null);
     assert.equal(win.document.querySelector('[data-action="step-turn"]'), null);
     click('[data-action="skip-combat"]');
-    assert.equal(g.state.skipCombat, true);
+    assert.equal(g.state.combat.skip, true);
+    assert.equal(g.state.skipCombat, false);
     assert.equal(g.state.isRunning, true);
     g.state.enemy!.hp = 0;
     g.advanceTurn();
@@ -256,6 +257,7 @@ test('discarded opening equipment remains under the departure marker', () => {
     )[g.state.run.profession],
   );
   g.startRun();
+  g.continueJourney();
   g.claimStarterRound();
   g.claimStarterRound();
   const weapon = g.state.inventory.find((i) => i.slot === 'weapon' && cells(i).length === 2)!;
@@ -264,6 +266,7 @@ test('discarded opening equipment remains under the departure marker', () => {
   assert.ok(g.state.run.journey.some((l) => l.title === '回收未入包装备'));
   assert.ok(g.state.run.journey.every((l) => l.event === 0));
   g.chooseReward(0);
+  if (g.state.run.prologue === 'ready') g.continueJourney();
   g.continueCamp();
   assert.deepEqual(
     journeyGroups(g.state.run.journey).map((l) => l.event),

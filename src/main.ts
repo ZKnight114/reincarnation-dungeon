@@ -23,6 +23,7 @@ import './motion.css';
 import './playtest.css';
 import './six-updates.css';
 import './pending-updates.css';
+import './adventure-v16.css';
 
 let started = false,
   busy = false;
@@ -45,10 +46,13 @@ function launch(state: GameState | null) {
     previous = now;
     if (!document.hidden) {
       const revision = game.state.revision;
+      const phase = game.state.phase;
       const wasCombat = game.state.phase === 'combat';
       // Never burst several visible sources into one frame after a slow render.
-      if (!ui.holdingJourney)
-        game.update(delta * game.state.speed, game.state.skipCombat ? Infinity : 1);
+      if (!ui.holdingJourney && !ui.holdingCombat)
+        game.update(delta * game.state.speed, game.skippingCombat() ? Infinity : 1);
+      // Persist automatic reveals before presenting them, including rolled supplies and victory recovery.
+      if (game.state.run.routeRevision === 16 && phase !== game.state.phase) ui.persist();
       uiTime += delta;
       if (
         (wasCombat && revision !== game.state.revision) ||

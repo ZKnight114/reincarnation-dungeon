@@ -26,10 +26,10 @@ test('route removes opening/pet/mentor years while preserving observed trial, re
     assert.equal(e.length, 37);
     assert.equal(e[2].kind, 'supply');
     assert.equal(e[4].kind, 'dig');
-    assert.equal(e[11].kind, 'treasure');
-    assert.equal(e[19].kind, 'chance');
+    assert.equal(e[9].kind, 'treasure');
+    assert.equal(e[14].kind, 'chance');
     for (const node of [8, 16, 24]) assert.equal(e[node].kind, 'boss');
-    for (const node of [5, 13, 17, 22]) assert.equal(e[node].kind, 'rest');
+    for (const node of [7, 15, 23]) assert.equal(e[node].kind, 'rest');
     assert.equal(e[31].kind, 'graduation');
     assert.equal(e[36].kind, 'ending');
     assert.ok(!e.some((e) => e.kind === 'mentor'));
@@ -121,6 +121,7 @@ test('graduation binds only equipped gear with its merged level, exact shape ori
     )[g.state.run.profession],
   );
   g.startRun();
+  g.continueJourney();
   g.claimStarterRound();
   assert.deepEqual(g.state.meta.heroes[0], original);
   assert.ok(g.state.inventory.every((i) => i.profession === 'mage'));

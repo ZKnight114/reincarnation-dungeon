@@ -157,6 +157,7 @@ test('starter offers recycle into points and move to the next batch only after t
     )[g.state.run.profession],
   );
   g.startRun();
+  g.continueJourney();
   // This test exercises batch recycling with an explicit weapon-first supply fixture.
   g.state.run.starterPlan = structuredClone(PROFESSIONS.warrior.starter);
   g.state.run.starterOffers = g.state.run.starterPlan[0].map((id) => g.makeItem(id));

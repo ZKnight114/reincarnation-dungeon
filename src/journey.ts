@@ -49,7 +49,7 @@ export const ROUTE_KINDS: EventKind[] = [
   'battle',
   'ending',
 ];
-export function chapterRoute(chapter: number) {
+export function legacyChapterRoute(chapter: number) {
   const normal = chapter === 1 ? 18 : chapter === 2 ? 24 : chapter === 3 ? 28 : 32;
   const trials =
     chapter === 1
@@ -81,6 +81,7 @@ export function chapterRoute(chapter: number) {
     normal,
     length,
     trials,
+    promotions: trials,
     kinds,
     graduation: normal - 1,
     ending: length - 1,
@@ -88,11 +89,50 @@ export function chapterRoute(chapter: number) {
     hasExtreme: length > normal,
   };
 }
-export function runRoute(s: import('./types').GameState) {
-  return s.run.legacyRoute
-    ? { ...chapterRoute(4), trials: [8, 16, 24], kinds: s.run.events.map((e) => e.kind) }
-    : chapterRoute(s.run.chapter);
+const REVIEWED_ROUTES = [
+  'B S M K C P B M K C P M K C P D B G',
+  'B B S D M K C P B W M K C P B S M K C P B D B G',
+  'B B S D B M K C P B W S M K C P B Q B M K C P B D B D G',
+  'B Q S B D Q B M K C P B S B W M K C P B S B Q M K C P B D B D G',
+];
+const NODE_KINDS: Record<string, EventKind> = {
+  B: 'battle',
+  S: 'supply',
+  M: 'rest',
+  K: 'boss',
+  C: 'treasure',
+  P: 'promotion',
+  D: 'dig',
+  W: 'chance',
+  Q: 'choice',
+  G: 'graduation',
+};
+export function chapterRoute(chapter: number) {
+  const kinds = REVIEWED_ROUTES[Math.min(3, chapter - 1)].split(' ').map((k) => NODE_KINDS[k]);
+  const normal = kinds.length;
+  if (chapter >= 3) {
+    kinds.push(...Array.from({ length: chapter === 3 ? 2 : 4 }, () => 'boss' as const), 'ending');
+  }
+  const trials = kinds.flatMap((kind, n) => (kind === 'boss' && n < normal ? [n] : []));
+  return {
+    normal,
+    length: kinds.length,
+    trials,
+    promotions: kinds.flatMap((kind, n) => (kind === 'promotion' ? [n] : [])),
+    kinds,
+    graduation: normal - 1,
+    ending: kinds.length - 1,
+    extremeStart: normal,
+    hasExtreme: kinds.length > normal,
+  };
 }
+export function runRoute(s: import('./types').GameState) {
+  if (s.run.routeRevision === 16) return chapterRoute(s.run.chapter);
+  return s.run.legacyRoute
+    ? { ...legacyChapterRoute(4), trials: [8, 16, 24], kinds: s.run.events.map((e) => e.kind) }
+    : legacyChapterRoute(s.run.chapter);
+}
+import { CHANCE_STORIES } from './event-rules';
 import { PROFESSIONS } from './backpack';
 import type { EventKind, Profession, TrialTier } from './types';
 
@@ -132,20 +172,20 @@ export function stageGrowth(profession: Profession, trials: (TrialTier | null)[]
 export function trialGain(profession: Profession, tier: TrialTier) {
   const d = PROFESSIONS[profession].growth,
     factor = TRIALS[tier].growth;
-  return `攻击 +${+(d.attack * factor * 100).toFixed(1)}% · 生命上限 +${Math.round(d.hp * factor)} · 防御 +${+(d.defense * factor).toFixed(2)}`;
+  return `攻击 +${+(d.attack * factor * 100).toFixed(1)}% · 最大生命 +${Math.round(d.hp * factor)} · 防御 +${+(d.defense * factor).toFixed(2)}`;
 }
 export function eventStory(kind: EventKind, variant = 0, hasExtreme = true) {
   switch (kind) {
     case 'treasure':
-      return '破损的石门后藏着一只古老宝箱，封印间透出微光。';
+      return '守关者身后的宝箱仍被血色封印笼罩。付出一缕生命，便能取走其中的装备。';
     case 'supply':
       return '一名远行商旅在岔路停下，把备用的装备留给了你。';
     case 'rest':
       return '林间月泉映出银色光芒。饮下泉水能疗伤，凝聚泉华能强健体魄。';
     case 'chance':
-      return variant === 0
-        ? '遗迹中，一座命运轮盘仍在缓缓转动。它会赠予什么？'
-        : '鲜血祭坛在黑暗中苏醒，索取生命，许诺力量。';
+      return CHANCE_STORIES[variant % CHANCE_STORIES.length];
+    case 'promotion':
+      return '勇者走入觉醒祭坛，试炼留下的力量正在体内汇聚。新的境界即将开启。';
     case 'elite':
       return '守门者拦住去路。跨越试炼，勇者才能踏入下一阶段。';
     case 'dig':

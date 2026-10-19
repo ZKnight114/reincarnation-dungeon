@@ -177,5 +177,6 @@ test('4x effects are bounded and reset removes stale timers; reduced motion supp
   motion.effect('hero', 'impact');
   motion.number('hero', 'hurt', 10);
   motion.pulse(node('.actor-rig'), 'hurt');
-  assert.equal(win.document.querySelectorAll('.actor-effect,.combat-number,.hurt').length, 0);
+  assert.equal(win.document.querySelectorAll('.actor-effect,.actor-rig.hurt').length, 0);
+  assert.equal(node('.combat-number.hurt').textContent, '−10');
 });

@@ -10,6 +10,7 @@ test('two rounds gift all six items once; exact offers restore without rerolling
     let g = new Game();
     recruitToConfigure(g, 1, profession);
     g.startRun(profession);
+    g.continueJourney();
     const gifted: string[] = [];
     for (let n = 0; n < 2; n++) {
       const offers = g.state.run.starterOffers.map((i) => i.id),
@@ -38,6 +39,9 @@ test('two rounds gift all six items once; exact offers restore without rerolling
     assert.deepEqual(restored.state.run.rewards[0].resonances, g.state.run.rewards[0].resonances);
     const hp = restored.state.player.hp;
     assert.equal(restored.chooseResonance(restored.state.run.rewards[0].resonances[0]), null);
+    assert.equal(restored.state.phase, 'journey');
+    assert.equal(restored.state.run.prologue, 'ready');
+    restored.continueJourney();
     assert.equal(restored.state.phase, 'camp');
     assert.equal(restored.state.run.resonances.length, 1);
     assert.equal(restored.state.player.hp, hp);
@@ -48,6 +52,7 @@ test('setup and initial resonance cannot be bypassed, missing weapons block adve
   const g = new Game();
   recruitToConfigure(g);
   g.startRun('warrior');
+  g.continueJourney();
   assert.match(g.finishOpening()!, /两轮/);
   assert.ok(advanceCamp(g));
   assert.ok(g.chooseResonance('cleave'));
@@ -74,4 +79,5 @@ test('pending recruit survives returning to guild and resumes without losing its
   assert.equal(restored.state.meta.energy.value, energy);
   restored.confirmAllocation();
   assert.equal(restored.startRun(), null);
+  restored.continueJourney();
 });

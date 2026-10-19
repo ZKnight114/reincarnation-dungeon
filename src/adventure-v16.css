@@ -1,0 +1,238 @@
+/* Stable actor anchors: only the body moves; labels, loot and touch targets stay fixed. */
+/* Battle review: borderless status row, approved four-column HUD and full-width actions. */
+#adventure-screen .in-combat .fighter-health .battle-status-button {
+  border: 0;
+  border-image: none;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  min-width: 34px;
+  height: 30px;
+  min-height: 30px;
+  padding: 4px 2px;
+  gap: 6px;
+}
+#adventure-screen .in-combat .fighter-health {
+  height: 66px;
+}
+#adventure-screen .combat-hud {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) 110px;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+#adventure-screen .combat-hud > strong {
+  font-size: 12px;
+  grid-column: 1;
+  grid-row: 1;
+  max-width: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hud-life {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+.hud-life > span {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.hud-health-track {
+  width: 100%;
+  height: 4px;
+  background: #091b22;
+}
+.hud-health-track i {
+  display: block;
+  height: 100%;
+  background: #adbba3;
+  transition: width 0.2s;
+}
+#adventure-screen .hud-values {
+  grid-column: 3;
+  grid-row: 1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+#adventure-screen .hud-values span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+}
+#adventure-screen .hud-values span:first-child {
+  grid-column: auto;
+}
+#adventure-screen .hud-values b {
+  font-weight: 500;
+}
+#adventure-screen .footer-main > [data-action='skip-combat'] {
+  width: 100%;
+  flex: 1;
+  font-size: 16px;
+}
+#adventure-screen .adventure-footer[data-tone='battle'] .footer-main .primary-button {
+  --ui-skin: var(--ui-combat);
+}
+.trial-dialog .trial-tiers button {
+  --trial-color: #7ec7ed;
+  border: 2px solid var(--trial-color);
+  background: #17303a;
+  color: var(--trial-color);
+}
+.trial-dialog .trial-tiers button.trial-quality-purple {
+  --trial-color: #cf9be8;
+}
+.trial-dialog .trial-tiers button.trial-quality-gold {
+  --trial-color: #f0cc79;
+}
+.trial-dialog .trial-tiers button small {
+  color: inherit;
+  opacity: 0.85;
+}
+.trial-dialog .trial-tiers button.selected {
+  border-color: var(--trial-color);
+  background: #263842;
+  color: var(--trial-color);
+  box-shadow:
+    inset 0 0 0 1px var(--trial-color),
+    0 0 9px color-mix(in srgb, var(--trial-color) 35%, transparent);
+}
+#adventure-screen .reforge-ready:not(.reforge-notify):not(.motion-tapped) {
+  animation: reforge-idle 1.6s ease-in-out infinite;
+}
+@keyframes reforge-idle {
+  0%,
+  100% {
+    filter: brightness(1);
+    box-shadow: 0 0 5px #efd38950;
+  }
+  50% {
+    filter: brightness(1.3);
+    box-shadow:
+      0 0 13px #efd389b0,
+      inset 0 0 0 1px #f0d99b;
+  }
+}
+#adventure-screen .actor-fx-layer .combat-number {
+  top: calc(var(--actor-center-y, 46%) - 8%);
+  animation-duration: 0.65s;
+  animation-delay: 0s;
+}
+#adventure-screen .actor-fx-layer .combat-number.heal {
+  top: calc(var(--actor-center-y, 46%) + 8%);
+  color: #aee7ad;
+}
+.wheel-dialog .wheel-rotor[data-timed-wheel] {
+  animation: none;
+  transition: transform 0.1s linear;
+}
+.wheel-rotor[data-timed-wheel] text {
+  transform: rotate(var(--wheel-counter-angle));
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.1s linear;
+}
+#adventure-screen .encounter-approach .hero-fighter .actor-body {
+  animation: encounter-dash calc(0.68s * var(--motion-factor, 1)) both !important;
+}
+@keyframes encounter-dash {
+  0% {
+    transform: translateX(0) rotate(0);
+  }
+  16% {
+    transform: translateX(-3px) rotate(5deg);
+  }
+  48% {
+    transform: translateX(26px) rotate(10deg);
+  }
+  76% {
+    transform: translateX(8px) rotate(3deg);
+  }
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+}
+#adventure-screen .in-combat .fighter:not(.acting):not(.hurt) .actor-body {
+  animation: combat-ready calc(1.9s * var(--motion-factor, 1)) ease-in-out infinite;
+}
+#adventure-screen
+  .in-combat[data-profession='mage']
+  .hero-fighter:not(.acting):not(.hurt)
+  .actor-body {
+  animation-name: combat-caster;
+}
+@keyframes combat-ready {
+  0%,
+  100% {
+    transform: translateY(0) rotate(calc(1.2deg * var(--actor-direction)));
+  }
+  50% {
+    transform: translateY(-1.5px) rotate(calc(2deg * var(--actor-direction)));
+  }
+}
+@keyframes combat-caster {
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+  50% {
+    transform: translateY(-1.5px) scaleY(1.006);
+  }
+}
+.supply-reveal {
+  display: grid;
+  gap: 18px;
+  place-items: center;
+  min-height: 150px;
+}
+.supply-runes {
+  font-size: 58px;
+  color: #ead39a;
+  animation: supply-omen 0.4s ease-in-out infinite alternate;
+}
+.supply-reel {
+  height: 28px;
+  overflow: hidden;
+  color: #ead39a;
+  text-align: center;
+}
+.supply-reel span {
+  display: block;
+  line-height: 28px;
+  animation: supply-reel calc(0.8s * var(--motion-factor, 1)) ease-out both;
+}
+@keyframes supply-reel {
+  to {
+    transform: translateY(-112px);
+  }
+}
+@keyframes supply-omen {
+  to {
+    transform: rotate(35deg) scale(1.15);
+    filter: drop-shadow(0 0 12px #f0d388);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #adventure-screen .reforge-ready {
+    animation: none !important;
+    box-shadow: 0 0 9px #efd389b0;
+  }
+  .wheel-rotor[data-timed-wheel],
+  .wheel-rotor[data-timed-wheel] text {
+    transition: none;
+  }
+  #adventure-screen .encounter-approach .hero-fighter .actor-body,
+  #adventure-screen .in-combat .fighter:not(.acting):not(.hurt) .actor-body,
+  .supply-runes,
+  .supply-reel span {
+    animation: none !important;
+  }
+}

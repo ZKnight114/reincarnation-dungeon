@@ -1,4 +1,4 @@
-import { advanceCamp } from './helpers';
+import { advanceCamp, settleJourneyUI } from './helpers';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Window } from 'happy-dom';
@@ -33,6 +33,7 @@ test('opening gifts stay available across the two supply batches; unplaced gear 
     )[g.state.run.profession],
   );
   g.startRun();
+  g.continueJourney();
   g.claimStarterRound();
   const weapon = g.state.inventory.find((i) => i.slot === 'weapon')!;
   g.placeItem(weapon.id, 2, 1);
@@ -67,7 +68,7 @@ test('open cells have a bright contour exactly where they meet closed cells', ()
   assert.equal(bagCellClass(open, 3, 2), 'open ');
   assert.match(bagCellClass(open, 4, 4), /edge-bottom.*edge-right/);
 });
-test('active phases keep bag or reforge left and speed right; event equipment reveals bag', () => {
+test('active phases keep bag or reforge left and speed right; event equipment reveals bag', async () => {
   const win = new Window({ url: 'http://localhost/' });
   try {
     Object.assign(globalThis, {
@@ -98,6 +99,8 @@ test('active phases keep bag or reforge left and speed right; event equipment re
     g.state.enemy!.hp = 0;
     g.advanceTurn();
     check();
+    assert.equal((win.document.querySelector('#view-pack') as any).hidden, true);
+    await settleJourneyUI(ui);
     assert.equal((win.document.querySelector('#view-pack') as any).hidden, false);
     assert.ok(win.document.querySelector('#battle-panel.has-offers'));
     positionEvent(g, 'supply');

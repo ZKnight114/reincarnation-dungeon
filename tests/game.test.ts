@@ -40,7 +40,7 @@ test('100 seeded routes have 37 nodes, three independent trials and optional gra
   for (let n = 0; n < 100; n++) {
     const e = generateEvents(seed(n));
     assert.equal(e.length, 37);
-    assert.equal(e.filter((x) => x.kind === 'battle').length, 12);
+    assert.equal(e.filter((x) => x.kind === 'battle').length, 9);
     for (const i of [8, 16, 24]) assert.equal(e[i].kind, 'boss');
     assert.equal(e[31].kind, 'graduation');
     assert.equal(
@@ -103,6 +103,7 @@ test('random recruit fixes its profession, resume does not charge again and gold
     )[g.state.run.profession],
   );
   assert.equal(g.startRun(), null);
+  g.continueJourney();
   assert.equal(g.state.meta.energy.value, 55);
   assert.equal(g.state.meta.gold, gold);
 });
@@ -361,6 +362,7 @@ test('full 37-node extreme run awards a fixed hero and currency once, then permi
   g.returnToSelection();
   recruitToConfigure(g, 2, 'rogue');
   g.startRun('rogue');
+  g.continueJourney();
   assert.deepEqual(g.state.meta.heroes[0], hero);
   assert.doesNotThrow(() => parseSave(JSON.stringify(g.state)));
 });

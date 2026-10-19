@@ -106,6 +106,9 @@ export interface CombatReport {
   won: boolean;
   reason: string;
   items: Record<string, Contribution>;
+  /** Snapshot before victory recovery, so combat loss remains measurable. */
+  lifeAtEnd?: number;
+  recovery?: number;
 }
 export interface Effect {
   kind: 'poison' | 'burn' | 'chill';
@@ -139,6 +142,7 @@ export type EventKind =
   | 'choice'
   | 'dig'
   | 'graduation'
+  | 'promotion'
   | 'mentor'
   | 'ending';
 export interface AdventureEvent {
@@ -302,6 +306,16 @@ export interface GameState {
     totalKills: number;
   };
   run: {
+    routeRevision?: 16;
+    prologue?: 'departure' | 'ready';
+    supply?: {
+      power: number;
+      threshold: number;
+      result: 'low' | 'normal' | 'great';
+      levels: number[];
+      elapsed: number;
+    };
+    wheel?: { sector: number; paid: number; elapsed: number };
     packLayout?: 'legacy';
     profession: Profession;
     chapter: number;
@@ -330,7 +344,14 @@ export interface GameState {
     lastLootIds: string[];
     trials: (TrialTier | null)[];
     journey: JourneyEntry[];
-    eventGrowth: { attack: number; hp: number; defense: number; speed: number };
+    eventGrowth: {
+      attack: number;
+      hp: number;
+      defense: number;
+      speed: number;
+      hpPercent?: number;
+      defensePercent?: number;
+    };
     extreme: boolean;
     storyElapsed: number;
     autoExplore: boolean;
@@ -358,6 +379,8 @@ export interface GameState {
   itemSerial: number;
   revision: number;
   combat: {
+    /** Per-encounter presentation skip; skipCombat remains the hidden global switch. */
+    skip?: boolean;
     stamina: number;
     mana: number;
     timers: Record<string, number>;

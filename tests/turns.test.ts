@@ -101,6 +101,7 @@ test('four stable talents and twelve allocation points survive navigation and re
     )[g.state.run.profession],
   );
   assert.equal(g.startRun(), null);
+  g.continueJourney();
   assert.ok(g.allocate('attack', -1));
   assert.deepEqual(g.state.run.trainee!.talents, original.talents);
 });

@@ -12,7 +12,7 @@ import { CATALOGUE } from '../src/catalogue';
 import { itemPainting } from '../src/scene';
 import { parseSave } from '../src/save';
 import { OLD_SPEAR_CELLS } from '../src/footprints';
-import { start, positionEvent, setEnemy } from './helpers';
+import { start, positionEvent, setEnemy, settleJourneyUI } from './helpers';
 
 let win: Window;
 beforeEach(() => {
@@ -157,7 +157,7 @@ test('cooling source steps produce no hero attacks; actual offensive activation 
   assert.equal(acts.length, count, 'unchanged rendering cannot replay an attack');
 });
 
-test('a lethal weapon activation still animates after combat runtime is cleared, with the hero behind loot', () => {
+test('a lethal weapon activation still animates after combat runtime is cleared, then the hero remains behind loot', async () => {
   const g = start();
   positionEvent(g, 'battle');
   g.state.combat.order = ['hero', 'enemy'];
@@ -173,6 +173,8 @@ test('a lethal weapon activation still animates after combat runtime is cleared,
     getComputedStyle(actor.querySelector('.actor-body')!).animation.includes('motion-strike'),
     true,
   );
+  assert.equal(el('#battle-panel').classList.contains('has-offers'), false);
+  await settleJourneyUI(ui);
   assert.equal(el('#battle-panel').classList.contains('has-offers'), true);
   assert.equal(getComputedStyle(el('.battle-scene')).zIndex, '-1');
 });

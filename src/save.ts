@@ -1,3 +1,4 @@
+import { SUPPLY_SECONDS, WHEEL_SECONDS, SUPPLY_GRADES, supplyThreshold } from './event-rules';
 import {
   availableItems,
   bagCells,
@@ -630,6 +631,11 @@ export function parseSave(source: string): GameState {
       m.heroes.every((h: HeroRecord) => Number(h.id.slice(5)) <= m.heroSerial),
   );
   const r = s.run;
+  check(r.routeRevision === undefined || r.routeRevision === 16);
+  check(
+    r.prologue === undefined ||
+      (r.routeRevision === 16 && ['departure', 'ready'].includes(r.prologue)),
+  );
   if (r.pendingPromotion === undefined) r.pendingPromotion = false;
   check(typeof r.pendingPromotion === 'boolean');
   if (r.resonanceAtNode === undefined) r.resonanceAtNode = false;
@@ -725,6 +731,7 @@ export function parseSave(source: string): GameState {
           'choice',
           'dig',
           'graduation',
+          'promotion',
           'mentor',
           'ending',
         ].includes(e.kind) &&
@@ -740,17 +747,26 @@ export function parseSave(source: string): GameState {
     );
     for (let n = 0; n < runRoute(s as GameState).length; n++)
       check(n < r.index ? r.events[n].completed : n > r.index ? !r.events[n].completed : true);
-    check(
-      r.stages + (r.pendingPromotion ? 1 : 0) ===
-        runRoute(s as GameState).trials.filter((n) => r.events[n].completed).length,
-    );
-    if (r.pendingPromotion)
+    const wonBosses = runRoute(s as GameState).trials.filter((n) => r.events[n].completed).length;
+    if (r.routeRevision === 16 && s.phase === 'summary') {
+      // Retiring after victory but before the ritual keeps the earned loot, not an unplayed promotion.
       check(
-        s.phase === 'camp' &&
-          r.events[r.index].completed &&
-          runRoute(s as GameState).trials[r.stages] === r.index &&
-          r.trials[r.stages] !== null,
+        r.stages ===
+          runRoute(s as GameState).promotions.filter((n) => r.events[n].completed).length,
       );
+      check(
+        wonBosses >= r.stages && wonBosses <= r.stages + (r.summary?.outcome === 'win' ? 0 : 1),
+      );
+    } else check(r.stages + (r.pendingPromotion ? 1 : 0) === wonBosses);
+    if (r.pendingPromotion) {
+      const boss = runRoute(s as GameState).trials[r.stages];
+      check(r.trials[r.stages] !== null && r.events[boss]?.completed);
+      if (r.routeRevision === 16)
+        check(
+          r.index >= boss && r.index <= boss + 2 && ['camp', 'journey', 'event'].includes(s.phase),
+        );
+      else check(s.phase === 'camp' && r.events[r.index].completed && boss === r.index);
+    }
   }
 
   check(Array.isArray(s.inventory) && s.inventory.length <= 500);
@@ -810,9 +826,9 @@ export function parseSave(source: string): GameState {
       r.lastLootIds.every((id: string) => ids.has(id)),
   );
   resonanceList(r.resonances, r.profession);
-  const active = ['initial', 'camp', 'journey', 'combat', 'event', 'awakening', 'reward'].includes(
-    s.phase,
-  );
+  const active =
+    !r.prologue &&
+    ['initial', 'camp', 'journey', 'combat', 'event', 'awakening', 'reward'].includes(s.phase);
   if (active)
     check(
       r.starterRound === 2 &&
@@ -878,7 +894,7 @@ export function parseSave(source: string): GameState {
       check(
         s.phase === 'initial' ||
           r.resonanceAtNode ||
-          (['elite', 'boss'].includes(current?.kind) && current.completed),
+          (['elite', 'boss', 'promotion'].includes(current?.kind) && current.completed),
       );
     }
   }
@@ -887,6 +903,8 @@ export function parseSave(source: string): GameState {
       number(r.eventGrowth.attack, 2) &&
       number(r.eventGrowth.hp, 1000) &&
       number(r.eventGrowth.defense, 100) &&
+      (r.eventGrowth.hpPercent === undefined || number(r.eventGrowth.hpPercent, 2)) &&
+      (r.eventGrowth.defensePercent === undefined || number(r.eventGrowth.defensePercent, 2)) &&
       integer(r.eventGrowth.speed, 0, 20) &&
       number(r.storyElapsed, STORY_SECONDS) &&
       typeof r.extreme === 'boolean' &&
@@ -938,6 +956,7 @@ export function parseSave(source: string): GameState {
   );
   if (active) check(p.hp > 0);
   const c = s.combat;
+  if (c.skip !== undefined) check(typeof c.skip === 'boolean');
   check(
     object(c) &&
       number(c.stamina, 20) &&
@@ -1149,6 +1168,8 @@ export function parseSave(source: string): GameState {
         text(a.reason),
     );
     contributions(a.items);
+    if (a.lifeAtEnd !== undefined) check(number(a.lifeAtEnd));
+    if (a.recovery !== undefined) check(number(a.recovery) && (a.won || a.recovery === 0));
   }
   if (r.summary !== null) {
     const a = r.summary;
@@ -1237,7 +1258,7 @@ export function parseSave(source: string): GameState {
         number(a.defense) &&
         integer(a.healed) &&
         current?.completed &&
-        runRoute(s as GameState).trials.includes(r.index) &&
+        runRoute(s as GameState).promotions.includes(r.index) &&
         r.rewards.length === 1,
     );
   } else check(s.phase !== 'awakening');
@@ -1246,7 +1267,7 @@ export function parseSave(source: string): GameState {
       s.phase === 'reward' &&
         !current.completed &&
         r.stages >= 1 &&
-        r.index === runRoute(s as GameState).trials[r.stages - 1] + 1 &&
+        r.index === runRoute(s as GameState).promotions[r.stages - 1] + 1 &&
         r.resonances.length === r.stages &&
         r.rewards.length === 1 &&
         r.rewards[0]?.kind === 'resonance' &&
@@ -1268,10 +1289,61 @@ export function parseSave(source: string): GameState {
     check(
       !current.completed &&
         r.rewards.length === 0 &&
-        r.resonances.length === 1 + r.stages &&
+        r.resonances.length === (r.prologue === 'departure' ? 0 : 1 + r.stages) &&
         r.dig === null &&
         r.lastLootIds.length === 0,
     );
+  if (r.prologue) {
+    check(
+      s.phase === 'journey' &&
+        r.index === 0 &&
+        r.stages === 0 &&
+        r.starterOffers.length === 0 &&
+        r.events.every((e: any) => !e.completed) &&
+        r.encounter === null &&
+        r.rewards.length === 0,
+    );
+    check(
+      r.prologue === 'departure'
+        ? r.starterRound === 0 && s.inventory.length === 0
+        : r.starterRound === 2 && r.resonances.length === 1,
+    );
+  }
+  if (r.wheel !== undefined) {
+    check(
+      r.routeRevision === 16 &&
+        s.phase === 'event' &&
+        current.kind === 'chance' &&
+        !current.completed &&
+        object(r.wheel) &&
+        integer(r.wheel.sector, 0, 5) &&
+        number(r.wheel.paid) &&
+        r.wheel.paid > 0 &&
+        number(r.wheel.elapsed, WHEEL_SECONDS),
+    );
+  }
+  if (r.supply !== undefined) {
+    const offer = r.supply;
+    check(
+      r.routeRevision === 16 &&
+        current.kind === 'supply' &&
+        ['event', 'camp'].includes(s.phase) &&
+        object(offer) &&
+        integer(offer.power) &&
+        offer.threshold === supplyThreshold(r.chapter, r.stages) &&
+        ['low', 'normal', 'great'].includes(offer.result) &&
+        number(offer.elapsed, SUPPLY_SECONDS),
+    );
+    const expected = [
+      ...SUPPLY_GRADES[Math.min(2, r.stages)][offer.result as 'low' | 'normal' | 'great'],
+    ].sort();
+    check(
+      Array.isArray(offer.levels) &&
+        JSON.stringify([...offer.levels].sort()) === JSON.stringify(expected),
+    );
+    check(offer.power < offer.threshold === (offer.result === 'low'));
+    check(current.completed ? offer.elapsed === SUPPLY_SECONDS : s.phase === 'event');
+  }
   if (s.phase === 'camp') check(r.rewards.length === 0 && r.resonances.length === 1 + r.stages);
   if (['summary', 'home', 'chapter', 'configure', 'tome'].includes(s.phase))
     check(
@@ -1283,6 +1355,12 @@ export function parseSave(source: string): GameState {
     );
   if (s.phase === 'tome') check(r.boundTome === null && r.events.length === 0);
   if (s.phase === 'summary') check(r.summary !== null && r.summary.heroId === r.trainee.id);
+  // The old visible skip control persisted a global preference. Convert that legacy
+  // preference to this encounter only; new hidden global controls carry c.skip.
+  if (c.skip === undefined) {
+    c.skip = s.phase === 'combat' && s.skipCombat;
+    s.skipCombat = false;
+  }
   return s as GameState;
 }
 export function saveGame(state: GameState) {

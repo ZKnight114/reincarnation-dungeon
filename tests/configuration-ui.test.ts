@@ -135,7 +135,8 @@ test('attribute plus/minus, reset, balanced assignment and remaining budget cont
     ui.render();
   }
   click('[data-action="start"]');
-  assert.equal(game.state.phase, 'opening');
+  assert.equal(game.state.phase, 'journey');
+  assert.equal(game.state.run.prologue, 'departure');
   assert.equal(loadSave()!.run.trainee!.allocation.speed, 3);
 });
 test('returning to chapter changes destination while preserving recruited identity, talents and points', () => {
@@ -253,7 +254,8 @@ test('battle offers skip and speed, while internal stepping still uses integral 
     [...win.document.querySelectorAll('.cooldown-label')].some((e) => /回合/.test(e.textContent)),
   );
   click('[data-action="skip-combat"]');
-  assert.equal(game.state.skipCombat, true);
+  assert.equal(game.state.combat.skip, true);
+  assert.equal(game.state.skipCombat, false);
   assert.equal(game.state.isRunning, true);
   click('[data-action="cycle-speed"]');
   assert.equal(game.state.speed, 2);

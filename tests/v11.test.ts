@@ -54,6 +54,7 @@ test('every profession receives six random gifts and may keep a usable subset in
       )[g.state.run.profession],
     );
     g.startRun();
+    g.continueJourney();
     g.claimStarterRound();
     g.claimStarterRound();
     fitStarters(g);
@@ -80,6 +81,7 @@ test('opening drags keep the other two offers until taken; final take shows seco
       )[g.state.run.profession],
     );
     g.startRun();
+    g.continueJourney();
     g.state.run.starterPlan = [
       ['warrior_gem', 'warrior_blade_2', 'warrior_guard_2'],
       ['warrior_gem', 'warrior_blade_2', 'warrior_guard_2'],
@@ -131,6 +133,7 @@ test('closed cells reject placement, swap/ejection and save tampering without cl
     )[g.state.run.profession],
   );
   g.startRun();
+  g.continueJourney();
   const id = g.state.run.starterOffers[0].id,
     before = JSON.stringify(g.state);
   for (const [x, y, r] of [

@@ -216,6 +216,7 @@ test('starter drag claims only its item; next batch requires all three or explic
     )[g.state.run.profession],
   );
   g.startRun();
+  g.continueJourney();
   const first = g.state.run.starterOffers.map((i) => i.id);
   const fitting = first
     .map((id) => firstFree(g.state.run.starterOffers, [], id, runBagCells(g.state)))

@@ -29,7 +29,24 @@ import {
   pointsSpent,
   rollTalents,
 } from './hero';
-import { chapterRoute, eventStory, runRoute, stageGrowth, trialGain, TRIALS } from './journey';
+import {
+  chapterRoute,
+  legacyChapterRoute,
+  eventStory,
+  runRoute,
+  stageGrowth,
+  trialGain,
+  TRIALS,
+} from './journey';
+import {
+  SUPPLY_SECONDS,
+  WHEEL_SECONDS,
+  SUPPLY_GRADES,
+  WHEEL_SECTORS,
+  supplyThreshold,
+  supplyChance,
+  lifeAmount,
+} from './event-rules';
 import { recruitAppearance } from './character-parts';
 import {
   emptyTomes,
@@ -72,7 +89,7 @@ export const TARGET_RECRUIT_COST = 20,
   ACTION_SECONDS = 0.7,
   STORY_SECONDS = 3.2;
 export function storyDuration(event: AdventureEvent) {
-  return ['boss', 'elite', 'graduation', 'ending'].includes(event.kind)
+  return ['boss', 'elite', 'promotion', 'graduation', 'ending'].includes(event.kind)
     ? STORY_SECONDS
     : Math.min(2.5, Math.max(1.2, eventStory(event.kind, event.variant).length * 0.065));
 }
@@ -87,12 +104,14 @@ export const EVENT_NAMES: Record<EventKind, string> = {
   choice: '旅途抉择',
   dig: '掘地挖宝',
   graduation: '结业抉择',
+  promotion: '境界晋升',
   mentor: '导师传授',
   ending: '极限毕业',
 };
 const emptyBuffs = () =>
   Object.fromEntries(BUFF_KEYS.map((k) => [k, 0])) as Record<BuffKey, number>;
 const emptyCombat = (): GameState['combat'] => ({
+  skip: false,
   stamina: 0,
   runtime: null,
   mana: 0,
@@ -189,14 +208,20 @@ export function createState(now = Date.now()): GameState {
     lastSaveTime: now,
   };
 }
-export function generateEvents(random = Math.random, chapter = 4): AdventureEvent[] {
-  const events: AdventureEvent[] = chapterRoute(chapter).kinds.map((kind) => ({
+export function generateEvents(
+  random = Math.random,
+  chapter = 4,
+  legacy = false,
+): AdventureEvent[] {
+  const events: AdventureEvent[] = (
+    legacy ? legacyChapterRoute(chapter) : chapterRoute(chapter)
+  ).kinds.map((kind) => ({
     kind,
     completed: false,
     variant: Math.floor(random() * 5),
   }));
   events.forEach((e, n) => {
-    if (e.kind === 'chance') e.variant = Math.floor(random() * 2);
+    if (e.kind === 'chance' && legacy) e.variant = Math.floor(random() * 2);
     if (e.kind === 'choice') e.variant = n % 5;
   });
   return events;
@@ -432,6 +457,7 @@ export class Game {
     s.run.trainee = structuredClone(old.run.trainee);
     s.run.profession = profession;
     s.run.chapter = chapter;
+    s.run.routeRevision = 16;
     s.run.events = generateEvents(this.random, chapter);
     s.run.realm = s.run.trainee.realmStart ?? 0;
     s.run.boundTome = {
@@ -442,16 +468,16 @@ export class Game {
     const base = finalAttributes(s);
     s.player.hp = s.player.maxHp = base.hp;
     s.player.defense = base.defense;
-    s.phase = 'opening';
+    s.phase = 'journey';
+    s.run.prologue = 'departure';
     this.state = s;
     this.feedback = [];
-    s.run.starterOffers = this.starterRoundItems(0);
     this.log(
       `${s.run.trainee.name}成为见习${PROFESSIONS[profession].name}，前往第 ${chapter} 座地牢。`,
     );
     this.chronicle(
       '公会启程',
-      `${s.run.trainee.name}携带公会补给，踏上第 ${chapter} 关的旅程。`,
+      `${s.run.trainee.name}离开公会，向第 ${chapter} 座地牢进发。公会为这次冒险准备了两批装备补给。`,
       'story',
       0,
     );
@@ -587,6 +613,17 @@ export class Game {
       'growth',
       s.run.resonances.length === 1 ? 0 : s.run.index + 1,
     );
+    if (s.run.routeRevision === 16 && s.run.resonances.length === 1) {
+      s.run.prologue = 'ready';
+      s.run.storyElapsed = 0;
+      s.phase = 'journey';
+      this.chronicle(
+        '整备完成',
+        `${s.run.trainee?.name}整好行囊，踏入地牢。冒险从这里开始。`,
+        'story',
+        0,
+      );
+    }
     if (s.run.resonanceAtNode && !s.run.rewards.length) {
       s.run.resonanceAtNode = false;
       s.isRunning = true;
@@ -640,7 +677,7 @@ export class Game {
     if (!this.packAnalysis(true).hasWeapon) return '至少放入一件武器';
     s.placements = structuredClone(s.draft);
     this.recalculate();
-    if (s.run.pendingPromotion) {
+    if (s.run.pendingPromotion && s.run.routeRevision !== 16) {
       this.promoteTrial();
       return null;
     }
@@ -670,11 +707,14 @@ export class Game {
     s.enemy = null;
     s.run.lastLootIds = [];
     s.run.dig = null;
+    delete s.run.supply;
     s.run.storyElapsed = 0;
     s.phase = 'journey';
     this.chronicle(
       EVENT_NAMES[event.kind],
-      eventStory(event.kind, event.variant, runRoute(s).hasExtreme),
+      event.kind === 'boss' && s.run.index >= runRoute(s).extremeStart
+        ? '更强的守关者堵住了归途。勇者以完整的构筑迎接这场极限挑战。'
+        : eventStory(event.kind, event.variant, runRoute(s).hasExtreme),
     );
     if (['battle', 'boss', 'elite'].includes(event.kind) && !s.run.encounter)
       s.run.encounter = generateEnemy(s, analysis(s, false, false).strength, this.random);
@@ -682,8 +722,25 @@ export class Game {
   continueJourney() {
     const s = this.state;
     if (s.phase !== 'journey') return false;
+    if (s.run.prologue) {
+      const departure = s.run.prologue === 'departure';
+      delete s.run.prologue;
+      s.run.storyElapsed = 0;
+      s.phase = departure ? 'opening' : 'camp';
+      if (departure) s.run.starterOffers = this.starterRoundItems(0);
+      s.revision++;
+      return true;
+    }
     s.run.storyElapsed = STORY_SECONDS;
     const event = this.currentEvent()!;
+    if (event.kind === 'promotion') {
+      this.promoteTrial();
+      return true;
+    }
+    if (event.kind === 'supply' && s.run.routeRevision === 16) {
+      this.prepareSupply();
+      return true;
+    }
     if (event.kind === 'dig') this.prepareDig();
     if (
       ['elite', 'boss'].includes(event.kind) &&
@@ -693,7 +750,10 @@ export class Game {
     } else if (['battle', 'elite', 'boss'].includes(event.kind)) {
       s.phase = 'combat';
       this.spawnEnemy();
-    } else if (['supply', 'treasure'].includes(event.kind)) {
+    } else if (
+      event.kind === 'supply' ||
+      (event.kind === 'treasure' && s.run.routeRevision !== 16)
+    ) {
       this.grantLoot(event.kind === 'supply' ? '获得旅人补给' : '开启遗物宝箱');
       this.resolved();
     } else {
@@ -856,11 +916,12 @@ export class Game {
     }
     return availableItems(s.run.profession);
   }
-  private grantLoot(title: string, level?: number) {
+  private grantLoot(title: string, level?: number, levels?: number[]) {
     const s = this.state,
-      items = Array.from({ length: 3 }, () => {
+      items = Array.from({ length: 3 }, (_, n) => {
         const i = this.lootItem();
-        if (level) this.setItemLevel(i, level);
+        if (levels) this.setItemLevel(i, levels[n]);
+        else if (level) this.setItemLevel(i, level);
         return i;
       });
     s.run.autoExplore = false;
@@ -929,7 +990,7 @@ export class Game {
       e = this.currentEvent();
     if (!e || e.completed) return;
     e.completed = true;
-    s.run.pendingPromotion = runRoute(s).trials.includes(s.run.index);
+    if (runRoute(s).trials.includes(s.run.index)) s.run.pendingPromotion = true;
     s.run.rewards = rewards.filter((r) => r.buffs.length || r.resonances.length);
     s.run.autoExplore = false;
     s.phase = s.run.rewards.length ? 'reward' : 'camp';
@@ -945,21 +1006,28 @@ export class Game {
     // Clear before applying growth: saving the ritual cannot apply it a second time.
     s.run.pendingPromotion = false;
     const previous = { ...s.run.growth },
-      stage = runRoute(s).trials.indexOf(s.run.index),
+      stage = runRoute(s).promotions.indexOf(s.run.index),
       tier = s.run.trials[stage] ?? 0;
     s.run.trials[stage] = tier;
     s.run.stages++;
     s.run.realm = Math.min(20, s.run.realm + 1);
+    const oldMax = s.player.maxHp,
+      oldLife = s.player.hp;
     s.run.growth = stageGrowth(s.run.profession, s.run.trials, s.run.stages);
     this.recalculate();
+    if (s.run.routeRevision === 16) {
+      s.player.hp = Math.min(s.player.maxHp, (oldLife * s.player.maxHp) / oldMax);
+      this.currentEvent()!.completed = true;
+    }
     this.log(`试炼 ${s.run.stages}/3 完成：${trialGain(s.run.profession, tier)}`, 'reward');
     this.chronicle(
       `${realmName(s.run.realm)} · 试炼通过`,
       `${TRIALS[tier].name}完成。境界：${realmName(s.run.realm - 1)} → ${realmName(s.run.realm)}。${trialGain(s.run.profession, tier)}。`,
       'growth',
     );
-    const healed = this.heal(s.player.maxHp * [0.25, 0.35, 0.45][tier]);
-    this.chronicle('晋阶恢复', `恢复 ${Math.round(healed)} 生命。`, 'rest');
+    const healed =
+      s.run.routeRevision === 16 ? 0 : this.heal(s.player.maxHp * [0.25, 0.35, 0.45][tier]);
+    if (healed > 0) this.chronicle('晋阶恢复', `恢复 ${lifeAmount(healed)} 生命。`, 'rest');
     s.awakening = {
       stage: stage + 1,
       tier,
@@ -1017,6 +1085,31 @@ export class Game {
     const s = this.state,
       e = this.currentEvent();
     if (s.phase !== 'event' || !e || e.completed) return '事件已结束';
+    if (s.run.wheel) return '请等待轮盘停稳后领取祝福';
+    if (e.kind === 'chance' && s.run.routeRevision === 16) {
+      if (action === 'skip') {
+        this.chronicle('继续前行', '勇者离开遗迹，保留了自己的生命。');
+        this.resolved();
+        return null;
+      }
+      if (!['spin', 'sacrifice'].includes(action) || s.player.hp <= 0) return '请选择献祭或离开';
+      const paid = s.player.hp * 0.15;
+      s.player.hp -= paid;
+      s.run.wheel = { sector: Math.min(5, Math.floor(this.random() * 6)), paid, elapsed: 0 };
+      s.revision++;
+      return null;
+    }
+    if (e.kind === 'treasure' && s.run.routeRevision === 16) {
+      if (action === 'skip') this.chronicle('宝箱封存', '勇者放弃开启宝箱，继续前行。');
+      else if (action === 'open' && s.player.hp > 0) {
+        const paid = s.player.hp * 0.1;
+        s.player.hp -= paid;
+        this.chronicle('解除血封', `消耗 ${lifeAmount(paid)} 生命，取走宝箱中的装备。`, 'danger');
+        this.grantLoot('遗物宝箱');
+      } else return '请选择开启宝箱或离开';
+      this.resolved();
+      return null;
+    }
     if (e.kind === 'dig') {
       if (action === 'dig-finish') {
         const count = s.run.dig!.claimed.length;
@@ -1052,7 +1145,7 @@ export class Game {
       this.recalculate();
       this.chronicle(
         '导师传授',
-        `${{ attack: '攻击', hp: '生命上限', defense: '防御', speed: '速度' }[k]} +${k === 'attack' ? value * 100 + '%' : value}。`,
+        `${{ attack: '攻击', hp: '最大生命', defense: '防御', speed: '速度' }[k]} +${k === 'attack' ? value * 100 + '%' : value}。`,
         'growth',
       );
       this.resolved();
@@ -1082,9 +1175,10 @@ export class Game {
             'rest',
           );
         } else if (action === 'vigor') {
-          s.run.eventGrowth.hp += 18;
-          this.recalculate();
-          this.chronicle('强健体魄', '生命上限 +18。', 'growth');
+          this.growLife(() => {
+            s.run.eventGrowth.hp += 18;
+          });
+          this.chronicle('强健体魄', '最大生命 +18。', 'growth');
         } else return '请选择泉水效果';
       } else {
         if (action !== 'risk') return '请选择接受代价或离开';
@@ -1099,10 +1193,12 @@ export class Game {
                 Math.floor(this.random() * 4)
               ],
               value = { attack: 0.05, hp: 16, defense: 1, speed: 1 }[k];
-            s.run.eventGrowth[k] += value;
+            this.growLife(() => {
+              s.run.eventGrowth[k] += value;
+            });
             this.chronicle(
               '占卜馈赠',
-              `${{ attack: '攻击', hp: '生命上限', defense: '防御', speed: '速度' }[k]} +${k === 'attack' ? value * 100 + '%' : value}。`,
+              `${{ attack: '攻击', hp: '最大生命', defense: '防御', speed: '速度' }[k]} +${k === 'attack' ? value * 100 + '%' : value}。`,
               'growth',
             );
           } else {
@@ -1131,6 +1227,11 @@ export class Game {
         const n = this.heal(s.player.maxHp * 0.35);
         this.log(`月泉恢复 ${Math.round(n)} 生命`, 'reward');
         this.chronicle('饮下月泉', `恢复 ${Math.round(n)} 生命。`, 'rest');
+      } else if (action === 'vigor' && s.run.routeRevision === 16) {
+        this.growLife(() => {
+          s.run.eventGrowth.hpPercent = (s.run.eventGrowth.hpPercent ?? 0) + 0.12;
+        });
+        this.chronicle('凝聚泉华', '最大生命 +12%。', 'growth');
       } else if (action === 'vigor') {
         if (s.run.buffs.vitality >= 3) return '生命祝福已达上限';
         const before = s.player.maxHp;
@@ -1180,6 +1281,57 @@ export class Game {
     return '无效事件选项';
   }
 
+  private growLife(change: () => void) {
+    const s = this.state,
+      oldMax = s.player.maxHp,
+      oldLife = s.player.hp;
+    change();
+    this.recalculate();
+    if (s.run.routeRevision === 16 && oldMax > 0)
+      s.player.hp = Math.min(s.player.maxHp, (oldLife * s.player.maxHp) / oldMax);
+  }
+  private prepareSupply() {
+    const s = this.state,
+      power = this.heroPreview('retreat')!.power,
+      threshold = supplyThreshold(s.run.chapter, s.run.stages),
+      chance = supplyChance(power, threshold),
+      result = power < threshold ? 'low' : this.random() < chance ? 'great' : 'normal',
+      levels = [...SUPPLY_GRADES[Math.min(2, s.run.stages)][result]];
+    for (let n = levels.length - 1; n > 0; n--) {
+      const j = Math.floor(this.random() * (n + 1));
+      [levels[n], levels[j]] = [levels[j], levels[n]];
+    }
+    s.run.supply = { power, threshold, result, levels, elapsed: 0 };
+    s.phase = 'event';
+    s.revision++;
+  }
+  finishWheel() {
+    const s = this.state,
+      wheel = s.run.wheel;
+    if (
+      s.phase !== 'event' ||
+      !wheel ||
+      wheel.elapsed < WHEEL_SECONDS ||
+      this.currentEvent()?.completed
+    )
+      return false;
+    const sector = WHEEL_SECTORS[wheel.sector];
+    this.growLife(() => {
+      if (sector.attribute === 'attack') s.run.eventGrowth.attack += sector.value;
+      else if (sector.attribute === 'hp')
+        s.run.eventGrowth.hpPercent = (s.run.eventGrowth.hpPercent ?? 0) + sector.value;
+      else
+        s.run.eventGrowth.defensePercent = (s.run.eventGrowth.defensePercent ?? 0) + sector.value;
+    });
+    this.chronicle(
+      '献祭祝福',
+      `消耗 ${lifeAmount(wheel.paid)} 生命，${sector.label} +${sector.value * 100}%。`,
+      'growth',
+    );
+    delete s.run.wheel;
+    this.resolved();
+    return true;
+  }
   private prepareDig() {
     const s = this.state,
       count = 2 + Math.floor(this.random() * 3),
@@ -1541,18 +1693,41 @@ export class Game {
     this.ended();
     s.revision++;
   }
+  skippingCombat() {
+    return this.state.skipCombat || !!this.state.combat.skip;
+  }
   update(delta: number, maxCombatSteps = Infinity) {
     const s = this.state;
     if (!Number.isFinite(delta) || delta <= 0) return;
     if (s.phase === 'journey') {
-      const duration = storyDuration(this.currentEvent()!);
+      const duration = s.run.prologue ? 1.8 : storyDuration(this.currentEvent()!);
       s.run.storyElapsed = Math.min(duration, s.run.storyElapsed + delta);
       if (s.run.storyElapsed >= duration) this.continueJourney();
       return;
     }
+    if (s.phase === 'event' && s.run.wheel) {
+      s.run.wheel.elapsed = Math.min(WHEEL_SECONDS, s.run.wheel.elapsed + delta);
+      return;
+    }
+    if (s.phase === 'event' && this.currentEvent()?.kind === 'supply' && s.run.supply) {
+      const offer = s.run.supply;
+      offer.elapsed = Math.min(SUPPLY_SECONDS, offer.elapsed + delta);
+      if (offer.elapsed >= SUPPLY_SECONDS) {
+        this.chronicle(
+          offer.result === 'great' ? '大吉' : '旅人补给',
+          offer.result === 'great'
+            ? '符文亮起，旅人为勇者留下了一批更珍贵的装备。'
+            : '旅人留下备用装备，愿勇者平安归来。',
+          'story',
+        );
+        this.grantLoot(offer.result === 'great' ? '大吉补给' : '旅人补给', undefined, offer.levels);
+        this.resolved();
+      }
+      return;
+    }
     if (s.phase !== 'combat' || !s.isRunning) return;
     if (this.ended()) return;
-    let remaining = Math.min(delta * (s.skipCombat ? 30 : 1), 60);
+    let remaining = Math.min(delta * (this.skippingCombat() ? 30 : 1), 60);
     let steps = 0;
     while (remaining > 1e-8 && s.phase === 'combat') {
       const c = s.combat,
@@ -1585,16 +1760,25 @@ export class Game {
       won,
       reason,
       items: structuredClone(s.combat.contributions),
+      lifeAtEnd: s.player.hp,
+      recovery: 0,
     };
   }
   private defeatEnemy() {
     const s = this.state,
       e = s.enemy;
-    if (!e) return;
+    if (!e || this.currentEvent()?.completed || s.player.hp <= 0) return;
     this.finishCombat(true, '战斗胜利');
+    let recovery = '';
+    if (s.run.routeRevision === 16) {
+      const fraction = e.isBoss || e.isElite ? 0.3 : 0.1;
+      const healed = this.heal(s.player.maxHp * fraction);
+      s.lastReport!.recovery = healed;
+      recovery = `恢复最大生命的${fraction * 100}%（实际 ${lifeAmount(healed)} 生命）。`;
+    }
     this.chronicle(
       '战斗胜利',
-      `${s.run.trainee?.name}击败了${e.name}，历经 ${s.combat.round} 回合。`,
+      `${s.run.trainee?.name}击败了${e.name}，历经 ${s.combat.round} 回合。${recovery}获得战利品，准备整理行囊。`,
       'story',
     );
     s.run.kills++;
@@ -1796,7 +1980,7 @@ export class Game {
     const s = this.state;
     if (['summary', 'home', 'chapter', 'configure'].includes(s.phase)) return;
     // A won trial is earned even if the player retires on its loot screen.
-    if (s.run.pendingPromotion) this.promoteTrial();
+    if (s.run.pendingPromotion && s.run.routeRevision !== 16) this.promoteTrial();
     const hero = this.heroPreview(outcome);
     if (!hero) return;
     const gold = outcome === 'win' ? (100 + s.run.chapter * 15) * (s.run.extreme ? 2 : 1) : 0;
@@ -1833,6 +2017,10 @@ export class Game {
       );
     }
     s.awakening = null;
+    s.run.pendingPromotion = false;
+    delete s.run.prologue;
+    delete s.run.wheel;
+    delete s.run.supply;
     s.run.resonanceAtNode = false;
     s.inventory = [];
     s.placements = [];
