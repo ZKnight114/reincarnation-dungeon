@@ -24,6 +24,7 @@ interface Row {
   name: string;
   value: string;
   detail?: string;
+  badge?: number;
 }
 const roundValue = (n: number) => +n.toFixed(2);
 export function statusRows(s: GameState, side: StatusSide): Row[] {
@@ -34,6 +35,7 @@ export function statusRows(s: GameState, side: StatusSide): Row[] {
   if (f.shield > 0)
     rows.push({
       kind: 'shield',
+      badge: Math.ceil(f.shield),
       name: '护盾',
       value: `${Math.ceil(f.shield)} 点`,
       detail: '优先抵消受到的伤害，耗尽后消失。',
@@ -58,19 +60,21 @@ export function statusRows(s: GameState, side: StatusSide): Row[] {
       mark: `受到的远程物品伤害增幅 ${roundValue(value * 100)}%`,
       smoke: `直接伤害减免 ${roundValue(Math.min(0.45, value) * 100)}%`,
     };
-    rows.push({ kind, name: names[kind], value: descriptions[kind], detail });
+    rows.push({ kind, name: names[kind], value: descriptions[kind], detail, badge: group.length });
   }
   if (side === 'enemy') {
     if (r.warning) rows.push({ kind: 'warning', name: '技能预告', value: r.warning });
     if (s.combat.round >= 16)
       rows.push({
         kind: 'rage',
+        badge: Math.round((enrageMultiplier(s.combat.round) - 1) * 100),
         name: '狂暴',
         value: `伤害 +${Math.round((enrageMultiplier(s.combat.round) - 1) * 100)}%`,
       });
     for (const m of r.minions.filter((m) => m.hp > 0))
       rows.push({
         kind: 'minions',
+        badge: r.minions.filter((m) => m.hp > 0).length,
         name: '幼蛛 ' + m.id.slice(7),
         value: `生命 ${Math.ceil(m.hp)}／${Math.ceil(m.maxHp)}`,
         detail: `${m.activeAt > r.enemyActions ? '下次敌方行动开始攻击' : '本次敌方行动可攻击'} · 独立攻击依次结算`,
@@ -80,6 +84,7 @@ export function statusRows(s: GameState, side: StatusSide): Row[] {
       cooldown = r.timers['tome:' + t.id + ':0'] ?? 0;
     rows.push({
       kind: 'tome',
+      badge: cooldown,
       name: t.name,
       value: cooldown ? `剩余 ${cooldown} 回合` : '就绪',
       detail: '按自身周期自动发动。',
@@ -88,8 +93,17 @@ export function statusRows(s: GameState, side: StatusSide): Row[] {
   return rows;
 }
 export function statusButton(s: GameState, side: StatusSide) {
-  const kinds = [...new Set(statusRows(s, side).map((x) => x.kind))];
-  return `<button class="battle-status-button" data-status-side="${side}" aria-label="查看${side === 'hero' ? '勇者' : '敌人'}状态详情">${kinds.slice(0, 4).map(statusIcon).join('')}${kinds.length > 4 ? `<small>+${kinds.length - 4}</small>` : ''}${statusIcon('info')}</button>`;
+  const rows = statusRows(s, side).filter((x) => x.kind !== 'warning');
+  const unique = rows.filter((x, n) => rows.findIndex((r) => r.kind === x.kind) === n);
+  return `<button class="battle-status-button" data-status-side="${side}" aria-label="查看${side === 'hero' ? '勇者' : '敌人'}状态详情">${unique
+    .slice(0, 4)
+    .map(
+      (row) =>
+        `<span class="status-icon-value" data-status-kind="${row.kind}" role="img" aria-label="${esc(row.name + '：' + row.value)}">${statusIcon(row.kind)}${row.badge !== undefined ? `<b class="status-count">${row.badge}</b>` : ''}</span>`,
+    )
+    .join(
+      '',
+    )}${unique.length > 4 ? `<small>+${unique.length - 4}</small>` : ''}${statusIcon('info')}</button>`;
 }
 export function battleVitals(s: GameState, side: StatusSide) {
   const f = s.combat.runtime?.[side];

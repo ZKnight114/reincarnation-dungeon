@@ -78,6 +78,10 @@ export function prepare(g: Game) {
   for (let n = 0; n < 2; n++) assert.equal(g.claimStarterRound(), null);
   fitStarters(g);
   assert.equal(g.finishOpening(), null);
+  if (g.state.run.prologue === 'equipped') {
+    g.continueJourney();
+    g.continueJourney();
+  }
   assert.equal(g.chooseResonance(g.state.run.rewards[0].resonances[0]), null);
   if (g.state.run.prologue === 'ready') g.continueJourney();
   return g;

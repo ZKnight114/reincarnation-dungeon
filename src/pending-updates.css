@@ -24,9 +24,50 @@
   background: none;
   border: 0;
   padding: 0;
-  width: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: auto;
   height: 36px;
   color: var(--aptitude-color);
+}
+.aptitude-badge strong {
+  font-size: 13px;
+  white-space: nowrap;
+}
+#selection-screen .compact-admission .file-heading {
+  height: 36px;
+}
+/* Simple controls preserve a readable touch target without the thick action skin. */
+#selection-screen .compact-admission .attribute-controls {
+  gap: 9px;
+}
+#selection-screen .compact-admission .attribute-controls button {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  border: 1px solid #839083;
+  border-image: none;
+  border-radius: 3px;
+  background: #253b3e;
+  color: #f3e5c3;
+  box-shadow: none;
+  font-size: 22px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+#selection-screen .compact-admission .attribute-controls button:active {
+  background: #3b5151;
+}
+#selection-screen .compact-admission .attribute-controls button:disabled {
+  background: #192e33;
+  border-color: #465c5b;
+  color: #91a09f;
+}
+#selection-screen .compact-admission .admission-submit {
+  width: 210px;
+  align-self: center;
 }
 .aptitude-symbol {
   width: 40px;
@@ -79,7 +120,24 @@
   stroke-width: 3;
 }
 #adventure-screen .pack-piece.selected {
-  translate: 0 -2px;
+  translate: none;
+}
+/* Only the occupied-cell path is highlighted, including keyboard focus. */
+#app #adventure-screen :is(.pack-piece, .field-piece):is(.selected, :focus-visible) {
+  outline: none;
+  border: 0;
+  border-image: none;
+  box-shadow: none;
+  filter: none;
+  translate: none;
+}
+#app
+  #adventure-screen
+  :is(.pack-piece, .field-piece):is(.selected, :focus-visible)
+  .item-grade-rim {
+  stroke: #ffe391;
+  stroke-width: 4;
+  filter: none;
 }
 #adventure-screen .combat-hud {
   height: 45px;

@@ -5,7 +5,7 @@ import { Game, STORY_SECONDS, storyDuration } from '../src/game';
 import { UI } from '../src/ui';
 import { eventStory } from '../src/journey';
 import { parseSave } from '../src/save';
-import { start, add, recruitToConfigure, positionEvent } from './helpers';
+import { start, add, recruitToConfigure, positionEvent, settleJourneyUI } from './helpers';
 
 test('each node plays its own story before combat or event; resolution waits for explicit continue', () => {
   const g = start();
@@ -224,7 +224,7 @@ test('native-style pointer gestures merge upper items, highlight targets and ign
     win.happyDOM.close();
   }
 });
-test('journey shows the current sentence without a dialog or backpack, then special results remain until continue', () => {
+test('journey shows the current sentence without a dialog or backpack, then special results remain until continue', async () => {
   const win = new Window({ url: 'http://localhost/' });
   try {
     Object.assign(globalThis, {
@@ -258,6 +258,8 @@ test('journey shows the current sentence without a dialog or backpack, then spec
     ui.render();
     assert.equal(g.state.phase, 'camp');
     assert.ok(win.document.querySelector('[data-action="continue"]'));
+    await settleJourneyUI(ui);
+    assert.equal((win.document.querySelector('#view-pack') as any).hidden, true);
     g.state.run.points = 6;
     g.redeemEquipment();
     ui.render();

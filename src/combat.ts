@@ -500,14 +500,15 @@ export class BattleEngine {
     }
     return worked;
   }
-  opening() {
+  opening(initializeEnemy = true) {
     for (const source of this.r.sources)
       source.skills.forEach((s, i) => {
         if (!s.trigger && !s.cooldown && !s.every) this.execute(source, s, 'hero', i);
       });
     const id = this.r.enemyId,
       e = this.r.enemy;
-    e.shield = id === 'golem' ? e.maxHp * 0.08 : id === 'dragon' ? e.maxHp * 0.05 : 0;
+    if (initializeEnemy)
+      e.shield = id === 'golem' ? e.maxHp * 0.08 : id === 'dragon' ? e.maxHp * 0.05 : 0;
   }
   private statuses(side: 'hero' | 'enemy') {
     const targets =

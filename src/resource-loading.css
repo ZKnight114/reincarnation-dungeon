@@ -1,0 +1,30 @@
+#resource-wait {
+  position: fixed;
+  width: min(280px, 80vw);
+  box-sizing: border-box;
+  padding: 24px;
+  text-align: center;
+  color: #f3e6bd;
+  background: #202820;
+  border: 1px solid #9b7f4c;
+  border-radius: 8px;
+}
+#resource-wait::backdrop {
+  background: #0d150cb3;
+}
+#resource-wait progress {
+  width: 100%;
+  accent-color: #d9b568;
+}
+#resource-wait p {
+  font-size: 13px;
+  line-height: 1.5;
+}
+#resource-wait button {
+  color: #fff2ca;
+  background: #70552c;
+  padding: 9px 20px;
+}
+#resource-wait [hidden] {
+  display: none !important;
+}

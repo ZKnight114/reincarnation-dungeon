@@ -15,6 +15,7 @@ import {
 } from './helpers';
 import { realmName } from '../src/progression';
 import { parseSave } from '../src/save';
+import { setExpeditionTeam, startExpedition, beginExpeditionBattle } from '../src/expedition';
 
 // Exercise the full stylesheet cascade alongside real game state transitions.
 // happy-dom computes CSS but does not paint or measure browser layout.
@@ -43,6 +44,40 @@ function setup(g: Game) {
   const click = (q: string) => el(q).dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
   return { w, ui, el, css, click };
 }
+
+test('combat status rows stay under health tracks and reserves align under the leader portrait', () => {
+  const g = start();
+  g.retreat();
+  g.returnToSelection();
+  const original = g.state.meta.heroes[0];
+  for (let n = 1; n < 3; n++) {
+    const h = structuredClone(original);
+    h.id = `hero-${n + 1}`;
+    g.state.meta.heroes.push(h);
+  }
+  g.state.meta.heroSerial = 3;
+  for (const h of g.state.meta.heroes) setExpeditionTeam(g.state, h.id);
+  assert.equal(startExpedition(g.state, 1), null);
+  assert.equal(beginExpeditionBattle(g.state), null);
+  const { w, css } = setup(g);
+  try {
+    assert.equal(css('.exp-battle .hero-effects').marginLeft, '0px');
+    assert.equal(css('.exp-battle .enemy-effects').marginRight, '0px');
+    assert.equal(css('.exp-battle .hero-health > strong').textAlign, 'left');
+    assert.equal(css('.exp-battle .enemy-health > strong').textAlign, 'right');
+    assert.equal(css('.exp-battle .exp-enemy-hp').flexDirection, 'row-reverse');
+    assert.equal(css('.exp-battle .enemy-health .health-value').textAlign, 'left');
+    assert.equal(css('.exp-battle .enemy-effects .battle-status-button').marginLeft, 'auto');
+    assert.equal(css('.exp-battle .enemy-effects').maxWidth, 'none');
+    const health = css('.exp-battle .fighter-health'),
+      leader = css('.exp-leader-portrait'),
+      reserves = css('.exp-relay-portraits');
+    assert.equal(parseFloat(reserves.left), parseFloat(health.left) + parseFloat(leader.left));
+    assert.equal(parseFloat(reserves.top), parseFloat(health.top) + parseFloat(leader.height) + 7);
+  } finally {
+    w.happyDOM.close();
+  }
+});
 
 test('enlarged seven-by-six pack fits below resonances and above controls with square aligned cells', () => {
   const g = start(),
@@ -499,7 +534,7 @@ test('tutorial graduation offers only completion and does not advertise an unava
     assert.equal(w.document.querySelector('[data-event="extreme"]'), null);
     assert.doesNotMatch(g.state.run.journey.at(-1)!.text, /极限/);
     click('[data-event="graduate"]');
-    assert.match(el('.summary-record').textContent, /18\/18 步/);
+    assert.match(el('.summary-record').textContent, /23\/23 步/);
     assert.equal(g.state.meta.pendingPages.length, 0);
   } finally {
     w.happyDOM.close();

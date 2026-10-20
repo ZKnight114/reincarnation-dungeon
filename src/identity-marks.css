@@ -1,0 +1,79 @@
+/* Text stays legible where detailed raster icons become only a few pixels. */
+.profession-warrior,
+.profession-letter-plate[data-profession='warrior'] {
+  --profession-plate: #633e34;
+  --profession-ink: #ffead0;
+}
+.profession-mage,
+.profession-letter-plate[data-profession='mage'] {
+  --profession-plate: #294b6b;
+  --profession-ink: #e5f5ff;
+}
+.profession-rogue,
+.profession-letter-plate[data-profession='rogue'] {
+  --profession-plate: #355546;
+  --profession-ink: #eff9df;
+}
+#app .profession-icon {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #b5af8f;
+  border-radius: 0;
+  background: var(--profession-plate);
+  color: var(--profession-ink);
+  vertical-align: middle;
+  box-shadow: none;
+}
+#app .profession-icon .profession-letter {
+  font:
+    700 12px / 1 'Microsoft YaHei',
+    sans-serif;
+  color: inherit;
+  text-shadow: none;
+}
+.item-category-badge .profession-letter-plate rect {
+  fill: var(--profession-plate);
+}
+.item-category-badge rect {
+  stroke-width: 2;
+}
+.item-category-badge text {
+  font:
+    700 24px 'Microsoft YaHei',
+    sans-serif;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  fill: #fff5df;
+  stroke-width: 0.5px;
+}
+.item-category-badge .profession-letter-plate text {
+  fill: var(--profession-ink);
+}
+.item-category-badge .category-letter-plate rect {
+  fill: #ddcba4;
+  stroke: #75694b;
+}
+.item-category-badge .category-letter-plate text {
+  fill: #27343a;
+  stroke: none;
+}
+#app .battle-portrait .profession-icon {
+  position: absolute;
+  top: 0;
+  left: auto;
+  right: 0;
+  width: 14px;
+  height: 14px;
+  z-index: 2;
+}
+#app .battle-portrait .profession-letter {
+  font-size: 10px;
+}
+#app .enemy-portrait .profession-icon {
+  right: auto;
+  left: 0;
+}

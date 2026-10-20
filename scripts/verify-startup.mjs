@@ -5,6 +5,23 @@ import { Window } from 'happy-dom';
 
 const source = await readFile(new URL('../轮回地牢.html', import.meta.url), 'utf8');
 const key = 'recursion-dungeon-save-v15';
+// Deliberately hold two background images to prove they cannot keep the home page loading.
+const manifest = JSON.parse(
+  await readFile(new URL('../dist/asset-manifest.json', import.meta.url), 'utf8'),
+);
+const backgroundURLs = new Set(
+  await Promise.all(
+    ['M-0-', 'M-A2-'].map(async (prefix) => {
+      const asset = manifest.assets.find((a) => a.url.split('/').at(-1).startsWith(prefix));
+      return (
+        'data:image/png;base64,' +
+        (await readFile(new URL('../dist/' + asset.url.slice(2), import.meta.url))).toString(
+          'base64',
+        )
+      );
+    }),
+  ),
+);
 async function settle(win) {
   for (let n = 0; n < 150; n++) {
     if (
@@ -16,11 +33,12 @@ async function settle(win) {
   }
   assert.fail('Startup never reached a completed or recoverable state');
 }
-async function boot(entries = [], failFirst = false) {
+async function boot(entries = [], failFirst = false, holdBackground = false) {
   const win = new Window({ url: 'http://localhost/' });
   for (const [k, v] of entries) win.localStorage.setItem(k, v);
   win.document.body.innerHTML = source;
   const loads = new Map();
+  const pending = [];
   let fail = failFirst;
   Object.assign(globalThis, {
     window: win,
@@ -32,6 +50,13 @@ async function boot(entries = [], failFirst = false) {
       naturalWidth = 128;
       naturalHeight = 192;
       set src(url) {
+        if (holdBackground && backgroundURLs.has(url)) {
+          pending.push(() => {
+            loads.set(url, 1);
+            this.onload?.();
+          });
+          return;
+        }
         queueMicrotask(() => {
           if (fail) {
             fail = false;
@@ -49,7 +74,21 @@ async function boot(entries = [], failFirst = false) {
   });
   new Function(win.document.querySelector('script[type="module"]:not([src])').textContent)();
   await settle(win);
-  return { win, loads };
+  return { win, loads, pending };
+}
+
+const staged = await boot([], false, true);
+try {
+  assert.equal(!!staged.win.document.getElementById('startup-loading'), false);
+  assert.ok(staged.win.document.querySelector('.guild-art'));
+  assert.ok(staged.pending.length > 0, 'background images are still pending at admission');
+  assert.ok(
+    staged.loads.size < manifest.assets.length / 2,
+    'admission cannot wait for the whole catalogue',
+  );
+  staged.pending.forEach((done) => done());
+} finally {
+  await staged.win.happyDOM.close();
 }
 
 const retry = await boot([], true);

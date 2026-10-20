@@ -89,11 +89,19 @@ export function legacyChapterRoute(chapter: number) {
     hasExtreme: length > normal,
   };
 }
-const REVIEWED_ROUTES = [
+const PREVIOUS_REVIEWED_ROUTES = [
   'B S M K C P B M K C P M K C P D B G',
   'B B S D M K C P B W M K C P B S M K C P B D B G',
   'B B S D B M K C P B W S M K C P B Q B M K C P B D B D G',
   'B Q S B D Q B M K C P B S B W M K C P B S B Q M K C P B D B D G',
+];
+// The fixed spring / Boss / chest / promotion blocks supplement the adventure.
+// Each stage retains at least two ordinary battles; the completed build gets a final test.
+const REVIEWED_ROUTES = [
+  'B S B M K C P B Q B M K C P B B M K C P D B G',
+  'B B S D M K C P B W B S M K C P B Q B D M K C P B D B B G',
+  'B B S D B M K C P B W B S B M K C P B Q B D B M K C P B D B Q B G',
+  'B Q S B D B M K C P B S B W B D M K C P B S B Q B D M K C P B D B Q B D G',
 ];
 const NODE_KINDS: Record<string, EventKind> = {
   B: 'battle',
@@ -107,8 +115,8 @@ const NODE_KINDS: Record<string, EventKind> = {
   Q: 'choice',
   G: 'graduation',
 };
-export function chapterRoute(chapter: number) {
-  const kinds = REVIEWED_ROUTES[Math.min(3, chapter - 1)].split(' ').map((k) => NODE_KINDS[k]);
+function reviewedRoute(chapter: number, routes: string[]) {
+  const kinds = routes[Math.min(3, chapter - 1)].split(' ').map((k) => NODE_KINDS[k]);
   const normal = kinds.length;
   if (chapter >= 3) {
     kinds.push(...Array.from({ length: chapter === 3 ? 2 : 4 }, () => 'boss' as const), 'ending');
@@ -126,8 +134,21 @@ export function chapterRoute(chapter: number) {
     hasExtreme: kinds.length > normal,
   };
 }
+export function chapterRoute(chapter: number) {
+  return reviewedRoute(chapter, REVIEWED_ROUTES);
+}
 export function runRoute(s: import('./types').GameState) {
-  if (s.run.routeRevision === 16) return chapterRoute(s.run.chapter);
+  if (s.run.routeRevision === 16) {
+    // Active runs keep their already-issued route; revised lengths apply to new recruits.
+    // Recognize only the known former route, rather than accepting arbitrary saved events.
+    const previous = reviewedRoute(s.run.chapter, PREVIOUS_REVIEWED_ROUTES);
+    if (
+      s.run.events.length === previous.length &&
+      s.run.events.every((event, n) => event.kind === previous.kinds[n])
+    )
+      return previous;
+    return chapterRoute(s.run.chapter);
+  }
   return s.run.legacyRoute
     ? { ...legacyChapterRoute(4), trials: [8, 16, 24], kinds: s.run.events.map((e) => e.kind) }
     : legacyChapterRoute(s.run.chapter);

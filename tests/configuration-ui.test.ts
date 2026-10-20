@@ -6,6 +6,8 @@ import { Game } from '../src/game';
 import { UI } from '../src/ui';
 import { loadSave, parseSave } from '../src/save';
 import { start } from './helpers';
+import { tomePreviewText, tomeSelectionView } from '../src/guild-ui';
+import { TOMES } from '../src/progression';
 
 let win: Window, game: Game, ui: UI;
 beforeEach(() => {
@@ -38,6 +40,25 @@ const click = (q: string) => {
     ui.render();
   }
 };
+
+test('all nine tome previews stay concise at every rank while preserving the full details entry', () => {
+  for (const t of TOMES)
+    for (const rank of [1, 2, 3]) {
+      const text = tomePreviewText(t.id, rank);
+      assert.match(text, /每[34]回合/);
+      assert.ok(text.length <= 85, t.id + ':' + rank + ' ' + text);
+      assert.doesNotMatch(text, /undefined|NaN|(?:^|[^\d])0%攻击/);
+    }
+  game.enterChapters();
+  game.recruit('mage');
+  game.balanceAllocation();
+  game.confirmAllocation();
+  game.selectTome('rogue_poison_tome');
+  const html = tomeSelectionView(game.state, 'all');
+  assert.match(html, /data-inspect-tome="rogue_poison_tome"/);
+  assert.match(html, /施毒；已有毒时追加真实伤害/);
+  assert.doesNotMatch(html, /攻击前一次毒结算值/);
+});
 function swipe(dx: number, dy = 0, cancel = false) {
   const target = el('[data-chapter-carousel]');
   target.dispatchEvent(
@@ -103,6 +124,9 @@ test('targeted recruiter exposes three choices and opens the correct locked-prof
   assert.equal(win.document.querySelectorAll('.attribute-row').length, 4);
   assert.equal(win.document.querySelector('button[data-profession]'), null);
   assert.match(el('.admission-file').textContent, /入会档案|定向招募/);
+  assert.match(el('.aptitude-badge').textContent, /平凡|出众|卓越|传奇/);
+  assert.equal(win.document.querySelector('[data-action="inspect-aptitude"]'), null);
+  assert.equal(el('[data-action="confirm-allocation"]').textContent, '确认加点');
 });
 test('attribute plus/minus, reset, balanced assignment and remaining budget control actual admission', () => {
   click('[data-action="chapters"]');
@@ -267,6 +291,8 @@ test('heavy weapons display the first activation countdown before either actor m
   const heavy = game.makeItem('warrior_blade_4');
   game.state.inventory.push(heavy);
   game.state.draft = [{ id: heavy.id, x: 2, y: 1, rotation: 0 }];
+  // This fixture isolates the first cooldown; reclamation timing has its own UI tests.
+  game.collectLooseEquipment();
   ui.replace(game);
   click('[data-action="continue"]');
   assert.equal(game.state.phase, 'combat');

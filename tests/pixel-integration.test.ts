@@ -43,7 +43,7 @@ test('home separates the paged adventurer archive from the guild scene and filte
   try {
     assert.equal((w.document.querySelector('#roster-screen') as any).hidden, true);
     assert.equal(w.document.querySelector('#home-screen [data-hero]'), null);
-    assert.equal(w.document.querySelectorAll('#guild-nav button').length, 2);
+    assert.equal(w.document.querySelectorAll('#guild-nav button').length, 3);
     click('[data-action="roster"]');
     assert.equal((w.document.querySelector('#home-screen') as any).hidden, true);
     assert.equal(w.document.querySelectorAll('#guild-roster [data-hero]').length, 6);

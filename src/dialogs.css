@@ -1,0 +1,396 @@
+/* v27 registered Maker materials. Slice dimensions refer to source pixels. */
+#decision-sheet:not(.resonance-picker),
+#modal:not(.archive-modal),
+dialog.equipment-detail {
+  border: 10px solid transparent;
+  border-image: url('./assets/ui/panels/light-event.png') 24 fill / 10px / 0 stretch;
+  border-radius: 0;
+  background: transparent;
+  color: #423525;
+  box-shadow: 0 14px 48px #0008;
+  padding: 16px 13px;
+  image-rendering: pixelated;
+}
+#modal:not(.archive-modal)[data-skin='guild'] {
+  border-image-source: url('./assets/ui/panels/light-guild.png');
+  color: #f2e7ce;
+  color-scheme: dark;
+}
+#modal:not(.archive-modal) {
+  width: min(350px, calc(100vw - 28px));
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+}
+#modal:not(.archive-modal) #modal-body {
+  min-height: 0;
+}
+#modal:not(.archive-modal) h2,
+#modal:not(.archive-modal) h3 {
+  color: inherit;
+  text-shadow: none;
+}
+#modal:not(.archive-modal) p,
+#modal:not(.archive-modal) small,
+#modal:not(.archive-modal) .muted {
+  color: inherit;
+}
+#modal:not(.archive-modal) small,
+#modal:not(.archive-modal) .muted {
+  opacity: 0.85;
+}
+#modal:not(.archive-modal) .modal-close {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: 12px 0 0;
+}
+#modal.tome-modal .modal-close {
+  display: none;
+}
+#modal.tome-modal .tome-detail .detail-close {
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  padding: 0;
+}
+#modal.tome-modal {
+  overflow: hidden;
+  height: min(580px, calc(100dvh - 40px));
+}
+#modal:not(.archive-modal) button,
+#decision-sheet:not(.resonance-picker) .event-actions button,
+#decision-sheet:not(.resonance-picker) .primary-button,
+#decision-sheet:not(.resonance-picker) > #decision > button,
+.equipment-detail .detail-actions button {
+  border: 8px solid transparent;
+  border-image: url('./assets/ui/buttons/light-secondary.png') 24 fill / 8px / 0 stretch;
+  background: transparent;
+  color: #fff0d1;
+  text-shadow: 0 1px 2px #201c18;
+  box-shadow: none;
+  min-height: 44px;
+  padding: 2px 8px;
+  image-rendering: pixelated;
+}
+#modal:not(.archive-modal) .primary-button,
+#decision-sheet:not(.resonance-picker) .primary-button {
+  border-image-source: url('./assets/ui/buttons/light-primary.png');
+}
+#modal:not(.archive-modal) button:disabled,
+#decision-sheet:not(.resonance-picker) .event-actions button:disabled,
+.equipment-detail .detail-actions button:disabled {
+  border-image-source: url('./assets/ui/buttons/light-disabled.png');
+  color: #f0ece4;
+  opacity: 1;
+}
+#modal:not(.archive-modal) button:focus-visible,
+#decision-sheet button:focus-visible {
+  outline: 2px solid #fff0b2;
+  outline-offset: 2px;
+}
+#modal .tome-ranks .rank-1 {
+  color: #83ceff;
+}
+#modal .tome-ranks .rank-2 {
+  color: #e4b3ff;
+}
+#modal .tome-ranks .rank-3 {
+  color: #ffe085;
+}
+#modal .tome-ranks button[aria-pressed='true'] {
+  outline-color: #fff0c7;
+}
+#modal .tome-detail-status {
+  border-color: #758681;
+}
+
+/* Ivory text over a tinted brown center; keep the original thin edge visible. */
+.textured-inset,
+#decision-sheet .reward-card,
+#modal.tome-modal .tome-detail-body section {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  background: transparent;
+  color: #fff1d0;
+  text-shadow: 0 1px 2px #23140d;
+  padding: 14px;
+  box-shadow: none;
+}
+.textured-inset::before,
+#decision-sheet .reward-card::before,
+#modal.tome-modal .tome-detail-body section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  border: 7px solid transparent;
+  border-image: url('./assets/ui/insets/light.png') 22 fill / 7px / 0 stretch;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+.textured-inset::after,
+#decision-sheet .reward-card::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  z-index: -1;
+  background: rgb(36 22 14 / 48%);
+  pointer-events: none;
+}
+#decision-sheet .reward-card strong,
+#decision-sheet .reward-card p,
+#decision-sheet .reward-card small,
+#modal .textured-inset p,
+#modal .textured-inset h3,
+#modal .textured-inset small {
+  color: #fff1d0;
+}
+#decision-sheet .reward-card p {
+  margin-bottom: 0;
+}
+#decision-sheet .reward-card:disabled {
+  opacity: 0.65;
+}
+#modal.tome-modal .tome-detail-body section::before {
+  border-image-source: url('./assets/ui/insets/dark.png');
+}
+#modal.tome-modal .tome-detail-body section {
+  margin-bottom: 8px;
+}
+
+/* Candidate cards sit directly on the backdrop, without another large panel. */
+#decision-sheet.resonance-picker {
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100dvh - 28px);
+  padding: 8px;
+  border: 0;
+  border-image: none;
+  background: transparent;
+  color: #fff0d8;
+  box-shadow: none;
+  overflow-y: auto;
+  color-scheme: dark;
+}
+#decision-sheet.resonance-picker::backdrop {
+  background: rgb(0 0 0 / 73%);
+}
+#decision-sheet.resonance-picker h2 {
+  font-size: 19px;
+  margin: 0 0 18px;
+  color: #fff0d8;
+  text-shadow: 0 2px 5px #000;
+}
+.resonance-candidates {
+  display: grid;
+  gap: 10px;
+}
+.resonance-candidate {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 4px;
+  min-height: 96px;
+  padding: 4px 8px;
+  --resonance-color: #93d8ff;
+}
+.resonance-candidate::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 6px solid transparent;
+  border-image: url('./assets/ui/resonance/low.png') 16 fill / 6px / 0 stretch;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+.resonance-candidate.resonance-rank-2 {
+  --resonance-color: #eac0ff;
+}
+.resonance-candidate.resonance-rank-3 {
+  --resonance-color: #ffdf93;
+}
+.resonance-candidate.resonance-rank-2::before {
+  border-image-source: url('./assets/ui/resonance/advanced.png');
+}
+.resonance-candidate.resonance-rank-3::before {
+  border-image-source: url('./assets/ui/resonance/high.png');
+}
+#decision-sheet.resonance-picker button {
+  border: 0;
+  border-image: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #fff0d8;
+  text-shadow: 0 1px 2px #141111;
+  min-height: 44px;
+}
+#decision-sheet .resonance-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  text-align: left;
+  min-width: 0;
+}
+.resonance-sigil {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+.resonance-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.resonance-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px;
+}
+.resonance-heading strong {
+  color: var(--resonance-color);
+  font-size: 14px;
+  line-height: 19px;
+}
+#decision-sheet .resonance-heading small {
+  font-size: 10px;
+  color: var(--resonance-color);
+}
+.resonance-summary {
+  font-size: 11px;
+  line-height: 16px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+#decision-sheet .resonance-contribution {
+  font-size: 9px;
+  color: #ede5d6;
+  line-height: 13px;
+}
+.resonance-card-tools {
+  display: grid;
+  grid-template-rows: 44px 44px;
+}
+#decision-sheet .resonance-card-tools button {
+  padding: 0;
+  font-size: 11px;
+}
+#decision-sheet .resonance-card-tools button:disabled {
+  opacity: 0.42;
+}
+.resonance-picker-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+#decision-sheet .resonance-picker-tools small {
+  color: #dfd8c8;
+  font-size: 11px;
+}
+#decision-sheet .resonance-picker-tools button {
+  border: 7px solid transparent;
+  border-image: url('./assets/ui/buttons/light-secondary.png') 24 fill / 7px / 0 stretch;
+  padding: 1px 10px;
+  font-size: 12px;
+}
+#modal .resonance-detail header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+#modal .resonance-detail h2 {
+  font-size: 19px;
+  margin: 0 0 3px;
+}
+#modal .resonance-detail-score {
+  font-size: 12px;
+  line-height: 20px;
+  border-bottom: 1px solid #ac9169;
+  padding-bottom: 10px;
+}
+.resonance-detail-tiers {
+  display: grid;
+  gap: 8px;
+}
+#modal .resonance-detail-tiers h3 {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  margin: 0 0 7px;
+}
+#modal .resonance-detail-tiers h3 small {
+  font-size: 10px;
+  opacity: 1;
+}
+#modal .resonance-detail-tiers p {
+  font-size: 12px;
+  line-height: 20px;
+  margin: 0;
+}
+.resonance-detail-tiers .reached {
+  outline: 1px solid #ac914f;
+  outline-offset: -4px;
+}
+#modal .resonance-prerequisite {
+  font-size: 11px;
+  line-height: 18px;
+}
+.resonance-pack-preview {
+  width: 100%;
+  display: block;
+  margin-top: 12px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .resonance-candidate {
+    animation: resonance-arrive 160ms ease-out both;
+  }
+  @keyframes resonance-arrive {
+    from {
+      opacity: 0.4;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+/* The spring choice presents the current life before either decision. */
+.spring-health {
+  margin: 12px 0 16px;
+  padding: 10px 12px;
+  border: 1px solid #b1a17e;
+  background: #203735;
+  color: #eee5cc;
+}
+.spring-health > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  margin-bottom: 7px;
+}
+.spring-health .bar {
+  width: 100%;
+  height: 13px;
+  margin: 0;
+  background: #112824;
+  border: 1px solid #889571;
+}
+.spring-health .bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(#a9c28a, #668b66);
+}

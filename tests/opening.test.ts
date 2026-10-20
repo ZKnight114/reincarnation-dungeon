@@ -30,6 +30,14 @@ test('two rounds gift all six items once; exact offers restore without rerolling
     assert.equal(new Set(gifted).size, 6);
     assert.equal(validateLayout(g.state.inventory, g.state.draft), null);
     assert.equal(g.finishOpening(), null);
+    assert.equal(g.state.run.prologue, 'equipped');
+    g = new Game(parseSave(JSON.stringify(g.state)));
+    g.update(60);
+    assert.equal(g.state.run.prologue, 'equipped', 'equipment completion waits for Continue');
+    assert.equal(g.continueJourney(), true);
+    assert.equal(g.state.run.prologue, 'resonance');
+    g = new Game(parseSave(JSON.stringify(g.state)));
+    assert.equal(g.continueJourney(), true);
     assert.equal(g.state.phase, 'initial');
     assert.equal(g.state.run.rewards[0].resonances.length, 3);
     assert.equal(g.state.run.resonances.length, 0);

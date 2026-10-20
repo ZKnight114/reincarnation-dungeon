@@ -1,0 +1,810 @@
+/* Chapter maps use one uninterrupted registered background. */
+:root {
+  --expedition-battle-scene: url('./assets/expedition/chapter-1-battle.png');
+}
+#guild-feature-screen.expedition-page {
+  padding: 0;
+  gap: 0;
+  color: #f0e3c3;
+  background: #172d30;
+}
+#app .guild-remote-expedition {
+  position: absolute;
+  top: 577px;
+  left: 42px;
+  width: 306px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 8px solid transparent;
+  border-image: url('./assets/ui/buttons/light-secondary.png') 24 fill / 8px / 0 stretch;
+  background: transparent;
+  color: #fff0d1;
+  padding: 0 6px;
+  font-size: 17px;
+}
+.guild-remote-expedition .ui-icon {
+  width: 26px;
+  height: 26px;
+}
+.guild-remote-expedition small {
+  font-size: 10px;
+  color: #ffe0a0;
+}
+#app #guild-nav {
+  gap: 5px;
+  padding: 5px 6px;
+}
+#app #guild-nav button {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  height: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  justify-content: center;
+  padding: 1px;
+  font-size: 12px;
+}
+#app #guild-nav button .ui-icon {
+  width: 27px;
+  height: 27px;
+}
+#app .expedition-page button {
+  min-height: 44px;
+  color: #f1e5c9;
+  background-color: transparent;
+  border: 8px solid transparent;
+  border-image: url('./assets/ui/buttons/light-secondary.png') 24 fill / 8px / 0 stretch;
+  padding: 0 6px;
+  border-radius: 0;
+  font-size: 13px;
+}
+#app .expedition-page button.primary-button {
+  border-image-source: url('./assets/ui/buttons/light-primary.png');
+  color: #fff1ce;
+  text-shadow: 0 1px 2px #102638;
+}
+#app .expedition-page button:disabled {
+  border-image-source: url('./assets/ui/buttons/light-disabled.png');
+  color: #b9c1b8;
+  opacity: 0.55;
+}
+.expedition-page .profession-icon {
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+}
+.expedition-page .ui-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+.expedition-page .ui-control {
+  width: 23px;
+  height: 23px;
+  object-fit: contain;
+}
+.expedition-page h2 {
+  margin: 8px 0;
+  font-size: 21px;
+}
+.expedition-page p {
+  margin: 8px 0;
+  font-size: 13px;
+}
+.expedition-page small {
+  color: #b9c7b8;
+  font-size: 11px;
+}
+.expedition-page .feature-header {
+  height: 65px;
+  min-height: 65px;
+  margin: 0;
+  padding: 12px;
+  gap: 8px;
+  border-bottom: 1px solid #687c6d55;
+  background: #122b2c;
+}
+.expedition-page .feature-header h1 {
+  font-size: 19px;
+  line-height: 24px;
+}
+#app .expedition-page .feature-back {
+  width: 40px;
+  min-height: 36px;
+  border: 0;
+  border-image: none;
+}
+.exp-map-page {
+  position: absolute;
+  inset: 0;
+  background: url('./assets/expedition/chapter-1-map.png') center/100% 100% no-repeat;
+}
+.exp-map-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 65px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  background: #0e272aac;
+  border-bottom: 1px solid #79917466;
+}
+.exp-map-header h1 {
+  font-size: 22px;
+  letter-spacing: 3px;
+}
+.exp-map-header > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+.exp-star {
+  width: 20px;
+  height: 20px;
+  fill: #203d3f;
+  stroke: #6c8a77;
+  stroke-width: 1.5;
+}
+.exp-star.filled {
+  fill: #efd17c;
+  stroke: #9f722e;
+}
+.exp-stars {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+}
+.exp-stars .exp-star {
+  width: 16px;
+  height: 16px;
+}
+.exp-chapter-heading {
+  position: absolute;
+  top: 65px;
+  left: 0;
+  right: 0;
+  height: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 19px;
+  background: linear-gradient(#122d3088, transparent);
+  text-align: center;
+  text-shadow: 0 2px 3px #000;
+}
+.exp-chapter-heading small {
+  letter-spacing: 3px;
+  color: #e2c793;
+}
+.exp-chapter-heading h2 {
+  letter-spacing: 4px;
+  font-size: 26px;
+  color: #f9e8bd;
+}
+#app .expedition-page .exp-chapter-heading button {
+  width: 38px;
+  border: 0;
+  border-image: none;
+  background: transparent;
+}
+.exp-forward {
+  display: block;
+  transform: rotate(180deg);
+}
+.exp-map-scroll {
+  position: absolute;
+  top: 164px;
+  left: 0;
+  right: 63px;
+  bottom: 88px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.exp-map-scroll::-webkit-scrollbar,
+.exp-heroes::-webkit-scrollbar {
+  display: none;
+}
+.exp-map-route {
+  position: relative;
+  height: 1170px;
+  max-width: 300px;
+  margin: 0 auto;
+}
+.exp-route-line {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.exp-route-line polyline {
+  fill: none;
+  stroke: #dec375;
+  stroke-dasharray: 5 8;
+  stroke-width: 2;
+  opacity: 0.8;
+}
+#app .expedition-page .exp-map-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 78px;
+  height: 80px;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  border: 0;
+  border-image: none;
+  overflow: visible;
+  padding: 0;
+  color: #ffedba;
+  background: transparent;
+}
+.exp-map-node::before {
+  content: '';
+  position: absolute;
+  inset: 0 10px 22px;
+  border: 2px solid #859b76;
+  border-radius: 50%;
+  background: #21453ced;
+  box-shadow: 0 3px 6px #0009;
+}
+.exp-map-node > strong {
+  position: relative;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 21px;
+}
+.exp-map-node .ui-icon {
+  width: 19px;
+  height: 19px;
+}
+.exp-map-node .exp-stars,
+.exp-map-node small {
+  position: relative;
+  z-index: 1;
+}
+.exp-map-node .exp-stars {
+  background: #092928b8;
+  border-radius: 9px;
+  padding: 1px 3px;
+}
+.exp-map-node small {
+  color: #e8d8ad;
+  font-size: 10px;
+  line-height: 12px;
+}
+.exp-map-node.current::before {
+  border-color: #ffdd84;
+  box-shadow:
+    0 0 0 3px #c8b45c55,
+    0 0 16px #d1c87555;
+}
+.exp-map-node.elite::before {
+  background: #39374f;
+  border-color: #c49aea;
+}
+.exp-map-node.boss::before {
+  border-radius: 13px;
+  background: #4b332b;
+  border-color: #e0aa72;
+}
+#app .expedition-page .exp-map-node:disabled {
+  background: none;
+  border: 0;
+  border-image: none;
+  opacity: 0.5;
+}
+.exp-map-node:disabled::before {
+  background: #152b2a;
+  border-color: #718177;
+}
+.exp-star-rail {
+  position: absolute;
+  top: 164px;
+  bottom: 88px;
+  right: 0;
+  width: 63px;
+  background: none;
+  border: 0;
+}
+#app .expedition-page .exp-star-rail button {
+  position: absolute;
+  left: 2px;
+  width: 59px;
+  height: 65px;
+  min-height: 65px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: center;
+  border: 0;
+  border-image: none;
+  background: none;
+  padding: 0;
+}
+.exp-chest {
+  width: 44px;
+  height: 44px;
+  filter: drop-shadow(0 2px 2px #0009);
+}
+.exp-star-rail small {
+  font-size: 10px;
+  color: #ead9a8;
+}
+.exp-star-rail button.available .exp-chest {
+  animation: exp-chest-glow 1.3s ease-in-out infinite;
+}
+.exp-star-rail button.claimed {
+  filter: grayscale(0.8);
+  opacity: 0.55;
+}
+.exp-coming {
+  position: absolute;
+  inset: 240px 0 auto;
+  text-align: center;
+  font-size: 23px;
+  color: #e4d3a4;
+  text-shadow: 0 2px 3px #000;
+}
+.exp-sheet-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #020c13bd;
+}
+.exp-stage-sheet {
+  position: relative;
+  width: 344px;
+  text-align: center;
+  border: 18px solid transparent;
+  border-image: url('./assets/ui/panels/light-guild.png') 24 fill / 10px / 0 stretch;
+  background: none;
+  padding: 10px 3px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #f0dfbd;
+}
+#app .expedition-page .exp-stage-sheet .exp-sheet-close {
+  position: absolute;
+  right: -11px;
+  top: -11px;
+  width: 32px;
+  min-height: 32px;
+  border: 0;
+  border-image: none;
+  background: none;
+}
+.exp-enemy-preview {
+  position: relative;
+  width: 150px;
+  height: 145px;
+  margin: auto;
+}
+.exp-enemy-preview .actor-rig,
+.exp-enemy-preview .actor-body,
+.exp-enemy-preview .actor-art {
+  width: 100%;
+  height: 100%;
+}
+.exp-enemy-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.exp-goals {
+  width: 100%;
+  border: 7px solid transparent;
+  border-image: url('./assets/ui/insets/dark.png') 22 fill / 7px / 0 stretch;
+  padding: 3px 7px;
+  margin: 8px 0;
+  background: none;
+}
+.exp-goals > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 39px;
+  font-size: 12px;
+  text-align: left;
+  border-bottom: 1px solid #75947744;
+}
+.exp-goals > div:last-child {
+  border-bottom: 0;
+}
+.exp-goals span {
+  flex: 1;
+}
+.exp-goals small {
+  font-size: 10px;
+  color: #a9c1ac;
+}
+.exp-reward-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.exp-stage-sheet > .primary-button {
+  width: 100%;
+  height: 48px;
+}
+.exp-team-enemy {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 28px;
+  height: 137px;
+  min-height: 137px;
+  background:
+    linear-gradient(90deg, #122e36b0, #153b2e99),
+    var(--expedition-battle-scene) center 38% / cover;
+}
+.exp-team-enemy > .actor-rig {
+  position: relative;
+  width: 100px;
+  height: 120px;
+  flex-shrink: 0;
+}
+.exp-team-enemy .actor-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.exp-team-enemy > .ui-icon {
+  width: 74px;
+  height: 74px;
+}
+.exp-team-enemy h2 {
+  font-size: 19px;
+}
+.exp-team-heading,
+.exp-roster-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  font-size: 13px;
+  height: 44px;
+  min-height: 44px;
+}
+.exp-team {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 0 16px;
+  height: 118px;
+  min-height: 118px;
+}
+.exp-team article {
+  position: relative;
+  border: 5px solid transparent;
+  border-image: url('./assets/ui/insets/dark.png') 22 fill / 5px / 0 stretch;
+}
+.exp-slot-number {
+  position: absolute;
+  left: 2px;
+  top: 0;
+  font-size: 10px;
+  color: #e9ce89;
+  z-index: 1;
+}
+#app .expedition-page .exp-team-member {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: end;
+  width: 100%;
+  height: 75px;
+  border: 0;
+  border-image: none;
+  padding: 0;
+  background: none;
+}
+.exp-team-member img {
+  width: 45px;
+  height: 53px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.exp-team-member strong {
+  font-size: 11px;
+  line-height: 18px;
+}
+.exp-order {
+  display: flex;
+}
+#app .expedition-page .exp-order button {
+  flex: 1;
+  min-width: 0;
+  min-height: 29px;
+  height: 29px;
+  border-width: 4px;
+  padding: 0;
+  font-size: 10px;
+}
+.exp-team-empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  opacity: 0.7;
+}
+.exp-team-check {
+  height: 34px;
+  min-height: 34px;
+  margin: 8px 16px 0;
+  padding: 9px 7px;
+  background: #284438;
+  color: #dce8bf;
+  font-size: 11px;
+  white-space: nowrap;
+}
+#app .expedition-page .exp-roster-toolbar button {
+  border: 0;
+  border-image: none;
+  height: 34px;
+  min-height: 34px;
+  font-size: 11px;
+}
+.exp-heroes {
+  flex: 1;
+  min-height: 80px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-content: start;
+  gap: 7px;
+  margin: 0 16px;
+  scrollbar-width: none;
+  padding: 2px;
+}
+.exp-hero-card {
+  height: 139px;
+  border: 1px solid #688675;
+  background: #203c3d;
+}
+.exp-hero-card.selected {
+  outline: 1px solid #dfcb7e;
+  background: #355344;
+}
+#app .expedition-page .exp-hero-card > button:first-child {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  height: 111px;
+  border: 0;
+  border-image: none;
+  background: none;
+  padding: 2px;
+  min-height: 0;
+}
+.exp-hero-card img {
+  width: 40px;
+  height: 58px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.exp-hero-card .profession-icon {
+  width: 14px;
+  height: 14px;
+}
+.exp-hero-card strong {
+  font-size: 11px;
+}
+.exp-hero-card span,
+.exp-hero-card small {
+  font-size: 9px;
+  line-height: 12px;
+}
+#app .expedition-page .exp-hero-card > button:last-child {
+  display: block;
+  width: 100%;
+  height: 26px;
+  min-height: 26px;
+  border: 0;
+  border-image: none;
+  border-top: 1px solid #68867555;
+  background: #102c3077;
+  font-size: 10px;
+}
+.exp-filters {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px;
+  min-height: 56px;
+}
+#app .expedition-page .exp-filters button {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  font-size: 11px;
+}
+.exp-filters [aria-pressed='true'] {
+  filter: brightness(1.2);
+  outline: 1px solid #e3c57e;
+  outline-offset: -3px;
+}
+.exp-footer {
+  padding: 0 16px 15px;
+  min-height: 63px;
+}
+.exp-footer button {
+  width: 100%;
+  height: 48px;
+}
+#guild-feature-screen[data-view='dispatch'] {
+  padding-bottom: 88px;
+}
+.exp-area-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 8px 12px;
+}
+.exp-area-tabs button {
+  flex: 1;
+  padding: 0;
+  font-size: 10px !important;
+  min-width: 0;
+}
+.exp-area-tabs [aria-pressed='true'] {
+  outline: 1px solid #e2cd7e;
+  outline-offset: -3px;
+}
+.exp-dispatch {
+  margin: 14px 16px;
+  padding: 16px;
+  border: 7px solid transparent;
+  border-image: url('./assets/ui/insets/dark.png') 22 fill / 7px / 0 stretch;
+  text-align: center;
+}
+.exp-dispatch .exp-actions {
+  margin-top: 12px;
+}
+.exp-empty {
+  grid-column: 1/-1;
+  padding: 20px 6px;
+  text-align: center;
+}
+.exp-result-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 115px 24px 35px;
+  gap: 22px;
+  text-align: center;
+  background:
+    linear-gradient(#132a36df, #102a31eb),
+    url('./assets/expedition/chapter-1-map.png') center/cover;
+}
+.exp-result-page h1 {
+  font-size: 31px;
+  color: #f3d79d;
+  letter-spacing: 3px;
+  margin: 0;
+}
+.exp-result-stars .exp-star {
+  width: 54px;
+  height: 54px;
+}
+.exp-result-stars .exp-stars {
+  gap: 14px;
+}
+.exp-result-stars .exp-star.filled {
+  animation: expedition-star-reveal 260ms ease-out backwards;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+.exp-result-stars .exp-star.filled:nth-child(2) {
+  animation-delay: 140ms;
+}
+.exp-result-stars .exp-star.filled:nth-child(3) {
+  animation-delay: 280ms;
+}
+@keyframes expedition-star-reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .exp-result-stars .exp-star.filled {
+    animation: none;
+  }
+}
+.exp-result-page .exp-goals {
+  margin: 0;
+}
+.exp-result-page .exp-goals > div {
+  height: 49px;
+}
+.exp-result-page > .exp-actions {
+  width: 100%;
+  margin-top: auto;
+}
+.exp-rewards {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+.exp-rewards strong {
+  font-size: 13px;
+  color: #ebd89e;
+}
+.exp-rewards span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+}
+.exp-actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.exp-actions button {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  padding: 0;
+  font-size: 13px;
+}
+.exp-legacy-ready {
+  padding: 70px 25px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+@keyframes exp-chest-glow {
+  50% {
+    filter: drop-shadow(0 0 7px #ffe2a1);
+  }
+}
+@keyframes exp-item-pulse {
+  40% {
+    filter: brightness(1.7) drop-shadow(0 0 5px #ffedaf);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .exp-star-rail button.available .exp-chest,
+  .exp-pack .pack-piece.triggered {
+    animation: none;
+  }
+  .exp-health .bar i {
+    transition: none;
+  }
+}

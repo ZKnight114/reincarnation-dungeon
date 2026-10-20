@@ -1,6 +1,8 @@
 /** Reviewed v16 event rules. Rolls are stored on the run before any presentation. */
 export const SUPPLY_SECONDS = 0.8;
 export const WHEEL_SECONDS = 3.6;
+export const SPRING_HEAL = 0.35;
+export const SPRING_MAX_LIFE = 0.06;
 export const SUPPLY_GRADES = [
   { low: [1, 1, 1], normal: [1, 1, 1], great: [1, 1, 2] },
   { low: [1, 1, 1], normal: [1, 1, 2], great: [1, 2, 2] },

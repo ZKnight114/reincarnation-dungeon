@@ -41,6 +41,8 @@ import {
 import {
   SUPPLY_SECONDS,
   WHEEL_SECONDS,
+  SPRING_HEAL,
+  SPRING_MAX_LIFE,
   SUPPLY_GRADES,
   WHEEL_SECTORS,
   supplyThreshold,
@@ -64,6 +66,7 @@ import { resonanceAvailable } from './resonances';
 import { CHAPTER_CAP, GUILD_NODES, guildBenefits, medalReward } from './guild';
 import { normalizeActiveFootprints } from './footprints';
 import { COMBAT_PACING } from './combat-pacing';
+import { emptyExpedition } from './expedition';
 import { rollAptitude } from './aptitude';
 import type {
   Actor,
@@ -89,9 +92,13 @@ export const TARGET_RECRUIT_COST = 20,
   ACTION_SECONDS = 0.7,
   STORY_SECONDS = 3.2;
 export function storyDuration(event: AdventureEvent) {
-  return ['boss', 'elite', 'promotion', 'graduation', 'ending'].includes(event.kind)
-    ? STORY_SECONDS
-    : Math.min(2.5, Math.max(1.2, eventStory(event.kind, event.variant).length * 0.065));
+  // The UI already waits for each narrative card to finish appearing.
+  // Important choices should follow that reveal without a second long pause.
+  return ['boss', 'elite', 'graduation', 'ending'].includes(event.kind)
+    ? 0.55
+    : event.kind === 'promotion'
+      ? 0.9
+      : Math.min(2.5, Math.max(1.2, eventStory(event.kind, event.variant).length * 0.065));
 }
 export const EVENT_NAMES: Record<EventKind, string> = {
   battle: '遭遇战',
@@ -138,6 +145,7 @@ export function createState(now = Date.now()): GameState {
     footprintRevision: 1,
     phase: 'home',
     meta: {
+      expedition: emptyExpedition(),
       gold: 100,
       guildLevel: 1,
       medals: 0,
@@ -547,6 +555,11 @@ export class Game {
         event,
       );
   }
+  collectLooseEquipment() {
+    if (!['opening', 'camp'].includes(this.state.phase)) return;
+    this.clearLooseEquipment(this.state.phase === 'opening' ? 0 : this.state.run.index + 1);
+    this.state.revision++;
+  }
   finishOpening(): string | null {
     const s = this.state;
     if (s.phase !== 'opening' || s.run.starterRound !== 2) return '先领取全部两轮起始物品';
@@ -556,8 +569,21 @@ export class Game {
     s.placements = structuredClone(s.draft);
     this.recalculate();
     s.player.hp = s.player.maxHp;
-    s.run.rewards = [this.resonanceReward(true)];
-    s.phase = 'initial';
+    if (s.run.routeRevision === 16) {
+      s.run.prologue = 'equipped';
+      s.run.resonanceNarration = true;
+      s.run.storyElapsed = 0;
+      s.phase = 'journey';
+      this.chronicle(
+        '整备完成',
+        '公会补给已经整理妥当，背包里的装备将陪伴勇者踏上旅途。',
+        'story',
+        0,
+      );
+    } else {
+      s.run.rewards = [this.resonanceReward(true)];
+      s.phase = 'initial';
+    }
     s.revision++;
     return null;
   }
@@ -581,6 +607,37 @@ export class Game {
         this.resonanceFamilies(),
       ),
     );
+  }
+  refreshResonance(index: number): string | null {
+    const s = this.state,
+      reward = s.run.rewards[0];
+    if (
+      !['initial', 'reward'].includes(s.phase) ||
+      reward?.kind !== 'resonance' ||
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= reward.resonances.length
+    )
+      return '请选择当前共鸣候选';
+    if (reward.refreshUsed) return '本次刷新机会已使用';
+    const pool = this.resonanceChoices(s.phase === 'initial').filter(
+      (k) => !reward.resonances.includes(k),
+    );
+    if (!pool.length) return '暂无其他可选共鸣';
+    const weight = (k: ResonanceKey) => (resonanceScore(s.inventory, s.draft, k).tier > 0 ? 3 : 1);
+    let roll = this.random() * pool.reduce((n, k) => n + weight(k), 0);
+    let replacement = pool.at(-1)!;
+    for (const k of pool) {
+      roll -= weight(k);
+      if (roll <= 0) {
+        replacement = k;
+        break;
+      }
+    }
+    reward.resonances[index] = replacement;
+    reward.refreshUsed = true;
+    s.revision++;
+    return null;
   }
   chooseResonance(key: ResonanceKey): string | null {
     const s = this.state,
@@ -615,11 +672,12 @@ export class Game {
     );
     if (s.run.routeRevision === 16 && s.run.resonances.length === 1) {
       s.run.prologue = 'ready';
+      s.run.resonanceNarration = true;
       s.run.storyElapsed = 0;
       s.phase = 'journey';
       this.chronicle(
-        '整备完成',
-        `${s.run.trainee?.name}整好行囊，踏入地牢。冒险从这里开始。`,
+        '准备就绪',
+        `${s.run.trainee?.name}已唤醒共鸣，装备与力量相互呼应。继续向地牢深处进发。`,
         'story',
         0,
       );
@@ -628,7 +686,11 @@ export class Game {
       s.run.resonanceAtNode = false;
       s.isRunning = true;
       s.run.peakStrength = Math.max(s.run.peakStrength, analysis(s, false, false).strength);
-      this.beginEvent();
+      if (s.run.routeRevision === 16) {
+        s.run.resonanceNarration = true;
+        s.run.storyElapsed = 0;
+        s.phase = 'journey';
+      } else this.beginEvent();
     }
     return null;
   }
@@ -722,12 +784,38 @@ export class Game {
   continueJourney() {
     const s = this.state;
     if (s.phase !== 'journey') return false;
+    if (s.run.resonanceNarration) {
+      delete s.run.resonanceNarration;
+      if (!s.run.prologue) {
+        this.beginEvent();
+        return true;
+      }
+    }
     if (s.run.prologue) {
-      const departure = s.run.prologue === 'departure';
+      const prologue = s.run.prologue;
+      if (prologue === 'equipped') {
+        s.run.prologue = 'resonance';
+        s.run.storyElapsed = 0;
+        this.chronicle(
+          '选择初始共鸣',
+          '装备上的力量渐渐汇聚。选择一道初始共鸣，让它成为这次冒险的起点。',
+          'story',
+          0,
+        );
+        s.revision++;
+        return true;
+      }
       delete s.run.prologue;
       s.run.storyElapsed = 0;
-      s.phase = departure ? 'opening' : 'camp';
-      if (departure) s.run.starterOffers = this.starterRoundItems(0);
+      if (prologue === 'departure') {
+        s.phase = 'opening';
+        s.run.starterOffers = this.starterRoundItems(0);
+      } else if (prologue === 'resonance') {
+        s.run.rewards = [this.resonanceReward(true)];
+        s.phase = 'initial';
+      } else {
+        s.phase = 'camp';
+      }
       s.revision++;
       return true;
     }
@@ -983,6 +1071,7 @@ export class Game {
       title: initial ? '选择初始共鸣' : `阶段 ${this.state.run.stages} 完成 · 选择共鸣`,
       buffs: [],
       resonances: choices.slice(0, 3),
+      refreshUsed: false,
     };
   }
   private resolved(rewards: Reward[] = []) {
@@ -1086,6 +1175,14 @@ export class Game {
       e = this.currentEvent();
     if (s.phase !== 'event' || !e || e.completed) return '事件已结束';
     if (s.run.wheel) return '请等待轮盘停稳后领取祝福';
+    if (e.kind === 'supply' && s.run.routeRevision === 16) {
+      const offer = s.run.supply;
+      if (action !== 'take' || !offer || offer.elapsed < SUPPLY_SECONDS)
+        return '请等待补给揭晓后确认';
+      this.grantLoot(offer.result === 'great' ? '大吉补给' : '旅人补给', undefined, offer.levels);
+      this.resolved();
+      return null;
+    }
     if (e.kind === 'chance' && s.run.routeRevision === 16) {
       if (action === 'skip') {
         this.chronicle('继续前行', '勇者离开遗迹，保留了自己的生命。');
@@ -1224,14 +1321,18 @@ export class Game {
     }
     if (e.kind === 'rest') {
       if (action === 'heal') {
-        const n = this.heal(s.player.maxHp * 0.35);
+        const n = this.heal(s.player.maxHp * SPRING_HEAL);
         this.log(`月泉恢复 ${Math.round(n)} 生命`, 'reward');
-        this.chronicle('饮下月泉', `恢复 ${Math.round(n)} 生命。`, 'rest');
+        this.chronicle(
+          '饮下月泉',
+          `恢复最大生命的${SPRING_HEAL * 100}%（实际 ${Math.round(n)} 生命）。`,
+          'rest',
+        );
       } else if (action === 'vigor' && s.run.routeRevision === 16) {
         this.growLife(() => {
-          s.run.eventGrowth.hpPercent = (s.run.eventGrowth.hpPercent ?? 0) + 0.12;
+          s.run.eventGrowth.hpPercent = (s.run.eventGrowth.hpPercent ?? 0) + SPRING_MAX_LIFE;
         });
-        this.chronicle('凝聚泉华', '最大生命 +12%。', 'growth');
+        this.chronicle('凝聚泉华', `最大生命 +${SPRING_MAX_LIFE * 100}%。`, 'growth');
       } else if (action === 'vigor') {
         if (s.run.buffs.vitality >= 3) return '生命祝福已达上限';
         const before = s.player.maxHp;
@@ -1395,7 +1496,6 @@ export class Game {
         s.inventory.push(claimed);
         s.run.lastLootIds.push(item.id);
         s.run.highestItem = Math.max(s.run.highestItem, item.level);
-        this.chronicle('挖出遗物', `获得 ${item.name} Lv.${item.level}。`, 'loot');
       }
     }
     s.revision++;
@@ -1702,7 +1802,7 @@ export class Game {
     if (s.phase === 'journey') {
       const duration = s.run.prologue ? 1.8 : storyDuration(this.currentEvent()!);
       s.run.storyElapsed = Math.min(duration, s.run.storyElapsed + delta);
-      if (s.run.storyElapsed >= duration) this.continueJourney();
+      if (s.run.storyElapsed >= duration && !s.run.resonanceNarration) this.continueJourney();
       return;
     }
     if (s.phase === 'event' && s.run.wheel) {
@@ -1711,8 +1811,9 @@ export class Game {
     }
     if (s.phase === 'event' && this.currentEvent()?.kind === 'supply' && s.run.supply) {
       const offer = s.run.supply;
-      offer.elapsed = Math.min(SUPPLY_SECONDS, offer.elapsed + delta);
-      if (offer.elapsed >= SUPPLY_SECONDS) {
+      const previousElapsed = offer.elapsed;
+      offer.elapsed = Math.min(SUPPLY_SECONDS, previousElapsed + delta);
+      if (previousElapsed < SUPPLY_SECONDS && offer.elapsed >= SUPPLY_SECONDS) {
         this.chronicle(
           offer.result === 'great' ? '大吉' : '旅人补给',
           offer.result === 'great'
@@ -1720,8 +1821,7 @@ export class Game {
             : '旅人留下备用装备，愿勇者平安归来。',
           'story',
         );
-        this.grantLoot(offer.result === 'great' ? '大吉补给' : '旅人补给', undefined, offer.levels);
-        this.resolved();
+        s.revision++;
       }
       return;
     }
@@ -2019,6 +2119,7 @@ export class Game {
     s.awakening = null;
     s.run.pendingPromotion = false;
     delete s.run.prologue;
+    delete s.run.resonanceNarration;
     delete s.run.wheel;
     delete s.run.supply;
     s.run.resonanceAtNode = false;

@@ -86,7 +86,8 @@ test('highest resonance remains a separate effect and starts at the current cont
   g.state.run.rewards[0].resonances = ['execution', 'flurry', 'iron_guard'];
   assert.equal(g.chooseResonance('execution'), null);
   assert.deepEqual(g.state.run.resonances, ['cleave', 'execution']);
-  assert.equal(g.packAnalysis(true).tiers.execution, 1);
+  assert.equal(g.packAnalysis(true).tiers.execution, 0);
+  assert.equal(resonanceScore(g.state.inventory, g.state.draft, 'execution').next, 28);
   assert.doesNotThrow(() => parseSave(JSON.stringify(g.state)));
 });
 test('save rejects an advanced card without its prerequisite or with an initial advanced candidate', () => {
@@ -232,7 +233,7 @@ test('item resonance changes real attacks and advanced followup adds damage with
   assert.ok(damage(advanced) > damage(basic));
   assert.deepEqual(advanced.state.combat.hits, basic.state.combat.hits);
 });
-test('new choices render three contribution rows and digging replaces lower pack with an interactive board', () => {
+test('choices render three compact contribution summaries and digging uses its interactive board', () => {
   const win = new Window({ url: 'http://localhost/' });
   try {
     Object.assign(globalThis, {
@@ -250,7 +251,7 @@ test('new choices render three contribution rows and digging replaces lower pack
     g.finishAwakening();
     const ui = new UI(g, () => {});
     assert.equal(win.document.querySelectorAll('[data-resonance]').length, 3);
-    assert.equal(win.document.querySelectorAll('.resonance-levels span').length, 9);
+    assert.equal(win.document.querySelectorAll('.resonance-contribution').length, 3);
     positionEvent(g, 'dig');
     ui.render();
     assert.equal(win.document.querySelectorAll('.dig-cell').length, 16);

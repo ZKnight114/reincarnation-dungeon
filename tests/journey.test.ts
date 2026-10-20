@@ -23,15 +23,15 @@ function pendingTrial(tier: TrialTier = 0, index = 8) {
 test('route removes opening/pet/mentor years while preserving observed trial, recovery and digging order', () => {
   for (let n = 0; n < 100; n++) {
     const e = generateEvents(seed(n));
-    assert.equal(e.length, 37);
+    assert.equal(e.length, 42);
     assert.equal(e[2].kind, 'supply');
     assert.equal(e[4].kind, 'dig');
-    assert.equal(e[9].kind, 'treasure');
-    assert.equal(e[14].kind, 'chance');
-    for (const node of [8, 16, 24]) assert.equal(e[node].kind, 'boss');
-    for (const node of [7, 15, 23]) assert.equal(e[node].kind, 'rest');
-    assert.equal(e[31].kind, 'graduation');
-    assert.equal(e[36].kind, 'ending');
+    assert.equal(e[8].kind, 'treasure');
+    assert.equal(e[13].kind, 'chance');
+    for (const node of [7, 17, 27]) assert.equal(e[node].kind, 'boss');
+    for (const node of [6, 16, 26]) assert.equal(e[node].kind, 'rest');
+    assert.equal(e[36].kind, 'graduation');
+    assert.equal(e[41].kind, 'ending');
     assert.ok(!e.some((e) => e.kind === 'mentor'));
   }
 });

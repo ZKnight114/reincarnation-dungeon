@@ -63,7 +63,7 @@ export const PROFESSIONS: Record<
     ],
   },
   rogue: {
-    name: '盗贼',
+    name: '刺客',
     color: '#96b994',
     description: '短剑双剑近战与手弩远程，烟幕辅助。物品自带毒伤和标记，可选择专精或混搭。',
     trait: '剑 / 弩 / 辅助',
@@ -487,7 +487,7 @@ export function resonanceScore(items: Equipment[], layout: Placement[], key: Res
           .filter((i) => layout.some((p) => p.id === i.id) && d.matches(i))
           .reduce((n, i) => n + contributionPoints(i), 0)
       : 0;
-  const thresholds = d?.kind === 'item' ? [4, 12, 24] : [12, 48, 96];
+  const thresholds = d?.thresholds ?? [12, 48, 96];
   return {
     score,
     tier: score >= thresholds[2] ? 3 : score >= thresholds[1] ? 2 : score >= thresholds[0] ? 1 : 0,

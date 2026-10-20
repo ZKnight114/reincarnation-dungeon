@@ -1,0 +1,608 @@
+/* The same 390 × 844 combat canvas in training and expedition. Scene art and
+   the expedition reserve rail may differ; core geometry is shared here. */
+#app #adventure-screen.combat-screen {
+  border: 0;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) {
+  position: absolute;
+  top: 98px;
+  left: 0;
+  width: 390px;
+  height: 238px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+}
+#app .exp-battle {
+  background:
+    linear-gradient(#10242b66, transparent 50%),
+    var(--expedition-battle-scene) center / cover;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .fighter-health {
+  position: absolute;
+  top: 5px;
+  left: 13px;
+  right: 13px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  height: 66px;
+  padding: 0;
+  margin: 0;
+  z-index: 9;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .health-side {
+  position: relative;
+  width: 173px;
+  min-width: 0;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: auto;
+  padding: 0 0 0 45px;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .enemy-health {
+  padding: 0 45px 0 0;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .health-side > .battle-portrait {
+  position: absolute;
+  display: block;
+  width: 40px;
+  height: 43px;
+  margin: 0;
+  inset: 0 auto auto 0;
+  top: 0;
+  left: 0;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .enemy-health > .battle-portrait {
+  inset: 0 0 auto auto;
+  left: auto;
+  right: 0;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .health-side > strong {
+  display: block;
+  max-width: 128px;
+  height: 14px;
+  margin: 0;
+  font-size: 11px;
+  line-height: 14px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .enemy-health > strong {
+  text-align: right;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .health-side > span:not(.battle-portrait) {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: 16px;
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9px;
+  line-height: 13px;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .enemy-health > span:not(.battle-portrait) {
+  flex-direction: row-reverse;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .health-value {
+  position: static;
+  width: 100%;
+  text-align: right;
+  color: var(--ink);
+  font-size: 10px;
+  line-height: 13px;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .enemy-health .health-value {
+  text-align: left;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .profession-icon img {
+  width: 14px;
+  height: 14px;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .health-side .bar {
+  position: relative;
+  width: 100%;
+  height: 9px;
+  min-height: 9px;
+  margin: 0;
+  border: 1px solid var(--line);
+  background: #1b2527;
+  overflow: hidden;
+  border-radius: 0;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(#a9c97d, #63844e);
+  transition: width 150ms ease;
+  position: relative;
+  z-index: 1;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .health-trail {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  background: #e7c48a;
+  transition: width calc(0.4s * var(--motion-factor, 1)) ease-out
+    calc(0.12s * var(--motion-factor, 1));
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .enemy-bar i {
+  background: linear-gradient(#d79c70, #ab5d46);
+}
+#app :is(#battle-panel.in-combat, .exp-battle) :is(.hero-effects, .enemy-effects) {
+  position: static;
+  inset: auto;
+  display: block;
+  min-height: 24px;
+  margin: 4px 0 0;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .enemy-effects {
+  margin: 4px 0 0;
+  width: 100%;
+  max-width: none;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .enemy-effects .battle-status-button {
+  margin-left: auto;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .battle-status-button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 34px;
+  height: 30px;
+  min-height: 30px;
+  border: 0;
+  border-image: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 4px 2px;
+  gap: 6px;
+  z-index: 8;
+  position: relative;
+  width: fit-content;
+  color: var(--ink);
+  border-radius: 0;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .battle-status-button small {
+  position: static;
+  border: 0;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .status-icon-value {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  line-height: 1;
+  color: #fff3ce;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .status-count {
+  position: absolute;
+  right: -2px;
+  bottom: -3px;
+  font:
+    700 9px / 10px 'Microsoft YaHei',
+    sans-serif;
+  color: #fff3ce;
+  text-shadow:
+    -1px -1px #12252d,
+    1px -1px #12252d,
+    -1px 1px #12252d,
+    1px 1px #12252d;
+  pointer-events: none;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .battle-scene {
+  position: absolute;
+  top: 72px !important;
+  left: 48px;
+  right: 48px;
+  height: 150px;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  padding: 0;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .fighter {
+  position: relative;
+  width: 100px;
+  height: 150px;
+  margin: 0;
+  transform: none;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .enemy-fighter {
+  height: 144px;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .actor-art > img {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  translate: -50% 0;
+  width: 92px;
+  height: 137px;
+  object-fit: contain;
+  object-position: center bottom;
+  image-rendering: pixelated;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .actor-art > .enemy-pixel {
+  width: 118px;
+  height: 132px;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .actor-art > :is(.elite-art, .boss-art) {
+  width: 132px;
+  height: 146px;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .enemy-pixel.facing-left {
+  transform: none;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .actor-rig.has-sheet .hero-portrait {
+  display: none;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .actor-sprite {
+  position: absolute;
+  left: 2px;
+  bottom: 5px;
+  width: 96px;
+  height: 136px;
+  animation-duration: calc(0.9s * var(--motion-factor, 1));
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .fighter:not(.acting):not(.hurt) .actor-body {
+  animation: combat-ready calc(1.9s * var(--motion-factor, 1)) ease-in-out infinite;
+}
+#app
+  :is(#battle-panel.in-combat, .exp-battle)[data-profession='mage']
+  .hero-fighter:not(.acting):not(.hurt)
+  .actor-body {
+  animation-name: combat-caster;
+}
+#app .exp-battle .fighter.acting .actor-body {
+  animation: motion-strike calc(0.24s * var(--motion-factor, 1)) ease-out both;
+}
+#app .exp-battle .fighter.acting [data-attack='arcane'] .actor-body {
+  animation-name: motion-cast;
+}
+#app .exp-battle .fighter.hurt:not(.acting) .actor-body {
+  animation: motion-hurt calc(0.15s * var(--motion-factor, 1)) ease-out both;
+}
+#app .exp-battle .fighter.hurt .actor-art {
+  animation: motion-hit-light calc(0.15s * var(--motion-factor, 1)) ease-out;
+}
+#app :is(#battle-panel.in-combat, .exp-battle) .turn-order {
+  position: absolute;
+  top: 218px;
+  left: 0;
+  right: 0;
+  width: 390px;
+  height: 18px;
+  min-height: 0;
+  line-height: 18px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--ink);
+}
+#app :is(#shared-board, .exp-shared-board) {
+  position: absolute;
+  top: 344px;
+  left: 16px;
+  width: 358px;
+  height: 414px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+}
+#app :is(#shared-board, .exp-shared-board) .combat-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 358px;
+  height: 45px;
+  min-height: 0;
+  padding: 4px 10px;
+  border: 2px solid var(--line);
+  background: #213437;
+  box-shadow: inset 0 0 0 3px #405047;
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) 110px;
+  align-items: center;
+  gap: 8px;
+}
+#app :is(#shared-board, .exp-shared-board) .combat-hud > strong {
+  font-size: 12px;
+  line-height: 15px;
+  min-width: 0;
+  max-width: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
+#app :is(#shared-board, .exp-shared-board) .combat-hud > strong > small {
+  display: block;
+  font-size: 9px;
+  color: var(--muted);
+}
+#app :is(#shared-board, .exp-shared-board) .combat-hud :is(.ui-icon, .ui-control) {
+  width: 13px;
+  height: 13px;
+}
+#app :is(#shared-board, .exp-shared-board) .hud-values {
+  grid-column: 3;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+#app :is(#shared-board, .exp-shared-board) .hud-values span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+}
+#app :is(#shared-board, .exp-shared-board) .hud-values span:first-child {
+  grid-column: auto;
+}
+#app :is(#shared-board, .exp-shared-board) .hud-values b {
+  font-weight: 500;
+}
+#app :is(#shared-board, .exp-shared-board) .resonance-strip {
+  position: absolute;
+  top: 55px;
+  left: 0;
+  width: 358px;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+#app :is(#shared-board, .exp-shared-board) .resonance-slot {
+  position: relative;
+  height: 48px;
+  min-height: 0;
+  min-width: 0;
+  padding: 3px 2px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border: 2px solid var(--rank-color, var(--line));
+  border-image: none;
+  background: #213437;
+  box-shadow: inset 0 0 0 3px #405047;
+  border-radius: 0;
+}
+#app :is(#shared-board, .exp-shared-board) .resonance-slot b {
+  color: var(--rank-color, var(--ink));
+  font-size: 9px;
+  line-height: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+#app :is(#shared-board, .exp-shared-board) .resonance-slot small {
+  color: var(--muted);
+  font-size: 8px;
+}
+#app :is(#shared-board, .exp-shared-board) .resonance-slot svg {
+  display: none;
+}
+#app :is(#shared-board, .exp-shared-board) .resonance-slot.empty {
+  border-color: var(--line);
+  opacity: 0.65;
+}
+#app :is(#shared-board, .exp-shared-board) :is(#view-pack, .exp-view-pack) {
+  position: absolute;
+  top: 116px;
+  left: 17px;
+  width: 327px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+#app :is(#shared-board, .exp-shared-board) .pack-grid {
+  width: 327px;
+  height: 280px;
+  max-width: none;
+  grid-template-columns: repeat(7, 45px);
+  grid-template-rows: repeat(6, 45px);
+  gap: 2px;
+  background: #12242c;
+}
+#app :is(#shared-board, .exp-shared-board) .pack-cell {
+  background: #465651;
+  border: 1px solid #aaa17b;
+  box-shadow: inset 0 0 0 1px #243736;
+}
+#app :is(#shared-board, .exp-shared-board) .pack-cell.closed {
+  background: #142326;
+  border-color: #2a3735;
+  box-shadow: none;
+}
+#app :is(#shared-board, .exp-shared-board) .pack-cell.closed::after {
+  color: #33443f;
+  font-size: 14px;
+}
+#app :is(#shared-board, .exp-shared-board) .pack-cell.edge-top {
+  border-top: 2px solid #dfc994;
+}
+#app :is(#shared-board, .exp-shared-board) .pack-cell.edge-bottom {
+  border-bottom: 2px solid #dfc994;
+}
+#app :is(#shared-board, .exp-shared-board) .pack-cell.edge-left {
+  border-left: 2px solid #dfc994;
+}
+#app :is(#shared-board, .exp-shared-board) .pack-cell.edge-right {
+  border-right: 2px solid #dfc994;
+}
+#app :is(#shared-board, .exp-shared-board) .pack-piece .item-outline {
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+}
+#app :is(#shared-board, .exp-shared-board) .pack-piece .item-grade-rim {
+  stroke-width: 3;
+}
+#app :is(#adventure-footer, .exp-actions.adventure-footer) {
+  position: absolute;
+  top: 763px;
+  left: 16px;
+  width: 358px;
+  height: 54px;
+  padding: 0;
+  display: flex;
+  gap: 12px;
+  flex: none;
+  background: none;
+  margin: 0;
+}
+#app :is(#adventure-footer, .exp-actions.adventure-footer) button {
+  height: 54px;
+  min-height: 54px;
+  padding: 0;
+}
+#app :is(#adventure-footer, .exp-actions.adventure-footer) .footer-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 5px;
+}
+#app :is(#adventure-footer, .exp-actions.adventure-footer) .footer-main .primary-button {
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+}
+#app .exp-actions.adventure-footer .footer-main .primary-button {
+  border: 8px solid transparent;
+  border-image: var(--ui-combat) 19 fill stretch;
+  color: #e9dfc5;
+  background: transparent;
+}
+#app .exp-actions.adventure-footer .footer-main {
+  margin-left: 76px;
+}
+#app .exp-actions.adventure-footer .speed-button {
+  width: 64px;
+  flex: 0 0 64px;
+  border: 2px solid var(--line);
+  border-image: none;
+  background: #213437;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+#app .exp-actions.adventure-footer .speed-button .ui-control {
+  width: 19px;
+  height: 19px;
+}
+#app .exp-pack .item-cooldown-mask {
+  opacity: 0.78;
+}
+#app .exp-pack .pack-piece.triggered .item-activation-rim,
+#app .exp-pack .pack-piece.triggered .item-activation-label {
+  animation: item-activate calc(0.26s * var(--motion-factor, 1)) ease-out both;
+}
+#app .exp-pack .pack-piece.triggered .item-cooldown-mask,
+#app .exp-pack .pack-piece.triggered .cooldown-label {
+  visibility: hidden;
+}
+#app .expedition-page .exp-battle-heading {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 98px;
+  min-height: 0;
+  background: #102329;
+  padding: 0 16px;
+  display: flex;
+  justify-content: center;
+  align-items: start;
+}
+#app .exp-battle-heading > strong {
+  margin-top: 20px;
+  font-size: 12px;
+}
+#app .exp-battle-heading > button {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 35px;
+  height: 35px;
+  min-height: 35px;
+  padding: 0;
+  border: 0;
+  border-image: none;
+}
+.exp-battle-route {
+  position: absolute;
+  top: 49px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  gap: 3px;
+}
+.exp-battle-route i {
+  flex: 1;
+  height: 8px;
+  border: 1px solid #617269;
+  background: #263a38;
+}
+.exp-battle-route .current {
+  background: #f1d999;
+  border-color: #ffe9ad;
+}
+.exp-battle-route .complete {
+  background: #88764b;
+}
+.exp-battle-heading > small {
+  position: absolute;
+  top: 72px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.exp-relay-portraits {
+  position: absolute;
+  top: 55px;
+  left: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  z-index: 5;
+}
+#app .exp-relay-portraits button {
+  width: 40px;
+  height: 43px;
+  min-height: 43px;
+  padding: 0;
+  border: 0;
+  border-image: none;
+  background: none;
+}
+#app .exp-relay-portraits button[hidden] {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  #app .exp-pack .item-activation-rim,
+  #app .exp-pack .item-activation-label {
+    animation: none !important;
+  }
+  #app :is(#battle-panel.in-combat, .exp-battle) :is(.actor-body, .actor-sprite) {
+    animation: none !important;
+  }
+  #app :is(#battle-panel.in-combat, .exp-battle) .bar i {
+    transition: none;
+  }
+  #app :is(#battle-panel.in-combat, .exp-battle) .health-trail {
+    transition: none;
+  }
+}

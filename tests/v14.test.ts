@@ -143,7 +143,7 @@ test('story timing differs for short encounters and important growth milestones'
   const g = start(),
     first = g.currentEvent()!;
   assert.ok(storyDuration(first) >= 1.2 && storyDuration(first) <= 2.5);
-  assert.equal(storyDuration(g.state.run.events[8]), 3.2);
+  assert.equal(storyDuration(g.state.run.events[8]), 0.55);
 });
 
 test('history appends without replaying old cards and preserves the reading position across backpack switches', () => {
@@ -265,6 +265,8 @@ test('discarded opening equipment remains under the departure marker', () => {
   assert.equal(g.finishOpening(), null);
   assert.ok(g.state.run.journey.some((l) => l.title === '回收未入包装备'));
   assert.ok(g.state.run.journey.every((l) => l.event === 0));
+  g.continueJourney();
+  g.continueJourney();
   g.chooseReward(0);
   if (g.state.run.prologue === 'ready') g.continueJourney();
   g.continueCamp();

@@ -4,7 +4,7 @@ import { Game, ACTION_SECONDS } from '../src/game';
 import { availableItems, cells, runBagCells, validateLayout } from '../src/backpack';
 import { parseSave } from '../src/save';
 import { BattleEngine, battleRuntime, fighter } from '../src/combat';
-import { chapterRoute } from '../src/journey';
+import { runRoute } from '../src/journey';
 import { seed, recruitToConfigure, start, positionEvent, setEnemy } from './helpers';
 
 test('random starters persist both batches, allow duplicates and overflow, and guarantee a usable own-class weapon', () => {
@@ -66,7 +66,7 @@ test('a foreign tome supplies just one of six starting gifts, without changing t
 
 test('Boss loot remains through ritual, then recycles once at the next node before resonance and journey', () => {
   let g = start();
-  const node = chapterRoute(4).trials[0];
+  const node = runRoute(g.state).trials[0];
   positionEvent(g, 'boss', node);
   setEnemy(g, { hp: 0 });
   const realm = g.state.run.realm,
@@ -279,7 +279,7 @@ test('support, attack, tome and dependent resonance fire in that order, with ide
 
 test('retiring on won Boss loot preserves the earned stage and a valid graduate, without duplicate reward', () => {
   const g = start();
-  positionEvent(g, 'boss', chapterRoute(4).trials[0]);
+  positionEvent(g, 'boss', runRoute(g.state).trials[0]);
   setEnemy(g, { hp: 0 });
   g.update(0.01);
   assert.equal(g.state.run.pendingPromotion, true);

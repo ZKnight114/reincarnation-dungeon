@@ -136,7 +136,9 @@ const drag = (id: string, from: [number, number], to: [number, number], end = 'p
   );
 };
 test('guild to targeted recruit and configured hero flow has one entry; no removed controls remain', () => {
-  assert.equal(win.document.querySelectorAll('#home-screen button').length, 5);
+  assert.equal(win.document.querySelectorAll('#home-screen [data-action="chapters"]').length, 1);
+  assert.equal(win.document.querySelectorAll('#home-screen [data-action="exploration"]').length, 1);
+  assert.equal(win.document.querySelectorAll('#guild-nav [data-action="expedition"]').length, 1);
   begin();
   assert.equal(game.state.phase, 'journey');
   game.continueJourney();
@@ -223,10 +225,13 @@ test('detail layout names adjacency recipients, concrete effects and both fighte
   assert.equal(el('.item-description-header h2').textContent, sword.name + ' 【1阶】');
   click('[data-pack-action="close"]');
   click('[data-action="continue"]');
-  assert.equal(el('#player-hp .profession-icon').getAttribute('aria-label'), '战士');
-  const professions = { warrior: '战士', mage: '法师', rogue: '盗贼' };
   assert.equal(
-    el('#enemy-hp .profession-icon').getAttribute('aria-label'),
+    el('.hero-health > .battle-portrait .profession-icon').getAttribute('aria-label'),
+    '战士',
+  );
+  const professions = { warrior: '战士', mage: '法师', rogue: '刺客' };
+  assert.equal(
+    el('.enemy-health > .battle-portrait .profession-icon').getAttribute('aria-label'),
     professions[game.state.enemy!.profession!],
   );
   assert.equal(el('#combat-hud .profession-icon').getAttribute('aria-label'), '战士');
@@ -366,6 +371,7 @@ test('combat frames preserve backpack nodes and show cooldowns, hit effects and 
   click('[data-action="continue"]');
   const skip = el('[data-action="skip-combat"]'),
     cell = el('.pack-cell');
+  assert.equal(win.document.querySelectorAll('#battle-panel.in-combat .battle-portrait').length, 2);
   game.update(2);
   ui.render();
   assert.ok(el('.pack-cell') === cell, 'combat must retain board nodes');

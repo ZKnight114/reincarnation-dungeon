@@ -1517,6 +1517,126 @@
       "sha256": "6edf2de4c7e0c739c1069b69d52cc3e3c6948b5dd263b3d751a7f646212c89c6"
     },
     {
+      "id": "ui/buttons/light-disabled",
+      "path": "src/assets/ui/buttons/light-disabled.png",
+      "group": "轻框纹理UI-v27",
+      "size": [
+        284,
+        101
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v27：两张1024x1024整图拆分；默认服务模型，medium / 1K；请求、原图与九宫切片见 art-direction/ui-v27-light",
+      "sha256": "8127447c90d81ff30d143e57a3238ffc878fd4b646023bc89fc1965c9313d1e7"
+    },
+    {
+      "id": "ui/buttons/light-primary",
+      "path": "src/assets/ui/buttons/light-primary.png",
+      "group": "轻框纹理UI-v27",
+      "size": [
+        283,
+        101
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v27：两张1024x1024整图拆分；默认服务模型，medium / 1K；请求、原图与九宫切片见 art-direction/ui-v27-light",
+      "sha256": "31ab4e7204b620c0a7c713f7f21875acf0b2d880be7ed89235be1a0d4bd85fc1"
+    },
+    {
+      "id": "ui/buttons/light-secondary",
+      "path": "src/assets/ui/buttons/light-secondary.png",
+      "group": "轻框纹理UI-v27",
+      "size": [
+        283,
+        101
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v27：两张1024x1024整图拆分；默认服务模型，medium / 1K；请求、原图与九宫切片见 art-direction/ui-v27-light",
+      "sha256": "84283a65ca0dca29d3f77773b2cf9e28c61f672aeefdd8fde0ef56d41452b263"
+    },
+    {
+      "id": "ui/categories/focus",
+      "path": "src/assets/ui/categories/focus.png",
+      "group": "职业与物品类别图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "a826eb7cdf5010001bb2886d0b9cd34916fb86a2409d8c4b4aebc9f38ed5b621"
+    },
+    {
+      "id": "ui/categories/ranged",
+      "path": "src/assets/ui/categories/ranged.png",
+      "group": "职业与物品类别图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "12d00d6e7e59be9f2a4e024e2ca9eeaefa2e29582c7e5386957bcbfda842b3d7"
+    },
+    {
+      "id": "ui/categories/shield",
+      "path": "src/assets/ui/categories/shield.png",
+      "group": "职业与物品类别图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "4d3031d689140e2e1c2ae87441d5dc4d3f15f3a44663c35b77a2af8c55ace33d"
+    },
+    {
+      "id": "ui/categories/spear",
+      "path": "src/assets/ui/categories/spear.png",
+      "group": "职业与物品类别图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "7a658362aad60d1d965af7ac4c1e4e542f97d3a5388efbc7194ed76e46443386"
+    },
+    {
+      "id": "ui/categories/staff",
+      "path": "src/assets/ui/categories/staff.png",
+      "group": "职业与物品类别图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "7d582ab2576f7ab40588dd5a04d0dcbe6b563b87c55df97793950299d5395a30"
+    },
+    {
+      "id": "ui/categories/support",
+      "path": "src/assets/ui/categories/support.png",
+      "group": "职业与物品类别图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "08f403f335e8f2b8d64a5e847d0dc8643f9cf3167ef7158bb5d05c95e4d68c0b"
+    },
+    {
+      "id": "ui/categories/sword",
+      "path": "src/assets/ui/categories/sword.png",
+      "group": "职业与物品类别图标",
+      "size": [
+        48,
+        48
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "12d4b14b173051fd634a18109d5699a36061c963ce7d9e607795fa1b83dfe36f"
+    },
+    {
       "id": "ui/controls/back",
       "path": "src/assets/ui/controls/back.png",
       "group": "界面按钮与图标",
@@ -1829,6 +1949,114 @@
       "sha256": "9327ed4bebc2ef9e699a6b30536c56e8f2a18c020fec162e66f3abe333feb7bf"
     },
     {
+      "id": "ui/insets/dark",
+      "path": "src/assets/ui/insets/dark.png",
+      "group": "轻框纹理UI-v27",
+      "size": [
+        446,
+        138
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v27：两张1024x1024整图拆分；默认服务模型，medium / 1K；请求、原图与九宫切片见 art-direction/ui-v27-light",
+      "sha256": "0142b5f1d83009a53ff2fefb61a84cba581884f4fdf8c8db52e45a963374b309"
+    },
+    {
+      "id": "ui/insets/light",
+      "path": "src/assets/ui/insets/light.png",
+      "group": "轻框纹理UI-v27",
+      "size": [
+        447,
+        138
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v27：两张1024x1024整图拆分；默认服务模型，medium / 1K；请求、原图与九宫切片见 art-direction/ui-v27-light",
+      "sha256": "6c66574366892da8e75f531ce53ce69c5fc7f10b579e34ada918fa4cff8d8036"
+    },
+    {
+      "id": "ui/panels/event",
+      "path": "src/assets/ui/panels/event.png",
+      "group": "通用弹板底板",
+      "size": [
+        459,
+        790
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v26 单张1024x1024双弹板图集拆分；medium / 1K，默认服务模型；请求、原图和裁切记录见 art-direction/panels-v26",
+      "sha256": "1dcdd27d867e46351214b06eaaa5cb87dcead849dcb9320df6305973d34b4020"
+    },
+    {
+      "id": "ui/panels/guild",
+      "path": "src/assets/ui/panels/guild.png",
+      "group": "通用弹板底板",
+      "size": [
+        458,
+        790
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v26 单张1024x1024双弹板图集拆分；medium / 1K，默认服务模型；请求、原图和裁切记录见 art-direction/panels-v26",
+      "sha256": "2fd26fd385fa046209ab743732952ee4508cbaf4fba65da40b46e3e837b4ef53"
+    },
+    {
+      "id": "ui/panels/light-event",
+      "path": "src/assets/ui/panels/light-event.png",
+      "group": "轻框纹理UI-v27",
+      "size": [
+        434,
+        568
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v27：两张1024x1024整图拆分；默认服务模型，medium / 1K；请求、原图与九宫切片见 art-direction/ui-v27-light",
+      "sha256": "c0bb87d0c6520e77f51886788d33e58682270483b179c123be08e8a2991a4650"
+    },
+    {
+      "id": "ui/panels/light-guild",
+      "path": "src/assets/ui/panels/light-guild.png",
+      "group": "轻框纹理UI-v27",
+      "size": [
+        434,
+        567
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v27：两张1024x1024整图拆分；默认服务模型，medium / 1K；请求、原图与九宫切片见 art-direction/ui-v27-light",
+      "sha256": "b1203aaf282b71d08bcf88fcc853a11076c0030b0b1de4a5cb2f7015b6751bf0"
+    },
+    {
+      "id": "ui/resonance/advanced",
+      "path": "src/assets/ui/resonance/advanced.png",
+      "group": "轻框纹理UI-v27",
+      "size": [
+        900,
+        200
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v27：两张1024x1024整图拆分；默认服务模型，medium / 1K；请求、原图与九宫切片见 art-direction/ui-v27-light",
+      "sha256": "cb26d694a880223b783a0c8550608b86eb20e98099ac420364216641f20d6193"
+    },
+    {
+      "id": "ui/resonance/high",
+      "path": "src/assets/ui/resonance/high.png",
+      "group": "轻框纹理UI-v27",
+      "size": [
+        900,
+        200
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v27：两张1024x1024整图拆分；默认服务模型，medium / 1K；请求、原图与九宫切片见 art-direction/ui-v27-light",
+      "sha256": "d9ca1fc3fb01d91da1978d8bc4a3903cddc72c6c5197e192f8c52aed2ad55641"
+    },
+    {
+      "id": "ui/resonance/low",
+      "path": "src/assets/ui/resonance/low.png",
+      "group": "轻框纹理UI-v27",
+      "size": [
+        900,
+        197
+      ],
+      "alpha": true,
+      "source": "TapTap Maker v27：两张1024x1024整图拆分；默认服务模型，medium / 1K；请求、原图与九宫切片见 art-direction/ui-v27-light",
+      "sha256": "6b12da90919573390430dda389725dc22fb23624a4d1ccc9bf3991c084dee972"
+    },
+    {
       "id": "ui/shelf-plank",
       "path": "src/assets/ui/shelf-plank.png",
       "group": "界面按钮与图标",
@@ -1987,194 +2215,194 @@
     {
       "id": "ui/status/break",
       "path": "src/assets/ui/status/break.png",
-      "group": "职业与战斗状态图标",
+      "group": "战斗状态与功能图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
-      "sha256": "1623011fc1b4e107453bb6b139e019f7044f68f1c4d90a71d0f5dc3153dcb06d"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "60eb63ef19c6e29b887252776ff168ed18a7e5eab38f8d597a1a7bb99df818ca"
     },
     {
       "id": "ui/status/burn",
       "path": "src/assets/ui/status/burn.png",
-      "group": "职业与战斗状态图标",
+      "group": "战斗状态与功能图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
-      "sha256": "cd830b9eccf31c203e228091583b808cdc48d0c0ba3c643e5647162132d0037e"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "c00cb96b469539d998a0eca97a4fc5bded7d70156731ea9416617ff794388d28"
     },
     {
       "id": "ui/status/chill",
       "path": "src/assets/ui/status/chill.png",
-      "group": "职业与战斗状态图标",
+      "group": "战斗状态与功能图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
-      "sha256": "4d41a9cc4303d5d63238561fa35aec7b51a8a5690dba457d54ba2928557ab7ea"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "9d4f24c6410dd8f0bb31d7e3af400ac4a6bf904365abac843dc0d5c69fe083f8"
     },
     {
       "id": "ui/status/dig",
       "path": "src/assets/ui/status/dig.png",
-      "group": "职业与战斗状态图标",
+      "group": "战斗状态与功能图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
-      "sha256": "0e907cfbb511afa455e8f80e5a0228db5cf5143c51e48bdb6cc5bc6923bb9ca0"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "9f72798ec2dad45df87e0a1a65f3d1e1c9e2b6ce33380f028ad6986e70a80dbe"
     },
     {
       "id": "ui/status/info",
       "path": "src/assets/ui/status/info.png",
-      "group": "职业与战斗状态图标",
+      "group": "战斗状态与功能图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
-      "sha256": "8e24cabed2b1b4306562cf7cad797f115208a1eb56834cb75e92785afb79eca2"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "e15442fbed3706756803cf38ef060aa2c14ca5574f09c6138050a775992ae038"
     },
     {
       "id": "ui/status/mage",
       "path": "src/assets/ui/status/mage.png",
-      "group": "职业与战斗状态图标",
+      "group": "职业与物品类别图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "复用正式物品 M-A2 缩放",
-      "sha256": "9202ba632c120bece32bf256fdc9aad72bffa5582db0e10d0a3c0cf176325207"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "92f5af5951f307a846844d4499343157ee5e0b6d4269d27595f8d498e617a0aa"
     },
     {
       "id": "ui/status/mark",
       "path": "src/assets/ui/status/mark.png",
-      "group": "职业与战斗状态图标",
+      "group": "战斗状态与功能图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
-      "sha256": "a5937bb29f628ef673dd6b9f05433a54a5441301b96554509146b25abfe134c4"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "cde9e7c03a63d4ad97dd840c0b0b35903d1103f6cac2891ce1a8f39cfbe20fb1"
     },
     {
       "id": "ui/status/minions",
       "path": "src/assets/ui/status/minions.png",
-      "group": "职业与战斗状态图标",
+      "group": "战斗状态与功能图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
-      "sha256": "fd0b43f3bec588674b7fb1a5bf664244d475a8a5c4a3c701d6e955e42dd731a4"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "765834e7e5f745e57800ff4ceb3275af1dfeb6d2e5141e1100359f751b17568a"
     },
     {
       "id": "ui/status/poison",
       "path": "src/assets/ui/status/poison.png",
-      "group": "职业与战斗状态图标",
+      "group": "战斗状态与功能图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
-      "sha256": "01fdcd0f57147a43f55af7a5cad1ddcdea745b654f1d8db1979ed008a7923751"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "1478c1ca34c96dab3f4ebe543f0b01aabc686fec5d3ab13380aac722b7c4a87d"
     },
     {
       "id": "ui/status/rage",
       "path": "src/assets/ui/status/rage.png",
-      "group": "职业与战斗状态图标",
+      "group": "战斗状态与功能图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
-      "sha256": "e5871686a3f689ef6db63b7c0efdbe3c5f3eb3cba5a3243a27445545a8de1186"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "c648494876e25eeef72326ec86121cdadec78f6832c9f24ea21562f313e99efa"
     },
     {
       "id": "ui/status/rogue",
       "path": "src/assets/ui/status/rogue.png",
-      "group": "职业与战斗状态图标",
+      "group": "职业与物品类别图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "复用正式物品 R-A2 缩放",
-      "sha256": "a508eb0690bd825892cf85aae6f5349787645f6f583fb0f2d80e71d1cb1827e9"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "453ea3d3a394d753da685d767c26a98f1cf902fca83bc2b0f3c52c37ea127dc1"
     },
     {
       "id": "ui/status/shield",
       "path": "src/assets/ui/status/shield.png",
-      "group": "职业与战斗状态图标",
+      "group": "战斗状态与功能图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
-      "sha256": "8c48de60245af7685957e09701073c47cfef00746d588201a4964be68dd04f97"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "6e6a94b63c1feab76a08280475f0f632d5d388d4125e49d063aa3ef67e3b3ac5"
     },
     {
       "id": "ui/status/smoke",
       "path": "src/assets/ui/status/smoke.png",
-      "group": "职业与战斗状态图标",
+      "group": "战斗状态与功能图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
-      "sha256": "37718f1265a69c41cdf687577bdc502f7096039a0c931180c2042b3347b14f3f"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "6f42274b3c1a73ab56a06e30108edd7898eab9076769f6618be48802bbec98c2"
     },
     {
       "id": "ui/status/tome",
       "path": "src/assets/ui/status/tome.png",
-      "group": "职业与战斗状态图标",
+      "group": "战斗状态与功能图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
-      "sha256": "f378726b0efd333e26502fe39df9af4c7f5cb4315a0511721fbe89a88cd75112"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "74b5461054c17e23ae57979b9cfae04d4c73371ce47377303dd2665706b339ea"
     },
     {
       "id": "ui/status/warning",
       "path": "src/assets/ui/status/warning.png",
-      "group": "职业与战斗状态图标",
+      "group": "战斗状态与功能图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "scripts/prepare-status-icons.py 本地像素绘制，无生成服务费用",
-      "sha256": "e7742132135ca373af327c1e5a0255cb7877ff355cee33ce85898d0955114922"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "e937f7949bfae8acfcdc2127fa480421eb8db80ad905f1428c91db12cca63c96"
     },
     {
       "id": "ui/status/warrior",
       "path": "src/assets/ui/status/warrior.png",
-      "group": "职业与战斗状态图标",
+      "group": "职业与物品类别图标",
       "size": [
         48,
         48
       ],
       "alpha": true,
-      "source": "复用正式物品 W-A2 缩放",
-      "sha256": "3ce5e79e9a9c4447cd6ae49b47c9fbf28bb7624cc712b91cb809cb208ebc9832"
+      "source": "TapTap Maker v25 两张图集拆分；请求、原图和切图记录见 art-direction/icons-v25；medium / 1K，默认服务模型",
+      "sha256": "d9282e132c81a3d6685092b14a97bf704f22d5231133b0d5192646bbc394c335"
     },
     {
       "id": "warrior-full",
@@ -2223,6 +2451,30 @@
       "alpha": true,
       "source": "项目既有素材",
       "sha256": "41ec7ef180bbe7df4d792c40c0e407878194caed0c2d069356927cc5bd16cbbb"
+    },
+    {
+      "id": "expedition/chapter-1-map",
+      "path": "src/assets/expedition/chapter-1-map.png",
+      "group": "远征第一章背景",
+      "size": [
+        433,
+        1024
+      ],
+      "alpha": false,
+      "source": "TapTap Maker 2026-10-20 v29, one forest map/battle atlas split; request and original in art-direction/pixel-v29-expedition",
+      "sha256": "9eb5f8f2b6e910989f7bb5fa1a3c372fd0360932d30524a69b5024b35cdda22a"
+    },
+    {
+      "id": "expedition/chapter-1-battle",
+      "path": "src/assets/expedition/chapter-1-battle.png",
+      "group": "远征第一章背景",
+      "size": [
+        1079,
+        800
+      ],
+      "alpha": false,
+      "source": "TapTap Maker 2026-10-20 v29, one forest map/battle atlas split; request and original in art-direction/pixel-v29-expedition",
+      "sha256": "3a730602acdd986a323a61efbebda7d1b1ceade1a9994990bf15c958e67aa3ef"
     }
   ],
   "characterSource": "art-direction/characters-v21"

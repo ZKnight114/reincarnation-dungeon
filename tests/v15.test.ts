@@ -334,11 +334,11 @@ test('encounter growth follows builds partially, freezes before trial selection 
 test('short chapters retain three trial breakthroughs, four resonance choices and open all forty-two cells', () => {
   assert.deepEqual(
     [1, 2, 3, 4].map((n) => chapterRoute(n).length),
-    [18, 24, 31, 37],
+    [23, 29, 36, 42],
   );
   assert.deepEqual(
     [1, 2, 3, 4].map((n) => chapterRoute(n).normal),
-    [18, 24, 28, 32],
+    [23, 29, 33, 37],
   );
   for (const chapter of [1, 2, 3, 4]) {
     const s = createState();

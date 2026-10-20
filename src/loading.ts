@@ -1,6 +1,32 @@
 import { startupAssets, spriteUrl } from './assets';
-const ready = new Map<string, HTMLImageElement>();
-export const decodedAsset = (url: string) => ready.get(url);
+import { ResourceLoader, type ResourcePriority } from './resource-loader';
+const resources = new ResourceLoader<HTMLImageElement>(
+  (url) =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      let settled = false;
+      const finish = (error?: string) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        img.onload = img.onerror = null;
+        if (error) reject(new Error(error));
+        else resolve(img);
+      };
+      const timeout = window.setTimeout(() => finish('图片加载超时，请重试'), 20_000);
+      img.onerror = () => finish('图片加载失败，请重试');
+      img.onload = () => {
+        const decode = typeof img.decode === 'function' ? img.decode() : Promise.resolve();
+        decode.then(
+          () => finish(),
+          () => finish('图片解码失败，请重试'),
+        );
+      };
+      img.src = url;
+    }),
+);
+export const decodedAsset = (url: string) => resources.get(url);
+export const missingAssets = (urls: string[]) => urls.filter((url) => !resources.has(url));
 const el = (id: string) => document.getElementById(id)!;
 export function loadingProgress(done: number, total: number, label: string) {
   const percent = Math.floor((done * 100) / Math.max(1, total));
@@ -9,53 +35,17 @@ export function loadingProgress(done: number, total: number, label: string) {
   el('loading-status').textContent = label;
   el('loading-progress').setAttribute('aria-valuenow', String(percent));
 }
-export async function preloadAssets(onProgress: (done: number, total: number) => void) {
-  const urls = startupAssets();
-  let next = 0,
-    done = 0;
-  const load = async (url: string) => {
-    if (ready.has(url)) return;
-    await new Promise<void>((resolve, reject) => {
-      const img = new Image();
-      const timeout = window.setTimeout(() => {
-        img.onload = img.onerror = null;
-        reject(new Error('图片加载超时'));
-      }, 20_000);
-      img.onerror = () => {
-        clearTimeout(timeout);
-        reject(new Error('图片加载失败：' + url.split('/').at(-1)));
-      };
-      img.onload = () => {
-        const decode = typeof img.decode === 'function' ? img.decode() : Promise.resolve();
-        decode.then(
-          () => {
-            clearTimeout(timeout);
-            ready.set(url, img);
-            resolve();
-          },
-          () => {
-            clearTimeout(timeout);
-            reject(new Error('图片解码失败'));
-          },
-        );
-      };
-      img.src = url;
-    });
-  };
-  const tasks = await Promise.allSettled(
-    Array.from({ length: Math.min(6, urls.length) }, async () => {
-      while (next < urls.length) {
-        const url = urls[next++];
-        await load(url);
-        done++;
-        onProgress(done, urls.length);
-      }
-    }),
-  );
-  const failed = tasks.find((t): t is PromiseRejectedResult => t.status === 'rejected');
-  if (failed) throw failed.reason;
-  el('startup-loading').style.backgroundImage =
-    `linear-gradient(#10191155,#101911cc),url("${spriteUrl('guild-home')}")`;
+export async function preloadAssets(
+  onProgress: (done: number, total: number) => void = () => {},
+  urls = startupAssets(),
+  priority: ResourcePriority = 'foreground',
+) {
+  await resources.batch(urls, onProgress, priority);
+}
+export function loadingBackground() {
+  const panel = document.getElementById('startup-loading');
+  if (panel)
+    panel.style.backgroundImage = `linear-gradient(#10191155,#101911cc),url("${spriteUrl('guild-home')}")`;
 }
 export function loadingError(message: string, retry: () => void) {
   el('loading-status').textContent = message;

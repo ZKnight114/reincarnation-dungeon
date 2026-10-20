@@ -169,6 +169,8 @@ export interface Reward {
   title: string;
   buffs: BuffKey[];
   resonances: ResonanceKey[];
+  /** One free replacement is shared by the three candidates. Absent on older saves. */
+  refreshUsed?: boolean;
 }
 export type Outcome = 'win' | 'death' | 'retreat';
 export type Rating = 'D' | 'C' | 'B' | 'A' | 'S';
@@ -288,6 +290,7 @@ export interface GameState {
     | 'reward'
     | 'summary';
   meta: {
+    expedition?: import('./expedition-types').ExpeditionState;
     medals: number;
     guildPurchased: number;
     guildHistory: { trained: number; trials: number; aRated: number; sRated: number };
@@ -307,7 +310,8 @@ export interface GameState {
   };
   run: {
     routeRevision?: 16;
-    prologue?: 'departure' | 'ready';
+    prologue?: 'departure' | 'equipped' | 'resonance' | 'ready';
+    resonanceNarration?: boolean;
     supply?: {
       power: number;
       threshold: number;

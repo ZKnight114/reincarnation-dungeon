@@ -10,6 +10,7 @@ export interface Resonance {
   kind: 'profession' | 'item';
   series: string;
   rank: 1 | 2 | 3;
+  thresholds: [number, number, number];
   requires: ResonanceKey[];
   branches: Branch[];
   description: string;
@@ -27,6 +28,7 @@ function add(
   requires: ResonanceKey[],
   branches: Branch[],
   effects: [string, string, string],
+  thresholds: [number, number, number],
   family?: string,
 ) {
   RESONANCES[key] = {
@@ -35,6 +37,7 @@ function add(
     icon,
     series,
     rank,
+    thresholds,
     requires,
     branches,
     effects,
@@ -105,8 +108,8 @@ for (const r of proposals) {
   const key = Object.entries(DESIGN_RESONANCE_IDS).find(
     ([, id]) => id === r.id,
   )![0] as ResonanceKey;
-  const profession = ({ 战士: 'warrior', 法师: 'mage', 盗贼: 'rogue' } as const)[
-    r.profession as '战士' | '法师' | '盗贼'
+  const profession = ({ 战士: 'warrior', 法师: 'mage', 刺客: 'rogue' } as const)[
+    r.profession as '战士' | '法师' | '刺客'
   ];
   const base = Object.entries(DESIGN_RESONANCE_IDS).find(([, id]) => id === r.requires[0])?.[0] as
     ResonanceKey | undefined;
@@ -136,6 +139,7 @@ for (const r of proposals) {
     base ? [base] : [],
     [],
     r.effects.map(readableEffect) as [string, string, string],
+    r.thresholds as [number, number, number],
     family,
   );
 }

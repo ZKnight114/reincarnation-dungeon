@@ -36,19 +36,19 @@ test('v10 starts as a guild with reserve gold, full recruitment energy and no he
   assert.equal('schools' in s.meta, false);
   assert.deepEqual(parseSave(JSON.stringify(s)), s);
 });
-test('100 seeded routes have 37 nodes, three independent trials and optional graduation', () => {
+test('100 seeded routes have 42 nodes, three independent trials and optional graduation', () => {
   for (let n = 0; n < 100; n++) {
     const e = generateEvents(seed(n));
-    assert.equal(e.length, 37);
-    assert.equal(e.filter((x) => x.kind === 'battle').length, 9);
-    for (const i of [8, 16, 24]) assert.equal(e[i].kind, 'boss');
-    assert.equal(e[31].kind, 'graduation');
+    assert.equal(e.length, 42);
+    assert.equal(e.filter((x) => x.kind === 'battle').length, 12);
+    for (const i of [7, 17, 27]) assert.equal(e[i].kind, 'boss');
+    assert.equal(e[36].kind, 'graduation');
     assert.equal(
       e.some((x) => x.kind === 'mentor'),
       false,
     );
-    assert.equal(e[36].kind, 'ending');
-    assert.equal(e.filter((x) => x.kind === 'dig').length, 3);
+    assert.equal(e[41].kind, 'ending');
+    assert.equal(e.filter((x) => x.kind === 'dig').length, 5);
   }
 });
 test('three professions each define one neutral item plus three series at each 2/3/4 footprint; all 5-grid definitions reserved', () => {

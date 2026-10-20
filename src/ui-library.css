@@ -344,7 +344,7 @@ body.playing #app {
 }
 #selection-screen .tome-preview {
   display: flex;
-  height: 184px;
+  height: 138px;
   flex-shrink: 0;
   gap: 0;
   margin: 0;
@@ -380,8 +380,8 @@ body.playing #app {
   min-width: 0;
   border: 0;
   background: transparent;
-  padding: 10px;
-  overflow-y: auto;
+  padding: 8px 10px;
+  overflow: visible;
 }
 #selection-screen .tome-effects h3 {
   margin: 0;

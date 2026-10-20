@@ -14,6 +14,7 @@ try {
       './assets/ui/**/*.png',
       './assets/tomes/*.png',
       './assets/characters/**/*.png',
+      './assets/expedition/**/*.png',
     ],
     { eager: true, query: '?url', import: 'default' },
   ) as Record<string, string>;
@@ -27,3 +28,8 @@ export function spriteUrl(name: string): string {
   return files[`./assets/${name}.png`] ?? transparentPlaceholder;
 }
 export const startupAssets = () => [...new Set(Object.values(files))];
+export const assetEntries = () =>
+  Object.entries(files).map(([path, url]) => ({
+    name: path.replace('./assets/', '').replace(/\.png$/, ''),
+    url,
+  }));

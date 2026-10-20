@@ -156,6 +156,7 @@ export function play(
         const e = g.currentEvent()!;
         if (e.kind === 'supply' && s.run.supply) {
           g.update(1);
+          g.chooseEvent('take');
           break;
         }
         if (e.kind === 'chance' && s.run.routeRevision === 16) {

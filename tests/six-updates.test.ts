@@ -12,7 +12,7 @@ import { heroRig } from '../src/pixel';
 import { recruitAppearance, validAppearance, appearanceLayers } from '../src/character-parts';
 import { TALENTS } from '../src/hero';
 import { start, positionEvent, setEnemy, seed } from './helpers';
-import { chapterRoute, TRIALS } from '../src/journey';
+import { runRoute, TRIALS } from '../src/journey';
 
 let win: Window;
 beforeEach(() => {
@@ -36,7 +36,7 @@ const click = (selector: string) => {
 
 test('trial tier selection previews frozen boss and changes no game state until challenge', () => {
   const g = start();
-  positionEvent(g, 'boss', chapterRoute(4).trials[0]);
+  positionEvent(g, 'boss', runRoute(g.state).trials[0]);
   g.state.phase = 'event';
   g.state.enemy = null;
   g.state.run.trials[0] = null;
@@ -62,7 +62,7 @@ test('trial tier selection previews frozen boss and changes no game state until 
 
 test('promotion crosses one small node before resonance, reload preserves choices and journey stays at that node', () => {
   let g = start();
-  const node = chapterRoute(4).trials[0];
+  const node = runRoute(g.state).trials[0];
   positionEvent(g, 'boss', node);
   setEnemy(g, { hp: 0 });
   g.update(0.01);

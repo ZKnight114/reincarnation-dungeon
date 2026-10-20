@@ -975,7 +975,7 @@
     {
       "id": "rogue_gem",
       "name": "暗影宝石",
-      "profession": "盗贼",
+      "profession": "刺客",
       "category": null,
       "size": 1,
       "shape": "1格直形",
@@ -1011,16 +1011,16 @@
         "direction": "给别人",
         "text": "不增强毒伤、反击或典籍技能。每个目标最多接受2件宝石。"
       },
-      "contributionTags": ["盗贼"],
+      "contributionTags": ["刺客"],
       "contribution": [1, 2, 4, 8],
-      "intent": "盗贼布局枢纽；四阶可辅助炼金工具烟幕。",
+      "intent": "刺客布局枢纽；四阶可辅助炼金工具烟幕。",
       "cells": [[0, 0]],
       "series": "基础"
     },
     {
       "id": "rogue_assassin_2",
       "name": "潜行短剑",
-      "profession": "盗贼",
+      "profession": "刺客",
       "category": "剑",
       "size": 2,
       "shape": "2格直形",
@@ -1056,7 +1056,7 @@
         "direction": "无",
         "text": "无相邻联动。"
       },
-      "contributionTags": ["盗贼", "剑"],
+      "contributionTags": ["刺客", "剑"],
       "contribution": [2, 4, 8, 16],
       "intent": "低直伤与高频上毒；不依赖共鸣启用毒流。",
       "cells": [
@@ -1068,7 +1068,7 @@
     {
       "id": "rogue_assassin_3",
       "name": "轻型双剑",
-      "profession": "盗贼",
+      "profession": "刺客",
       "category": "剑",
       "size": 3,
       "shape": "3格L形",
@@ -1104,7 +1104,7 @@
         "direction": "别人给自己",
         "text": "每相邻1件其他剑，本物品直接物理伤害＋6%，最多3件；四阶每件＋10%。不放大额外真实伤害。"
       },
-      "contributionTags": ["盗贼", "剑"],
+      "contributionTags": ["刺客", "剑"],
       "contribution": [3, 6, 12, 24],
       "intent": "双匕多段与毒状态配合；额外伤害每次发动只结算一次。",
       "cells": [
@@ -1117,7 +1117,7 @@
     {
       "id": "rogue_assassin_4",
       "name": "影袭双剑",
-      "profession": "盗贼",
+      "profession": "刺客",
       "category": "剑",
       "size": 4,
       "shape": "4格L形",
@@ -1153,7 +1153,7 @@
         "direction": "无",
         "text": "无相邻联动。"
       },
-      "contributionTags": ["盗贼", "剑"],
+      "contributionTags": ["刺客", "剑"],
       "contribution": [4, 8, 16, 32],
       "intent": "毒流收尾大件；四阶增加斩杀倍率，不直接秒杀。",
       "cells": [
@@ -1167,7 +1167,7 @@
     {
       "id": "rogue_archer_2",
       "name": "轻型手弩",
-      "profession": "盗贼",
+      "profession": "刺客",
       "category": "弩",
       "size": 2,
       "shape": "2格直形",
@@ -1203,7 +1203,7 @@
         "direction": "无",
         "text": "无相邻联动；标记属于命中后的敌方状态，不属于邻接。"
       },
-      "contributionTags": ["盗贼", "弩"],
+      "contributionTags": ["刺客", "弩"],
       "contribution": [2, 4, 8, 16],
       "intent": "建立远程目标；标记在本次攻击之后施加，多个标记只取最强。",
       "cells": [
@@ -1215,7 +1215,7 @@
     {
       "id": "rogue_archer_3",
       "name": "连发手弩",
-      "profession": "盗贼",
+      "profession": "刺客",
       "category": "弩",
       "size": 3,
       "shape": "3格直形",
@@ -1251,7 +1251,7 @@
         "direction": "别人给自己",
         "text": "每相邻1件炼金工具，本物品直接伤害＋6%，最多3件；四阶每件＋10%。"
       },
-      "contributionTags": ["盗贼", "弩"],
+      "contributionTags": ["刺客", "弩"],
       "contribution": [3, 6, 12, 24],
       "intent": "稳定连射；以炼金工具邻接换取增伤，避免全包只放手弩。",
       "cells": [
@@ -1264,7 +1264,7 @@
     {
       "id": "rogue_archer_4",
       "name": "重型手弩",
-      "profession": "盗贼",
+      "profession": "刺客",
       "category": "弩",
       "size": 4,
       "shape": "4格L形",
@@ -1300,7 +1300,7 @@
         "direction": "无",
         "text": "无相邻联动。"
       },
-      "contributionTags": ["盗贼", "弩"],
+      "contributionTags": ["刺客", "弩"],
       "contribution": [4, 8, 16, 32],
       "intent": "标记爆发大件；用横L布局制造邻接与放置取舍。",
       "cells": [
@@ -1314,7 +1314,7 @@
     {
       "id": "rogue_leather_2",
       "name": "烟雾瓶",
-      "profession": "盗贼",
+      "profession": "刺客",
       "category": "辅助",
       "size": 2,
       "shape": "2格直形",
@@ -1350,7 +1350,7 @@
         "direction": "无",
         "text": "无专属相邻联动。"
       },
-      "contributionTags": ["盗贼", "辅助"],
+      "contributionTags": ["刺客", "辅助"],
       "contribution": [2, 4, 8, 16],
       "intent": "烟幕单一效果：减少原生直接伤害；同类取最高值，不叠乘。",
       "cells": [
@@ -1362,7 +1362,7 @@
     {
       "id": "rogue_leather_3",
       "name": "烟雾弹组",
-      "profession": "盗贼",
+      "profession": "刺客",
       "category": "辅助",
       "size": 3,
       "shape": "3格L形",
@@ -1398,7 +1398,7 @@
         "direction": "别人给自己",
         "text": "每相邻1件剑类物品，烟幕减伤强度增加10%（四阶15%），最多3件。"
       },
-      "contributionTags": ["盗贼", "辅助"],
+      "contributionTags": ["刺客", "辅助"],
       "contribution": [3, 6, 12, 24],
       "intent": "烟幕单一效果：减少原生直接伤害；同类取最高值，不叠乘。",
       "cells": [
@@ -1411,7 +1411,7 @@
     {
       "id": "rogue_leather_4",
       "name": "烟幕匣",
-      "profession": "盗贼",
+      "profession": "刺客",
       "category": "辅助",
       "size": 4,
       "shape": "4格方形",
@@ -1447,7 +1447,7 @@
         "direction": "别人给自己",
         "text": "每相邻1件本职业剑或手弩，本物品提供的生命增加8%（四阶12%），最多3件。"
       },
-      "contributionTags": ["盗贼", "辅助"],
+      "contributionTags": ["刺客", "辅助"],
       "contribution": [4, 8, 16, 32],
       "intent": "烟幕单一效果：减少原生直接伤害；同类取最高值，不叠乘。",
       "cells": [

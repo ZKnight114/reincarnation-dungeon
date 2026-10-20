@@ -29,6 +29,7 @@ import { emptyTomes, heroRating, tome, tomeBranch, TOMES } from './progression';
 import { resonanceAvailable, validResonanceOrder } from './resonances';
 import { itemSkills } from './skills';
 import { migrateFootprints, OLD_SPEAR_CELLS } from './footprints';
+import { readExpedition } from './expedition-save';
 import type { Equipment, GameState, HeroRecord, Placement, Trainee } from './types';
 import type { BattleRuntime } from './skill-types';
 export const SAVE_KEY = 'recursion-dungeon-save-v15';
@@ -376,7 +377,7 @@ function hero(v: any): asserts v is HeroRecord {
   trainee(v);
   const h = v as any;
   check(
-    integer(h.routeLength, 18, 37) &&
+    integer(h.routeLength, 18, 42) &&
       integer(h.normalLength, 18, h.routeLength) &&
       integer(h.guildAtGraduation, 1, GUILD_CAP) &&
       h.realm === Math.min(20, (h.realmStart ?? 0) + h.stages),
@@ -623,6 +624,7 @@ export function parseSave(source: string): GameState {
       integer(m.totalKills),
   );
   m.heroes.forEach(hero);
+  m.expedition = readExpedition(m.expedition, m.heroes);
   check(new Set(m.pendingPages.map((r: any) => r.heroId)).size === m.pendingPages.length);
   for (const reward of m.pendingPages)
     check(m.heroes.some((h: HeroRecord) => h.id === reward.heroId && h.outcome === 'win'));
@@ -634,12 +636,14 @@ export function parseSave(source: string): GameState {
   check(r.routeRevision === undefined || r.routeRevision === 16);
   check(
     r.prologue === undefined ||
-      (r.routeRevision === 16 && ['departure', 'ready'].includes(r.prologue)),
+      (r.routeRevision === 16 &&
+        ['departure', 'equipped', 'resonance', 'ready'].includes(r.prologue)),
   );
   if (r.pendingPromotion === undefined) r.pendingPromotion = false;
   check(typeof r.pendingPromotion === 'boolean');
   if (r.resonanceAtNode === undefined) r.resonanceAtNode = false;
   check(typeof r.resonanceAtNode === 'boolean');
+  check(r.resonanceNarration === undefined || typeof r.resonanceNarration === 'boolean');
   check(
     object(r) &&
       PROFESSION_KEYS.includes(r.profession) &&
@@ -859,6 +863,7 @@ export function parseSave(source: string): GameState {
         Array.isArray(a.buffs) &&
         Array.isArray(a.resonances),
     );
+    check(a.refreshUsed === undefined || typeof a.refreshUsed === 'boolean');
     if (a.kind === 'buff') {
       check(
         a.resonances.length === 0 &&
@@ -1289,7 +1294,7 @@ export function parseSave(source: string): GameState {
     check(
       !current.completed &&
         r.rewards.length === 0 &&
-        r.resonances.length === (r.prologue === 'departure' ? 0 : 1 + r.stages) &&
+        r.resonances.length === (r.prologue && r.prologue !== 'ready' ? 0 : 1 + r.stages) &&
         r.dig === null &&
         r.lastLootIds.length === 0,
     );
@@ -1306,7 +1311,18 @@ export function parseSave(source: string): GameState {
     check(
       r.prologue === 'departure'
         ? r.starterRound === 0 && s.inventory.length === 0
-        : r.starterRound === 2 && r.resonances.length === 1,
+        : r.starterRound === 2 && r.resonances.length === (r.prologue === 'ready' ? 1 : 0),
+    );
+  }
+  if (r.resonanceNarration) {
+    check(
+      r.routeRevision === 16 &&
+        s.phase === 'journey' &&
+        r.rewards.length === 0 &&
+        !r.resonanceAtNode &&
+        r.encounter === null &&
+        (['equipped', 'ready'].includes(r.prologue) ||
+          (r.stages >= 1 && r.index === runRoute(s as GameState).promotions[r.stages - 1] + 1)),
     );
   }
   if (r.wheel !== undefined) {

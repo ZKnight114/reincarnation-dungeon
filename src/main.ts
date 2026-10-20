@@ -1,9 +1,17 @@
-import { Game } from './game';
+import { Game, createState } from './game';
 import { loadSave, parseSave, SAVE_KEY } from './save';
 import { UI } from './ui';
-import { finishLoading, loadingError, loadingProgress, preloadAssets } from './loading';
+import {
+  finishLoading,
+  loadingError,
+  loadingProgress,
+  preloadAssets,
+  loadingBackground,
+} from './loading';
 import { startupAssets } from './assets';
-import { preloadCharacterParts } from './character-parts';
+import { registerCharacterParts } from './character-parts';
+import { initializeAssetCache } from './asset-cache';
+import { initialHomeView, visibleAssets } from './resource-plan';
 import type { GameState } from './types';
 
 // Styles intentionally build on earlier layers; preserve this cascade order.
@@ -24,6 +32,14 @@ import './playtest.css';
 import './six-updates.css';
 import './pending-updates.css';
 import './adventure-v16.css';
+import './recycle.css';
+import './dialogs.css';
+import './expedition.css';
+import './battle-portraits.css';
+import './combat-layout.css';
+import './viewport.css';
+import './identity-marks.css';
+import './resource-loading.css';
 
 let started = false,
   busy = false;
@@ -39,6 +55,10 @@ function launch(state: GameState | null) {
   started = true;
   loadingProgress(1, 1, '准备进入');
   finishLoading();
+  // Background failures are retried only when their page is opened, never block play.
+  void preloadAssets(() => {}, startupAssets(), 'background')
+    .then(registerCharacterParts)
+    .catch(() => {});
   let previous = performance.now(),
     uiTime = 0;
   function frame(now: number) {
@@ -150,21 +170,29 @@ async function boot() {
       loadingError('界面样式加载失败，请重试', () => location.reload());
       return;
     }
-    const count = startupAssets().length;
-    loadingProgress(1, count + 3, '加载资源');
-    await preloadAssets((done, total) =>
-      loadingProgress(done + 1, total + 3, `加载资源 ${done}/${total}`),
-    );
-    loadingProgress(count + 1, count + 3, '读取进度');
-    await preloadCharacterParts();
-    let state: GameState | null;
+    loadingProgress(0, 1, '读取进度');
+    let state: GameState;
+    let saveError: unknown;
     try {
-      state = loadSave();
+      state = loadSave() ?? createState();
     } catch (e) {
-      recovery(e);
+      saveError = e;
+      state = createState();
+    }
+    await initializeAssetCache();
+    const critical = visibleAssets(state, initialHomeView(state));
+    const count = critical.length;
+    await preloadAssets(
+      (done, total) => loadingProgress(done, total + 1, `准备当前页面 ${done}/${total}`),
+      critical,
+    );
+    loadingBackground();
+    registerCharacterParts();
+    if (saveError) {
+      recovery(saveError);
       return;
     }
-    loadingProgress(count + 2, count + 3, '准备进入');
+    loadingProgress(count, count + 1, '准备进入');
     launch(state);
   } catch (e) {
     loadingError('启动失败：' + (e instanceof Error ? e.message : String(e)), () => void boot());

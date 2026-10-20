@@ -27,7 +27,7 @@
       "series": "重击",
       "rank": 2,
       "requires": ["warrior_heavy_1"],
-      "thresholds": [12, 48, 96],
+      "thresholds": [20, 60, 120],
       "contributionScope": "战士",
       "effects": [
         "每3回合独立造成25%A物理伤害；目标已有破防时，额外造成15%A物理伤害。",
@@ -44,7 +44,7 @@
       "series": "重击",
       "rank": 3,
       "requires": ["warrior_heavy_1"],
-      "thresholds": [12, 48, 96],
+      "thresholds": [28, 80, 144],
       "contributionScope": "战士",
       "effects": [
         "每4回合独立造成70%A物理伤害；目标生命≤30%H敌时，额外造成25%A物理伤害。",
@@ -78,7 +78,7 @@
       "series": "连击",
       "rank": 2,
       "requires": ["warrior_flurry_1"],
-      "thresholds": [12, 48, 96],
+      "thresholds": [20, 60, 120],
       "contributionScope": "战士",
       "effects": [
         "每3回合独立造成20%A物理伤害；本轮勇者先手时，恢复1%H生命，每场治疗最多3次。",
@@ -95,7 +95,7 @@
       "series": "连击",
       "rank": 3,
       "requires": ["warrior_flurry_1"],
-      "thresholds": [12, 48, 96],
+      "thresholds": [28, 80, 144],
       "contributionScope": "战士",
       "effects": [
         "每4回合独立攻击3次，每次20%A物理伤害；目标已有破防时，每次额外忽略10%防御。",
@@ -129,7 +129,7 @@
       "series": "守势",
       "rank": 2,
       "requires": ["warrior_guard_1"],
-      "thresholds": [12, 48, 96],
+      "thresholds": [20, 60, 120],
       "contributionScope": "战士",
       "effects": [
         "敌方直接攻击前勇者有护盾且受击后仍存活时，独立反击本次减伤后、护盾前伤害的10%，最多20%A；每敌方回合最多1次。",
@@ -146,7 +146,7 @@
       "series": "守势",
       "rank": 3,
       "requires": ["warrior_guard_1"],
-      "thresholds": [12, 48, 96],
+      "thresholds": [28, 80, 144],
       "contributionScope": "战士",
       "effects": [
         "每场首次因敌方伤害破盾且仍存活时，独立恢复8%H护盾，并造成30%A物理伤害。",
@@ -180,7 +180,7 @@
       "series": "火焰",
       "rank": 2,
       "requires": ["mage_flame_1"],
-      "thresholds": [12, 48, 96],
+      "thresholds": [20, 60, 120],
       "contributionScope": "法师",
       "effects": [
         "每3回合独立造成25%A法术伤害，并追加当前一次灼烧结算值的75%，追加量最多20%A。",
@@ -197,7 +197,7 @@
       "series": "火焰",
       "rank": 3,
       "requires": ["mage_flame_1"],
-      "thresholds": [12, 48, 96],
+      "thresholds": [28, 80, 144],
       "contributionScope": "法师",
       "effects": [
         "每4回合独立造成70%A法术伤害；目标已有灼烧时，本次额外忽略15%防御。",
@@ -231,7 +231,7 @@
       "series": "冰霜",
       "rank": 2,
       "requires": ["mage_ice_1"],
-      "thresholds": [12, 48, 96],
+      "thresholds": [20, 60, 120],
       "contributionScope": "法师",
       "effects": [
         "每3回合独立获得3%H护盾；本轮勇者先手时，独立造成20%A法术伤害。",
@@ -248,7 +248,7 @@
       "series": "冰霜",
       "rank": 3,
       "requires": ["mage_ice_1"],
-      "thresholds": [12, 48, 96],
+      "thresholds": [28, 80, 144],
       "contributionScope": "法师",
       "effects": [
         "每4回合独立造成70%A法术伤害；目标已有冰霜减速时，本次额外忽略15%防御。",
@@ -282,7 +282,7 @@
       "series": "奥术",
       "rank": 2,
       "requires": ["mage_arcane_1"],
-      "thresholds": [12, 48, 96],
+      "thresholds": [20, 60, 120],
       "contributionScope": "法师",
       "effects": [
         "每3回合独立造成25%A法术伤害；目标同时有灼烧和冰霜减速时，额外造成20%A法术伤害。",
@@ -299,7 +299,7 @@
       "series": "奥术",
       "rank": 3,
       "requires": ["mage_arcane_1"],
-      "thresholds": [12, 48, 96],
+      "thresholds": [28, 80, 144],
       "contributionScope": "法师",
       "effects": [
         "典籍技能成功释放后，独立造成25%A法术伤害并获得2%H护盾；每勇者回合最多1次，无典籍时不触发。",
@@ -311,13 +311,13 @@
     {
       "id": "rogue_poison_1",
       "name": "毒刃回响",
-      "profession": "盗贼",
+      "profession": "刺客",
       "kind": "职业",
       "series": "毒刃",
       "rank": 1,
       "requires": [],
       "thresholds": [12, 48, 96],
-      "contributionScope": "盗贼",
+      "contributionScope": "刺客",
       "effects": [
         "每3回合独立造成25%A物理伤害；目标已有毒时，额外造成8%A真实伤害。",
         "每3回合独立造成40%A物理伤害；目标已有毒时，额外造成14%A真实伤害。",
@@ -328,13 +328,13 @@
     {
       "id": "rogue_poison_2",
       "name": "伏击要害",
-      "profession": "盗贼",
+      "profession": "刺客",
       "kind": "职业",
       "series": "毒刃",
       "rank": 2,
       "requires": ["rogue_poison_1"],
-      "thresholds": [12, 48, 96],
-      "contributionScope": "盗贼",
+      "thresholds": [20, 60, 120],
+      "contributionScope": "刺客",
       "effects": [
         "每3回合独立造成25%A物理伤害；目标已有毒时，恢复5%A生命，每场治疗最多3次。",
         "每3回合独立造成40%A物理伤害；目标已有毒时，恢复8%A生命，每场治疗最多3次。",
@@ -345,13 +345,13 @@
     {
       "id": "rogue_poison_3",
       "name": "蚀骨毒雾",
-      "profession": "盗贼",
+      "profession": "刺客",
       "kind": "职业",
       "series": "毒刃",
       "rank": 3,
       "requires": ["rogue_poison_1"],
-      "thresholds": [12, 48, 96],
-      "contributionScope": "盗贼",
+      "thresholds": [28, 80, 144],
+      "contributionScope": "刺客",
       "effects": [
         "每4回合独立造成25%A真实伤害，并追加当前一次毒结算值的75%，追加量最多20%A。",
         "每4回合独立造成40%A真实伤害，并追加当前一次毒结算值的100%，追加量最多30%A。",
@@ -362,13 +362,13 @@
     {
       "id": "rogue_volley_1",
       "name": "穿透连射",
-      "profession": "盗贼",
+      "profession": "刺客",
       "kind": "职业",
       "series": "连射",
       "rank": 1,
       "requires": [],
       "thresholds": [12, 48, 96],
-      "contributionScope": "盗贼",
+      "contributionScope": "刺客",
       "effects": [
         "每3回合独立攻击2次，每次15%A物理伤害。",
         "每3回合独立攻击2次，每次22%A物理伤害。",
@@ -379,13 +379,13 @@
     {
       "id": "rogue_volley_2",
       "name": "猎手汲取",
-      "profession": "盗贼",
+      "profession": "刺客",
       "kind": "职业",
       "series": "连射",
       "rank": 2,
       "requires": ["rogue_volley_1"],
-      "thresholds": [12, 48, 96],
-      "contributionScope": "盗贼",
+      "thresholds": [20, 60, 120],
+      "contributionScope": "刺客",
       "effects": [
         "每3回合独立造成20%A物理伤害；目标已有标记时，恢复1%H生命，每场治疗最多3次。",
         "每3回合独立造成30%A物理伤害；目标已有标记时，恢复2%H生命，每场治疗最多3次。",
@@ -396,13 +396,13 @@
     {
       "id": "rogue_volley_3",
       "name": "箭雨追猎",
-      "profession": "盗贼",
+      "profession": "刺客",
       "kind": "职业",
       "series": "连射",
       "rank": 3,
       "requires": ["rogue_volley_1"],
-      "thresholds": [12, 48, 96],
-      "contributionScope": "盗贼",
+      "thresholds": [28, 80, 144],
+      "contributionScope": "刺客",
       "effects": [
         "每4回合独立攻击3次，每次20%A物理伤害；目标已有标记时，每次额外忽略10%防御。",
         "每4回合独立攻击3次，每次28%A物理伤害；目标已有标记时，每次额外忽略20%防御。",
@@ -413,13 +413,13 @@
     {
       "id": "rogue_shadow_1",
       "name": "暗影庇护",
-      "profession": "盗贼",
+      "profession": "刺客",
       "kind": "职业",
       "series": "暗影",
       "rank": 1,
       "requires": [],
       "thresholds": [12, 48, 96],
-      "contributionScope": "盗贼",
+      "contributionScope": "刺客",
       "effects": [
         "每3回合独立获得3%H护盾。",
         "每3回合独立获得5%H护盾。",
@@ -430,13 +430,13 @@
     {
       "id": "rogue_shadow_2",
       "name": "烟幕伏击",
-      "profession": "盗贼",
+      "profession": "刺客",
       "kind": "职业",
       "series": "暗影",
       "rank": 2,
       "requires": ["rogue_shadow_1"],
-      "thresholds": [12, 48, 96],
-      "contributionScope": "盗贼",
+      "thresholds": [20, 60, 120],
+      "contributionScope": "刺客",
       "effects": [
         "每3回合造成25%A物理伤害，自身有烟幕时追加15%A。",
         "每3回合造成40%A物理伤害，自身有烟幕时追加25%A。",
@@ -447,13 +447,13 @@
     {
       "id": "rogue_shadow_3",
       "name": "夜幕潜行",
-      "profession": "盗贼",
+      "profession": "刺客",
       "kind": "职业",
       "series": "暗影",
       "rank": 3,
       "requires": ["rogue_shadow_1"],
-      "thresholds": [12, 48, 96],
-      "contributionScope": "盗贼",
+      "thresholds": [28, 80, 144],
+      "contributionScope": "刺客",
       "effects": [
         "每场首次因敌方伤害跌至50%H及以下且仍存活时，独立恢复3%H生命，并获得4%H护盾。",
         "每场首次因敌方伤害跌至50%H及以下且仍存活时，独立恢复5%H生命，并获得6%H护盾。",
@@ -486,7 +486,7 @@
       "series": "剑",
       "rank": 2,
       "requires": ["warrior_sword_1"],
-      "thresholds": [4, 12, 24],
+      "thresholds": [8, 20, 36],
       "contributionScope": "剑（所有职业）",
       "effects": [
         "每3回合造成20%A物理伤害，并无条件追击15%A。",
@@ -503,7 +503,7 @@
       "series": "剑",
       "rank": 3,
       "requires": ["warrior_sword_1"],
-      "thresholds": [4, 12, 24],
+      "thresholds": [12, 28, 48],
       "contributionScope": "剑（所有职业）",
       "effects": [
         "每4回合独立造成65%A物理伤害；本次忽略10%防御，目标生命≤30%H敌时再追加15%A物理伤害。",
@@ -537,7 +537,7 @@
       "series": "枪",
       "rank": 2,
       "requires": ["warrior_spear_1"],
-      "thresholds": [4, 12, 24],
+      "thresholds": [8, 20, 36],
       "contributionScope": "枪（所有职业）",
       "effects": [
         "每3回合独立造成25%A物理伤害；目标已有破防时，额外造成10%A物理伤害。",
@@ -554,7 +554,7 @@
       "series": "枪",
       "rank": 3,
       "requires": ["warrior_spear_1"],
-      "thresholds": [4, 12, 24],
+      "thresholds": [12, 28, 48],
       "contributionScope": "枪（所有职业）",
       "effects": [
         "每4回合独立攻击3次，每次18%A物理伤害；本次忽略10%防御。",
@@ -588,7 +588,7 @@
       "series": "防御",
       "rank": 2,
       "requires": ["warrior_shield_1"],
-      "thresholds": [4, 12, 24],
+      "thresholds": [8, 20, 36],
       "contributionScope": "防御（所有职业）",
       "effects": [
         "敌方直接攻击前有护盾且受击后仍存活时，独立反击本次减伤后、护盾前伤害的8%，最多15%A，每敌方回合最多1次。",
@@ -605,7 +605,7 @@
       "series": "防御",
       "rank": 3,
       "requires": ["warrior_shield_1"],
-      "thresholds": [4, 12, 24],
+      "thresholds": [12, 28, 48],
       "contributionScope": "防御（所有职业）",
       "effects": [
         "每场首次因敌方伤害破盾且仍存活时，独立获得4%H护盾并恢复2%H生命。",
@@ -639,7 +639,7 @@
       "series": "法杖",
       "rank": 2,
       "requires": ["mage_staff_1"],
-      "thresholds": [4, 12, 24],
+      "thresholds": [8, 20, 36],
       "contributionScope": "法杖（所有职业）",
       "effects": [
         "每3回合独立造成20%A法术伤害，并追加当前一次灼烧值的50%，追加量最多15%A。",
@@ -656,7 +656,7 @@
       "series": "法杖",
       "rank": 3,
       "requires": ["mage_staff_1"],
-      "thresholds": [4, 12, 24],
+      "thresholds": [12, 28, 48],
       "contributionScope": "法杖（所有职业）",
       "effects": [
         "每4回合独立造成65%A法术伤害；目标已有灼烧时，本次忽略15%防御。",
@@ -690,7 +690,7 @@
       "series": "法球",
       "rank": 2,
       "requires": ["mage_book_1"],
-      "thresholds": [4, 12, 24],
+      "thresholds": [8, 20, 36],
       "contributionScope": "法球（所有职业）",
       "effects": [
         "每3回合独立造成20%A法术伤害；目标已有冰霜减速时，额外造成10%A真实伤害。",
@@ -707,7 +707,7 @@
       "series": "法球",
       "rank": 3,
       "requires": ["mage_book_1"],
-      "thresholds": [4, 12, 24],
+      "thresholds": [12, 28, 48],
       "contributionScope": "法球（所有职业）",
       "effects": [
         "每4回合独立造成65%A法术伤害；目标已有冰霜减速时，本次忽略15%防御。",
@@ -737,7 +737,7 @@
       "series": "辅助",
       "rank": 2,
       "requires": ["mage_robe_1"],
-      "thresholds": [4, 12, 24],
+      "thresholds": [8, 20, 36],
       "contributionScope": "辅助（所有职业）",
       "effects": [
         "每4回合恢复1%H＋5%A生命，每战最多3次有效治疗。",
@@ -754,7 +754,7 @@
       "series": "辅助",
       "rank": 3,
       "requires": ["mage_robe_1"],
-      "thresholds": [4, 12, 24],
+      "thresholds": [12, 28, 48],
       "contributionScope": "辅助（所有职业）",
       "effects": [
         "辅助物品原生回合技能发动后，造成20%A魔法伤害并获得2%H护盾；每回合最多一次。",
@@ -766,7 +766,7 @@
     {
       "id": "rogue_ranged_1",
       "name": "弦鸣",
-      "profession": "盗贼",
+      "profession": "刺客",
       "kind": "物品",
       "series": "弩",
       "rank": 1,
@@ -783,12 +783,12 @@
     {
       "id": "rogue_ranged_2",
       "name": "追猎回响",
-      "profession": "盗贼",
+      "profession": "刺客",
       "kind": "物品",
       "series": "弩",
       "rank": 2,
       "requires": ["rogue_ranged_1"],
-      "thresholds": [4, 12, 24],
+      "thresholds": [8, 20, 36],
       "contributionScope": "弩（所有职业）",
       "effects": [
         "每3回合独立造成20%A物理伤害；目标已有标记时，额外造成10%A物理伤害。",
@@ -800,12 +800,12 @@
     {
       "id": "rogue_ranged_3",
       "name": "手弩极意",
-      "profession": "盗贼",
+      "profession": "刺客",
       "kind": "物品",
       "series": "弩",
       "rank": 3,
       "requires": ["rogue_ranged_1"],
-      "thresholds": [4, 12, 24],
+      "thresholds": [12, 28, 48],
       "contributionScope": "弩（所有职业）",
       "effects": [
         "每4回合独立攻击3次，每次18%A物理伤害，本次忽略10%防御。",
@@ -993,7 +993,7 @@
     {
       "id": "rogue_poison_tome",
       "name": "蚀影刃典",
-      "profession": "盗贼",
+      "profession": "刺客",
       "series": "短剑 / 双剑",
       "attributes": [
         {
@@ -1022,7 +1022,7 @@
     {
       "id": "rogue_ranged_tome",
       "name": "追猎弩典",
-      "profession": "盗贼",
+      "profession": "刺客",
       "series": "手弩",
       "attributes": [
         {
@@ -1051,7 +1051,7 @@
     {
       "id": "rogue_shadow_tome",
       "name": "夜行秘卷",
-      "profession": "盗贼",
+      "profession": "刺客",
       "series": "炼金工具",
       "attributes": [
         {
@@ -1079,5 +1079,15 @@
       "skillName": "烟影遁形"
     }
   ],
-  "status": "implemented-v15.1"
+  "status": "implemented-v15.1",
+  "professionThresholdsByRank": [
+    [12, 48, 96],
+    [20, 60, 120],
+    [28, 80, 144]
+  ],
+  "itemThresholdsByRank": [
+    [4, 12, 24],
+    [8, 20, 36],
+    [12, 28, 48]
+  ]
 }

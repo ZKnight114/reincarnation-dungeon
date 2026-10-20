@@ -8,6 +8,7 @@ import { TOMES, tome, realmName, upgradeCost } from './progression';
 import { heroArt } from './scene';
 import type { GameState, Profession } from './types';
 import { tomeArt, uiControl, uiIcon } from './ui-art';
+import { tomeSkills } from './skills';
 
 export type TomeFilter = Profession | 'all';
 type Meta = GameState['meta'];
@@ -30,8 +31,38 @@ function skill(t: Tome, level: number) {
   const text = readableEffect(t.skillStages[Math.max(0, level - 1)]);
   const split = text.indexOf('：');
   return split < 0
-    ? { name: '自动回合技能', text }
+    ? { name: t.skillName || '自动回合技能', text }
     : { name: text.slice(0, split), text: text.slice(split + 1) };
+}
+
+/** Compact selection preview; coefficients come from the actual combat skill. */
+export function tomePreviewText(id: string, level: number) {
+  const s = tomeSkills(id, level)[0];
+  const percent = (value: number) => `${Math.round(value * 100)}%`;
+  const effects = s.actions
+    .filter(
+      (a) =>
+        !a.when &&
+        ['damage', 'shield', 'heal'].includes(a.kind) &&
+        (a.kind !== 'damage' || (a.a ?? 0) > 0),
+    )
+    .map((a) => {
+      if (a.kind === 'shield') return `${percent(a.h!)}生命护盾`;
+      if (a.kind === 'heal') return `${percent(a.h!)}生命治疗（每战至多${a.limit}次）`;
+      return `${a.hits ? a.hits + '次×' : ''}${percent(a.a!)}攻击${a.type === 'magic' ? '法伤' : '物伤'}`;
+    });
+  const synergy: Record<string, string> = {
+    warrior_sword_tome: '破防时穿防，残血目标追加伤害。',
+    warrior_spear_tome: '破防时穿防。',
+    warrior_shield_tome: '消耗部分护盾追加伤害。',
+    mage_flame_tome: '施加灼烧；已有灼烧时追加伤害。',
+    mage_ice_tome: '施加减速；已有减速时穿防。',
+    mage_arcane_tome: '目标同时灼烧、减速时追加伤害。',
+    rogue_poison_tome: '施毒；已有毒时追加真实伤害。',
+    rogue_ranged_tome: '施加标记增幅手弩；已有标记时增伤。',
+    rogue_shadow_tome: '烟幕下追加伤害。',
+  };
+  return `每${s.cooldown}回合：${effects.join('、')}。${synergy[id]}`;
 }
 
 export function tomeSelectionView(s: GameState, filter: TomeFilter) {
@@ -43,7 +74,7 @@ export function tomeSelectionView(s: GameState, filter: TomeFilter) {
     effect = chosen ? skill(chosen, level) : null;
   return `${header('选择典籍', 'back-allocation', '加点')}
     <section class="tome-dossier"><div class="tome-hero">${heroArt(trainee.profession, trainee.appearance)}<div><h2>${esc(trainee.name)} · ${PROFESSIONS[trainee.profession].name}</h2><small>${realmName(trainee.realmStart ?? 0)}</small><p>攻 ${+stats.attack.toFixed(1)} · 生 ${Math.round(stats.hp)} · 防 ${+stats.defense.toFixed(1)} · 速 ${stats.speed}</p></div></div>
-    <div class="tome-preview"><button class="tome-equipped" ${chosen ? `data-inspect-tome="${chosen.id}" aria-label="查看${chosen.name}详情"` : 'disabled'}><small>本局典籍</small>${chosen ? tomeArt(chosen.id) : '<span class="tome-empty">?</span>'}<strong>${chosen ? chosen.name : '未装备'}</strong><small>${chosen ? level + '阶' : '请选择典籍'}</small></button><div class="tome-effects"><h3>典籍效果</h3>${chosen && effect ? `<p>${tomeAttributeText(chosen, level)}</p><p><strong>${esc(effect.name)}</strong><br>${decorateStatusText(esc(effect.text))}</p>` : '<p>选择后查看人物属性与自动技能</p>'}</div></div>
+    <div class="tome-preview"><button class="tome-equipped" ${chosen ? `data-inspect-tome="${chosen.id}" aria-label="查看${chosen.name}详情"` : 'disabled'}><small>本局典籍</small>${chosen ? tomeArt(chosen.id) : '<span class="tome-empty">?</span>'}<strong>${chosen ? chosen.name : '未装备'}</strong><small>${chosen ? level + '阶' : '请选择典籍'}</small></button><div class="tome-effects"><h3>典籍效果</h3>${chosen && effect ? `<p>${tomeAttributeText(chosen, level)}</p><p><strong>${esc(effect.name)} · </strong>${esc(tomePreviewText(chosen.id, level))}</p>` : '<p>选择后查看人物属性与自动技能</p>'}</div></div>
     <p class="tome-caption">${free ? '首次培养 · 可任选一本免费解锁' : '选择已收集的典籍'}</p>
     <div class="tome-catalogue">${visibleTomes(filter)
       .map((b) => {

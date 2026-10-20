@@ -97,6 +97,7 @@ test('guild roster displays fixed hero power and details after a failed run', ()
   assert.equal(game.state.meta.heroes.length, 1);
   click('[data-action="selection"]');
   assert.equal(game.state.phase, 'home');
+  click('[data-action="roster"]');
   assert.match(el('#guild-roster').textContent, new RegExp(trainee.name));
   click(`[data-hero="${trainee.id}"]`);
   assert.match(el('#modal-body').textContent, /战力来源|已经定型/);

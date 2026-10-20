@@ -46,8 +46,10 @@ function step(g: Game) {
       break;
     case 'event': {
       const kind = g.currentEvent()!.kind;
-      if (kind === 'supply') g.update(1);
-      else
+      if (kind === 'supply') {
+        g.update(1);
+        assert.equal(g.chooseEvent('take'), null);
+      } else
         assert.equal(
           g.chooseEvent(
             kind === 'boss'
@@ -93,6 +95,12 @@ test('departure and ready history survive reload, and two batches grant exactly 
   assert.equal(g.claimStarterRound(), '起始物品已领取');
   fitStarters(g);
   g.finishOpening();
+  assert.equal(g.state.run.prologue, 'equipped');
+  g = reload(g);
+  g.continueJourney();
+  assert.equal(g.state.run.prologue, 'resonance');
+  g = reload(g);
+  g.continueJourney();
   g.chooseResonance(g.state.run.rewards[0].resonances[0]);
   assert.equal(g.state.run.prologue, 'ready');
   g = reload(g);
@@ -103,7 +111,7 @@ test('departure and ready history survive reload, and two batches grant exactly 
 });
 
 test('all ten routes preserve three spring/Boss/chest/promotion blocks and shortened onboarding', () => {
-  const expected = [18, 24, 28, 32, 32, 32, 32, 32, 32, 32];
+  const expected = [23, 29, 33, 37, 37, 37, 37, 37, 37, 37];
   for (let chapter = 1; chapter <= 10; chapter++) {
     const route = chapterRoute(chapter);
     assert.equal(route.normal, expected[chapter - 1]);
@@ -116,13 +124,67 @@ test('all ten routes preserve three spring/Boss/chest/promotion blocks and short
       assert.equal(route.promotions[stage], boss + 2);
     }
     assert.equal(route.kinds.filter((x) => x === 'promotion').length, 3);
+    let start = 0;
+    for (const [stage, boss] of route.trials.entries()) {
+      const interval = route.kinds.slice(start, boss - 1);
+      assert.ok(
+        interval.filter((x) => x === 'battle').length >= 2,
+        `chapter ${chapter} stage ${stage}`,
+      );
+      start = boss + 3;
+    }
+    assert.ok(route.kinds.slice(route.promotions[2] + 1, route.graduation).includes('battle'));
     const tail = route.kinds.slice(route.normal, -1);
     assert.ok(tail.every((x) => x === 'boss'));
   }
 });
 
+test('the issued former v16 route remains unchanged after reload while new recruits use longer construction intervals', () => {
+  const g = fresh(1);
+  const kinds =
+    'battle supply rest boss treasure promotion battle rest boss treasure promotion rest boss treasure promotion dig battle graduation'.split(
+      ' ',
+    );
+  g.state.run.events = kinds.map((kind) => ({
+    kind,
+    completed: false,
+    variant: 0,
+  })) as typeof g.state.run.events;
+  const restored = reload(g);
+  assert.equal(runRoute(restored.state).normal, 18);
+  assert.deepEqual(runRoute(restored.state).trials, [3, 8, 12]);
+  assert.equal(chapterRoute(1).normal, 23);
+  assert.deepEqual(
+    restored.state.run.events.map((e) => e.kind),
+    kinds,
+  );
+});
+
+test('initial resonance result waits for manual continue and survives saving without granting it twice', () => {
+  let g = fresh(1);
+  g.continueJourney();
+  g.claimStarterRound();
+  g.claimStarterRound();
+  fitStarters(g);
+  g.finishOpening();
+  g.continueJourney();
+  g.continueJourney();
+  const key = g.state.run.rewards[0].resonances[0];
+  g.chooseResonance(key);
+  g.update(60);
+  assert.equal(g.state.phase, 'journey');
+  assert.equal(g.state.run.resonanceNarration, true);
+  assert.ok(g.chooseResonance(key));
+  g = reload(g);
+  g.continueJourney();
+  assert.equal(g.state.phase, 'camp');
+  assert.deepEqual(g.state.run.resonances, [key]);
+  assert.equal(g.state.run.resonanceNarration, undefined);
+});
+
 test('Boss heals immediately, chest costs current life, promotion preserves percentage and next-node resonance runs first', () => {
-  let g = at(3, 1);
+  const boss = chapterRoute(1).trials[0];
+  let g = at(boss, 1);
   g.chooseTrial(2);
   const max = g.state.player.maxHp;
   setPlayer(g, { hp: max * 0.2 });
@@ -138,7 +200,7 @@ test('Boss heals immediately, chest costs current life, promotion preserves perc
   g.update(5);
   close(g.state.player.hp, max * 0.5);
   g.continueCamp(); // recycles the Boss drops at the next small node
-  assert.equal(g.state.run.index, 4);
+  assert.equal(g.state.run.index, boss + 1);
   assert.equal(g.looseItems().length, 0);
   g.continueJourney();
   const before = g.state.player.hp;
@@ -155,12 +217,19 @@ test('Boss heals immediately, chest costs current life, promotion preserves perc
   close(g.state.player.hp / g.state.player.maxHp, 0.45);
   g = reload(g);
   g.finishAwakening();
-  assert.equal(g.state.run.index, 6);
+  assert.equal(g.state.run.index, boss + 3);
   assert.equal(g.state.phase, 'reward');
   assert.equal(g.state.run.resonanceAtNode, true);
-  assert.equal(g.state.run.events[6].completed, false);
+  assert.equal(g.state.run.events[boss + 3].completed, false);
   g.chooseResonance(g.state.run.rewards[0].resonances[0]);
   assert.equal(g.state.phase, 'journey');
+  g.update(30);
+  assert.equal(g.state.phase, 'journey');
+  assert.equal(g.state.run.resonanceNarration, true);
+  g = reload(g);
+  g.continueJourney();
+  assert.equal(g.state.phase, 'journey');
+  assert.equal(g.state.run.resonanceNarration, undefined);
   g.continueJourney();
   assert.equal(g.state.phase, 'combat');
   assert.equal(g.state.run.resonances.length, 2);
@@ -194,7 +263,7 @@ test('wheel interleaves six equal attributes; each outcome pays once and survive
     ['hp', 'attack', 'defense', 'hp', 'attack', 'defense'],
   );
   for (let sector = 0; sector < 6; sector++) {
-    let g = reload(at(14), () => (sector + 0.5) / 6);
+    let g = reload(at(chapterRoute(4).kinds.indexOf('chance')), () => (sector + 0.5) / 6);
     g.state.player.hp = 0.5; // fractions must not round into a lethal cost
     const old = { ...g.state.player },
       inventory = g.state.inventory.length;
@@ -222,12 +291,13 @@ test('wheel interleaves six equal attributes; each outcome pays once and survive
 
 test('blood chest works below one life and leaving is free', () => {
   assert.equal(lifeAmount(0.001), '不足0.01');
-  const g = at(9);
+  const chest = chapterRoute(4).trials[0] + 1;
+  const g = at(chest);
   g.state.player.hp = 0.1;
   g.chooseEvent('open');
   close(g.state.player.hp, 0.09);
   assert.equal(g.looseItems().length, 3);
-  const leave = at(9),
+  const leave = at(chest),
     hp = leave.state.player.hp;
   leave.chooseEvent('skip');
   close(leave.state.player.hp, hp);
@@ -251,6 +321,8 @@ test('supply chances and grades are stage-based, stable across reload and issued
   g = reload(g, () => 0.99);
   assert.deepEqual(g.state.run.supply, supply);
   g.update(1);
+  assert.equal(g.state.inventory.length, inventory);
+  assert.equal(g.chooseEvent('take'), null);
   const drops = g.looseItems();
   assert.equal(drops.length, 3);
   assert.deepEqual(drops.map((x) => x.level).sort(), [...supply.levels].sort());
@@ -263,14 +335,14 @@ test('supply chances and grades are stage-based, stable across reload and issued
 });
 
 test('spring maximum-life choice preserves life percentage and last normal fight opens all 42 cells', () => {
-  const g = at(2, 1);
+  const g = at(chapterRoute(1).trials[0] - 1, 1);
   const old = g.state.player.maxHp;
   g.state.player.hp = old * 0.4;
   g.chooseEvent('vigor');
   close(g.state.player.hp / g.state.player.maxHp, 0.4);
-  close(g.state.player.maxHp, old * 1.12);
+  close(g.state.player.maxHp, old * 1.06);
   assert.ok(!g.state.run.journey.some((x) => x.text.includes('不恢复当前生命')));
-  const end = at(16, 1);
+  const end = at(chapterRoute(1).graduation - 1, 1);
   step(end);
   assert.equal(runBagCells(end.state).size, 42);
   assert.doesNotThrow(() => reload(end));
@@ -279,7 +351,11 @@ test('spring maximum-life choice preserves life percentage and last normal fight
 test('all three supply stages apply explicit low, normal and great grades without rerolling on load', () => {
   for (let stage = 0; stage < 3; stage++)
     for (const result of ['low', 'normal', 'great'] as const) {
-      let g = reload(at([2, 12, 20][stage]), () => (result === 'great' ? 0.01 : 0.99));
+      const route = chapterRoute(4);
+      const node = route.kinds.findIndex(
+        (kind, n) => kind === 'supply' && route.promotions.filter((p) => p < n).length === stage,
+      );
+      let g = reload(at(node), () => (result === 'great' ? 0.01 : 0.99));
       delete g.state.run.supply;
       g.state.phase = 'journey';
       const preview = g.heroPreview()!,
@@ -289,6 +365,7 @@ test('all three supply stages apply explicit low, normal and great grades withou
       assert.equal(g.state.run.supply!.result, result);
       g = reload(g);
       g.update(1);
+      g.chooseEvent('take');
       assert.deepEqual(
         g
           .looseItems()
@@ -319,7 +396,7 @@ test('flat and random maximum-life choices preserve the paid remaining-life perc
 });
 
 test('retiring between Boss and promotion does not invent a realm increase or duplicate recovery', () => {
-  const g = at(3, 1);
+  const g = at(chapterRoute(1).trials[0], 1);
   g.chooseTrial(0);
   step(g);
   assert.equal(g.state.run.pendingPromotion, true);

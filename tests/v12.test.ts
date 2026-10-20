@@ -118,6 +118,8 @@ test('active phases keep bag or reforge left and speed right; event equipment re
     g.chooseEvent('heal');
     check();
     assert.equal((win.document.querySelector('#view-pack') as any).hidden, true);
+    await settleJourneyUI(ui);
+    assert.equal((win.document.querySelector('#view-pack') as any).hidden, true);
     g.state.run.points = 6;
     g.redeemEquipment();
     check();

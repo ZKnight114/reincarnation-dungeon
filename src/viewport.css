@@ -1,0 +1,41 @@
+/* Browser bars shorten a phone viewport. Extend scenery, never stretch the grid. */
+#app.mobile-frame,
+body.playing #app.mobile-frame {
+  position: relative;
+  isolation: isolate;
+  background: #102329;
+}
+#app.mobile-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(#10232922, #10232988),
+    var(--dungeon-scene) center / cover;
+}
+#app.mobile-frame[data-mobile-scene='guild']::before {
+  background:
+    linear-gradient(transparent 66%, #102329 92%),
+    var(--guild-scene) center top / cover;
+}
+#app.mobile-frame[data-mobile-scene='expedition']::before {
+  background:
+    linear-gradient(#10232955, #10232988),
+    var(--expedition-battle-scene) center / cover;
+}
+#app.mobile-frame .app-shell {
+  position: absolute;
+  left: var(--game-left);
+  top: var(--game-top);
+  background: transparent;
+}
+#app.mobile-frame #home-screen {
+  background: transparent;
+}
+#app.mobile-frame #home-screen .guild-scene {
+  background: none;
+}
+#app.mobile-frame #home-screen .guild-scene::after {
+  background: none;
+}

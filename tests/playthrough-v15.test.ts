@@ -19,7 +19,7 @@ test('all three professions can finish the short tutorial with real combat, pack
       h = g.state.meta.heroes[0];
     assert.equal(g.state.phase, 'summary');
     assert.equal(h.outcome, 'win');
-    assert.equal(h.completed, 18);
+    assert.equal(h.completed, chapterRoute(1).normal);
     assert.equal(h.realm, 3);
     assert.equal(h.resonances.length, 4);
     assert.equal(h.loadout!.capacity, 42);

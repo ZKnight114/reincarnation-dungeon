@@ -1,0 +1,36 @@
+/* Shared head-only frames for training, exploration and chapter battles. */
+.battle-portrait {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 43px;
+  border: 1px solid #8eafa0;
+  background: #284345;
+  overflow: hidden;
+  flex-shrink: 0;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+.battle-portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.battle-portrait small {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #172e33e8;
+  padding: 1px 3px;
+  font-size: 8px !important;
+  line-height: 10px;
+  color: #fff1cb !important;
+}
+#modal[data-skin='guild'] .enemy-skill-details p {
+  color: #d0dac1;
+}
+#adventure-screen #battle-panel:not(.in-combat) .battle-portrait {
+  display: none;
+}

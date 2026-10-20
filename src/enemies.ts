@@ -5,7 +5,7 @@ import type { Enemy, GameState } from './types';
 import { nonGuildAttributes, buildSources } from './backpack';
 import { estimatePressure } from './combat';
 
-const professions = { 战士: 'warrior', 法师: 'mage', 盗贼: 'rogue' } as const;
+const professions = { 战士: 'warrior', 法师: 'mage', 刺客: 'rogue' } as const;
 export const ENEMY_TEMPLATES = catalogue.enemies.map((e) => ({
   ...e,
   profession: professions[e.profession as keyof typeof professions],

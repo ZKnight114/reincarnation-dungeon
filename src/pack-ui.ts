@@ -57,18 +57,32 @@ export function bagCellClass(open: Set<string>, x: number, y: number) {
 export function shapePreview(item: Equipment) {
   return `<span class="shape-name">${SHAPE_NAMES[definition(item).shape]}</span>`;
 }
-const gradeFill: Record<Equipment['quality'], string> = {
+export const gradeFill: Record<Equipment['quality'], string> = {
   white: '#65716d',
   green: '#195e38',
   blue: '#184f80',
   purple: '#623285',
   orange: '#755234',
 };
+export function equipmentActivation(el: Element, item: Equipment) {
+  if (el.querySelector('.item-activation-rim')) return;
+  const rim = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  rim.setAttribute('class', 'item-activation-rim');
+  rim.setAttribute('d', el.querySelector('.item-outline')!.getAttribute('d')!);
+  const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  label.setAttribute('class', 'item-activation-label');
+  const cell = cells(item)[0];
+  label.setAttribute('x', String(cell[0] * 100 + 50));
+  label.setAttribute('y', String(cell[1] * 100 + 58));
+  label.textContent = '发动';
+  el.append(rim, label);
+}
 export function itemCard(item: Equipment) {
   return `<span class="card-art quality-${item.quality}" style="--quality-color:${QUALITIES[item.quality].color}">${itemPainting(item)}</span><strong>${esc(item.name)} <small>Lv.${item.level}</small></strong><span class="branch-label" style="color:${BRANCHES[item.branch].color}">${BRANCHES[item.branch].name} · 共鸣 ${contributionPoints(item)} 点 · 属性倍率 ${Math.round(item.potency * 100)}%</span><p>${item.attack ? `攻击 +${item.attack.toFixed(0)} · ` : ''}${item.hp ? `生命 +${item.hp.toFixed(0)} · ` : ''}${item.defense ? `防御 +${item.defense.toFixed(1)} · ` : ''}${shapePreview(item)}</p>`;
 }
 type Gesture = { pointer: number; id: string; x: number; y: number; dragging: boolean };
 export class PackUI {
+  private locked = false;
   private selected: string | null = null;
   private rotation = 0;
   private anchor: [number, number] = [0, 0];
@@ -116,6 +130,7 @@ export class PackUI {
       true,
     );
     this.root.addEventListener('click', (e) => {
+      if (this.locked) return;
       const el = (e.target as Element).closest<HTMLElement>('[data-pack-item],[data-pack-action]');
       if (!el) return;
       if (el.dataset.packItem && Date.now() < this.suppressUntil) {
@@ -127,6 +142,7 @@ export class PackUI {
       else this.showDetails(el.dataset.packItem!);
     });
     this.root.addEventListener('keydown', (e) => {
+      if (this.locked) return;
       const el = (e.target as Element).closest<HTMLElement>('[data-pack-item]');
       if (el && ['Enter', ' '].includes(e.key)) {
         e.preventDefault();
@@ -139,6 +155,7 @@ export class PackUI {
       }
     });
     this.root.addEventListener('pointerdown', (e) => {
+      if (this.locked) return;
       const el = (e.target as Element).closest<HTMLElement>('[data-pack-item]');
       if (!el || !this.game.editable() || e.button !== 0 || this.gesture) return;
       this.game.state.run.autoExplore = false;
@@ -261,6 +278,10 @@ export class PackUI {
     this.key = '';
     this.lastOpen = null;
     this.lastItems = null;
+  }
+  setLocked(locked: boolean) {
+    this.locked = locked;
+    if (locked) this.cancel();
   }
   private refresh() {
     this.key = '';
@@ -480,19 +501,8 @@ export class PackUI {
   }
   pulse(id: string) {
     const el = this.grid.querySelector(`[data-pack-item="${id}"]`);
-    if (el && !el.querySelector('.item-activation-rim')) {
-      const rim = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      rim.setAttribute('class', 'item-activation-rim');
-      rim.setAttribute('d', el.querySelector('.item-outline')!.getAttribute('d')!);
-      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      label.setAttribute('class', 'item-activation-label');
-      const cell = cells(this.game.findItem(id)!)[0];
-      label.setAttribute('x', String(cell[0] * 100 + 50));
-      label.setAttribute('y', String(cell[1] * 100 + 58));
-      label.textContent = '发动';
-      el.append(rim, label);
-    }
     if (!el) return;
+    equipmentActivation(el, this.game.findItem(id)!);
     this.motion?.pulse(el, 'triggered', 260);
   }
   render() {

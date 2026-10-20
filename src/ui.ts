@@ -1,4 +1,12 @@
-import { WHEEL_SECONDS, WHEEL_SECTORS, lifeAmount, chanceName } from './event-rules';
+import {
+  SUPPLY_SECONDS,
+  SPRING_HEAL,
+  SPRING_MAX_LIFE,
+  WHEEL_SECONDS,
+  WHEEL_SECTORS,
+  lifeAmount,
+  chanceName,
+} from './event-rules';
 import { itemTalentText } from './talents';
 import { archiveDetails, archiveOutcome, type ArchiveTab } from './archive-ui';
 import { icon, professionIcon } from './art';
@@ -13,6 +21,8 @@ import {
   PROFESSIONS,
   RESONANCES,
   resonanceScore,
+  runBagCells,
+  validateLayout,
 } from './backpack';
 import { isEnemySource } from './combat';
 import { QUALITIES } from './data';
@@ -33,9 +43,14 @@ import { eventStory, runRoute, TRIALS } from './journey';
 import { esc, PackUI } from './pack-ui';
 import { foeRig, heroRig, pixel } from './pixel';
 import { journeyGroups } from './presentation';
+import { viewportFit } from './viewport-fit';
 import { currentHero, guildConditions, realmName, tome } from './progression';
 import { CHAPTER_CAP, GUILD_NODES, guildBenefits, startingRealm } from './guild';
 import { resonanceRankClass, resonanceRankName } from './resonance-appearance';
+import { resonanceCandidates, resonanceDetails, resonancePack } from './resonance-ui';
+import { ExpeditionUI } from './expedition-ui';
+import { heroHead, enemyHead } from './battle-portraits';
+import { combatHud, combatResonances, combatVitals } from './combat-view';
 import { cleanLegacyData, parseSave, SAVE_KEY, saveGame } from './save';
 import { heroArt, itemPainting, shapePath } from './scene';
 import {
@@ -47,12 +62,15 @@ import {
 } from './guild-ui';
 import { uiControl, uiIcon } from './ui-art';
 import { Motion, type AttackStyle } from './motion';
+import { recyclingFlight } from './recycle-transition';
 import { equipmentFamily } from './categories';
 import { ENEMY_ANCHORS } from './actor-appearance';
 import { configurationView } from './configuration-ui';
 import { trialView } from './trial-ui';
 import { statusButton, statusDetails, type StatusSide } from './battle-status';
-import { aptitudeDescription, aptitudeIcon, APTITUDES } from './aptitude';
+import { visibleAssets } from './resource-plan';
+import { missingAssets, preloadAssets } from './loading';
+import { registerCharacterParts } from './character-parts';
 import type {
   Attribute,
   GameState,
@@ -63,7 +81,13 @@ import type {
   TalentKey,
 } from './types';
 export class UI {
-  private homeView: 'guild' | 'roster' | 'library' | 'guild-tree' = 'guild';
+  private resourcesBlocked = false;
+  private resourceEpoch = 0;
+  private resourceTask = false;
+  private resourceFailed = false;
+  private resourceDialog: HTMLDialogElement | null = null;
+  private homeView: 'guild' | 'roster' | 'library' | 'guild-tree' | 'expedition' = 'guild';
+  private expedition: ExpeditionUI;
   private rosterFilter: Profession | 'all' = 'all';
   private rosterAscending = false;
   private rosterPage = 0;
@@ -103,6 +127,13 @@ export class UI {
   private transitionUntil = 0;
   private transitionNode = -1;
   private resultNode = -1;
+  private recycling: {
+    game: Game;
+    action: 'continue' | 'finish-opening';
+    until: number;
+    credited: boolean;
+    cleanup: () => void;
+  } | null = null;
   private footerReady = false;
   private reforgeReady = false;
   private digFeedbackCell = -1;
@@ -121,7 +152,7 @@ export class UI {
     // An old paused save must resume now that pause is no longer a player control.
     if (game.state.phase === 'combat') game.state.isRunning = true;
     this.root = document.getElementById('app')!;
-    this.root.innerHTML = `<main class="app-shell"><section id="home-screen" class="guild-home"><div class="guild-scene guild-art" aria-hidden="true"></div><div class="guild-title"><h1>冒险公会</h1><small>灰石之门</small></div><button class="home-settings" data-action="settings">${uiIcon('settings')}设置</button><div id="guild-wallet"></div><p class="home-chapter" id="home-chapter"></p><div class="guild-progress-controls"><button data-action="guild-level" id="guild-level-button">公会 Lv.1</button><button data-action="library">典籍</button></div><button class="primary-button guild-expedition" data-action="chapters">${uiIcon('dungeon')}地牢探险</button></section><section id="roster-screen" hidden><header><h1>冒险者</h1></header><div class="roster-toolbar"><small id="guild-count"></small><button data-action="roster-sort" id="roster-sort">战力 ↓</button></div><div id="guild-roster"></div><div class="roster-pagination"><button data-action="roster-prev" aria-label="上一页">‹</button><small id="roster-page"></small><button data-action="roster-next" aria-label="下一页">›</button></div><div class="roster-filters">${(['all', ...PROFESSION_KEYS] as const).map((k) => `<button data-roster-filter="${k}">${k === 'all' ? '全部' : PROFESSIONS[k].name}</button>`).join('')}</div></section><nav id="guild-nav" class="guild-nav" aria-label="公会导航"><button data-action="roster">${uiIcon('adventurers')}<strong>冒险者</strong></button><button data-action="guild">${uiIcon('guild')}<strong>冒险公会</strong></button></nav><section id="guild-feature-screen" class="guild-feature-screen" hidden></section><section id="selection-screen" class="selection-screen"></section><section id="adventure-screen" class="adventure-screen"><header class="adventure-header"><div><small id="chapter-label"></small><strong id="event-label"></strong></div><div class="header-actions"><span id="hero-power"></span><button data-action="settings" aria-label="存档设置">${uiIcon('settings')}</button></div></header><div id="stage-route" class="stage-route"></div><section id="battle-panel" class="battle-panel"></section><div id="shared-board" class="shared-board"><div id="combat-hud" class="combat-hud"></div><div id="resonance-strip" class="resonance-strip"></div><div id="resonance-info" class="resonance-info" hidden></div><section id="view-pack"></section><section id="journey-panel" class="journey-panel" hidden><div class="journey-heading"><strong>探险历程</strong><span id="journey-status"></span></div><div id="journey-history" class="journey-history" role="log" aria-label="探险经过与结果"></div></section></div><div id="adventure-footer" class="adventure-footer"></div></section><section id="summary-screen" class="summary-screen"></section></main><dialog id="decision-sheet" class="event-dialog" aria-labelledby="decision-title"><div id="decision"></div></dialog><dialog id="modal"><div id="modal-body"></div><button data-action="close" class="secondary-button modal-close">关闭</button></dialog><div id="toast" role="status"></div>`;
+    this.root.innerHTML = `<main class="app-shell"><section id="home-screen" class="guild-home"><div class="guild-scene guild-art" aria-hidden="true"></div><div class="guild-title"><h1>冒险公会</h1><small>灰石之门</small></div><button class="home-settings" data-action="settings">${uiIcon('settings')}设置</button><div id="guild-wallet"></div><p class="home-chapter" id="home-chapter"></p><div class="guild-progress-controls"><button data-action="guild-level" id="guild-level-button">公会 Lv.1</button><button data-action="library">典籍</button></div><button class="primary-button guild-expedition" data-action="chapters">${uiIcon('dungeon')}地牢探险</button></section><section id="roster-screen" hidden><header><h1>冒险者</h1></header><div class="roster-toolbar"><small id="guild-count"></small><button data-action="roster-sort" id="roster-sort">战力 ↓</button></div><div id="guild-roster"></div><div class="roster-pagination"><button data-action="roster-prev" aria-label="上一页">‹</button><small id="roster-page"></small><button data-action="roster-next" aria-label="下一页">›</button></div><div class="roster-filters">${(['all', ...PROFESSION_KEYS] as const).map((k) => `<button data-roster-filter="${k}">${k === 'all' ? '全部' : PROFESSIONS[k].name}</button>`).join('')}</div></section><nav id="guild-nav" class="guild-nav" aria-label="公会导航"><button data-action="roster">${uiIcon('adventurers')}<strong>冒险者</strong></button><button data-action="guild">${uiIcon('guild')}<strong>冒险公会</strong></button><button data-action="expedition">${uiIcon('trial')}<strong>远征</strong></button></nav><section id="guild-feature-screen" class="guild-feature-screen" hidden></section><section id="selection-screen" class="selection-screen"></section><section id="adventure-screen" class="adventure-screen"><header class="adventure-header"><div><small id="chapter-label"></small><strong id="event-label"></strong></div><div class="header-actions"><span id="hero-power"></span><button data-action="settings" aria-label="存档设置">${uiIcon('settings')}</button></div></header><div id="stage-route" class="stage-route"></div><section id="battle-panel" class="battle-panel"></section><div id="shared-board" class="shared-board"><div id="combat-hud" class="combat-hud"></div><div id="resonance-strip" class="resonance-strip"></div><div id="resonance-info" class="resonance-info" hidden></div><section id="view-pack"></section><section id="journey-panel" class="journey-panel" hidden><div class="journey-heading"><strong>探险历程</strong><span id="journey-status"></span></div><div id="journey-history" class="journey-history" role="log" aria-label="探险经过与结果"></div></section></div><div id="adventure-footer" class="adventure-footer"></div></section><section id="summary-screen" class="summary-screen"></section></main><dialog id="decision-sheet" class="event-dialog" aria-labelledby="decision-title"><div id="decision"></div></dialog><dialog id="modal"><div id="modal-body"></div><button data-action="close" class="secondary-button modal-close">关闭</button></dialog><div id="toast" role="status"></div>`;
     document
       .getElementById('decision-sheet')!
       .addEventListener('cancel', (e) => e.preventDefault());
@@ -141,6 +172,9 @@ export class UI {
     });
     this.fit();
     this.motion = new Motion(this.root);
+    this.expedition = new ExpeditionUI(document.getElementById('guild-feature-screen')!);
+    if (game.state.phase === 'home' && game.state.meta.expedition?.run)
+      this.homeView = 'expedition';
     window.addEventListener('resize', () => this.fit());
     window.visualViewport?.addEventListener('resize', () => this.fit());
     this.pack = new PackUI(
@@ -182,6 +216,7 @@ export class UI {
       }
     });
     this.root.parentElement!.addEventListener('click', (e) => {
+      if (this.recycling) return;
       const talent = (e.target as Element).closest<HTMLElement>('[data-inspect-talent]');
       if (!talent && !this.talentBubble?.contains(e.target as Node)) this.hideTalent();
       const button = (e.target as Element).closest<HTMLElement>('button,[data-bound-item]');
@@ -192,8 +227,21 @@ export class UI {
         this.inspectTalent(d.inspectTalent as TalentKey, button);
       } else if (d.statusSide) {
         this.statusSide = d.statusSide as StatusSide;
-        this.modal(statusDetails(this.game.state, this.statusSide));
+        this.modal(
+          statusDetails(
+            this.homeView === 'expedition'
+              ? (this.expedition.battleState(this.game.state) ?? this.game.state)
+              : this.game.state,
+            this.statusSide,
+          ),
+        );
         document.getElementById('modal')!.classList.add('battle-status-modal');
+      } else if (d.expResonance) {
+        const view = this.expedition.battleState(this.game.state);
+        if (view) {
+          this.modal(resonanceDetails(view, d.expResonance as ResonanceKey), 'event');
+          document.getElementById('modal')!.classList.add('resonance-detail-modal');
+        }
       } else if (d.trialTier !== undefined) {
         this.selectedTrial = Number(d.trialTier) as TrialTier;
         this.keys.decision = '';
@@ -220,6 +268,11 @@ export class UI {
         const h = this.game.state.meta.heroes.find((h) => h.id === d.owner),
           item = h?.loadout?.equipment.find((i) => i.id === d.boundItem),
           el = button.closest('.hero-equipment-section')?.querySelector('[data-bound-detail]');
+        if (item && !el && this.homeView === 'expedition') {
+          this.modal(
+            `<h2>${esc(item.name)} · ${item.level}阶</h2><p>${item.attack ? `攻击 +${item.attack.toFixed(1)} · ` : ''}生命 +${item.hp} · 防御 +${item.defense}</p><p>${esc(readableEffect(itemStageText(item)))}</p><small>天赋增幅：${esc(itemTalentText(item, h!.talents))}</small>`,
+          );
+        }
         if (item && el) {
           el.innerHTML = `<strong>${esc(item.name)} · ${item.level}阶</strong><p>${item.attack ? `攻击 +${item.attack.toFixed(1)} · ` : ''}生命 +${item.hp} · 防御 +${item.defense} · 共鸣 ${contributionPoints(item)} 点</p><p>${esc(readableEffect(itemStageText(item)))}</p><small>天赋增幅：${esc(itemTalentText(item, h!.talents))}</small>`;
           button
@@ -243,7 +296,18 @@ export class UI {
       } else if (d.chapter) this.game.chooseChapter(Number(d.chapter));
       else if (d.attribute)
         this.result(this.game.allocate(d.attribute as Attribute, Number(d.delta)), '属性已分配');
-      else if (d.resonance)
+      else if (d.resonanceDetail) {
+        const key = d.resonanceDetail as ResonanceKey;
+        if (this.game.state.run.rewards[0]?.resonances.includes(key)) {
+          this.modal(resonanceDetails(this.game.state, key), 'event');
+          document.getElementById('modal')!.classList.add('resonance-detail-modal');
+        }
+      } else if (d.refreshResonance !== undefined)
+        this.result(this.game.refreshResonance(Number(d.refreshResonance)), '');
+      else if (d.resonancePack !== undefined) {
+        this.modal(resonancePack(this.game.state), 'guild');
+        document.getElementById('modal')!.classList.add('resonance-pack-modal');
+      } else if (d.resonance)
         this.result(this.game.chooseResonance(d.resonance as ResonanceKey), '共鸣已获得');
       else if (d.reward !== undefined)
         this.result(this.game.chooseReward(Number(d.reward)), '祝福已获得');
@@ -260,11 +324,8 @@ export class UI {
       } else if (d.inspectResonance) {
         const k = d.inspectResonance as ResonanceKey;
         this.pack.showResonance(k);
-        const r = resonanceScore(this.game.state.inventory, this.game.state.draft, k),
-          rd = RESONANCES[k];
-        this.modal(
-          `<div class="resonance-inspection ${resonanceRankClass(rd.rank)}"><h2>${rd.name} <small>${resonanceRankName(rd.rank)}</small></h2><p>${r.score} 贡献 · ${r.tier} / 3 段</p>${rd.effects.map((effect, n) => `<p class="${r.tier > n ? 'reached' : 'muted'}"><b>${r.thresholds[n]} 点</b> ${esc(effect)}</p>`).join('')}</div>`,
-        );
+        this.modal(resonanceDetails(this.game.state, k), 'event');
+        document.getElementById('modal')!.classList.add('resonance-detail-modal');
       } else if (d.hero) {
         const h = this.game.state.meta.heroes.find((h) => h.id === d.hero);
         if (h) {
@@ -393,18 +454,19 @@ export class UI {
     if (error) this.toast(error);
   }
   private action(action: string) {
-    if (action === 'inspect-aptitude') {
-      const key = this.game.state.run.trainee?.aptitude;
-      this.modal(
-        `<h2>基础资质</h2><p>${key ? aptitudeDescription(key) : '历史勇者保留原天赋，资质未评定。'}</p>${Object.entries(
-          APTITUDES,
-        )
-          .map(
-            ([k, a]) =>
-              `<p class="aptitude-detail" style="color:${a.color}">${aptitudeIcon(k as keyof typeof APTITUDES)}${a.name} · ${a.gold ? `至少${a.gold}条金色天赋` : a.purple ? '至少1条紫色或金色天赋' : '天赋品质随机'}</p>`,
-          )
-          .join('')}`,
-      );
+    if (this.recycling) return;
+    if (action === 'expedition' || action === 'exploration') {
+      if (this.game.state.phase === 'home') {
+        this.close();
+        this.expedition.reset();
+        if (action === 'exploration') this.expedition.showExploration();
+        this.keys['guild-feature'] = '';
+        this.homeView = 'expedition';
+      }
+      return;
+    }
+    if (action.startsWith('exp-')) {
+      this.result(this.expedition.handle(action, this.game.state), '');
       return;
     }
     if (['continue', 'continue-story'].includes(action) && this.journeyPlaying) return;
@@ -519,7 +581,7 @@ export class UI {
       }
     }
     if (action === 'claim-starters') this.result(g.claimStarterRound(), '本轮三件物品已全部领取');
-    if (action === 'finish-opening') this.result(g.finishOpening(), '选择初始共鸣');
+    if (action === 'finish-opening') this.advanceWithRecycling('finish-opening');
     if (action === 'fast-explore') {
       s.run.autoExplore = true;
       s.skipCombat = true;
@@ -535,7 +597,12 @@ export class UI {
       this.showPack = false;
       // Closing voluntary inspection resumes playback; it never skips the story.
     }
-    if (action === 'continue') this.result(g.continueCamp(), '培养继续');
+    if (action === 'continue-resonance' && !this.journeyPlaying && s.run.resonanceNarration) {
+      const startAdventure = s.run.prologue === 'ready';
+      g.continueJourney();
+      if (startAdventure) this.result(g.continueCamp(), '');
+    }
+    if (action === 'continue') this.advanceWithRecycling('continue');
     if (action === 'skip-reward') g.skipReward();
     if (action === 'redeem') this.result(g.redeemEquipment(), '随机装备已放在战场');
     if (action === 'selection') {
@@ -580,8 +647,71 @@ export class UI {
       this.toast('已回到新的公会');
     }
   }
+  private advanceWithRecycling(action: 'continue' | 'finish-opening') {
+    const s = this.game.state;
+    if (
+      this.recycling ||
+      (action === 'continue' && s.phase !== 'camp') ||
+      (action === 'finish-opening' && (s.phase !== 'opening' || s.run.starterRound !== 2))
+    )
+      return;
+    const error = validateLayout(s.inventory, s.draft, runBagCells(s));
+    if (error || !this.game.packAnalysis(true).hasWeapon) {
+      this.toast(error ?? '至少放入一件武器');
+      return;
+    }
+    const loose = this.game.looseItems();
+    const target = document.getElementById('point-redeem');
+    if (!loose.length || !target || (s.run.pendingPromotion && s.run.routeRevision !== 16)) {
+      this.completeAdvance(action);
+      return;
+    }
+    const ids = new Set(loose.map((item) => item.id));
+    const sources = Array.from(
+      this.root.querySelectorAll<SVGElement>('#field-items [data-pack-item]'),
+    ).filter((source) => ids.has(source.dataset.packItem!));
+    const flight = recyclingFlight(sources, target, this.motion.reduced);
+    this.recycling = {
+      game: this.game,
+      action,
+      credited: false,
+      until: Date.now() + flight.duration,
+      cleanup: flight.cleanup,
+    };
+    this.pack.setLocked(true);
+    this.root.dataset.recycling = 'true';
+  }
+  private completeAdvance(action: 'continue' | 'finish-opening') {
+    this.result(action === 'continue' ? this.game.continueCamp() : this.game.finishOpening(), '');
+  }
+  private updateRecycling() {
+    const pending = this.recycling;
+    if (!pending || Date.now() < pending.until) return;
+    if (!pending.credited) {
+      pending.cleanup();
+      this.game.collectLooseEquipment();
+      pending.credited = true;
+      pending.until = Date.now() + (this.motion.reduced ? 0 : 220);
+      this.keys.footer = '';
+      this.persist();
+      return;
+    }
+    this.recycling = null;
+    this.pack.setLocked(false);
+    delete this.root.dataset.recycling;
+    this.completeAdvance(pending.action);
+    this.persist();
+  }
   render() {
+    if (!this.ensureResources()) return;
+    this.updateRecycling();
     this.game.recoverEnergy();
+    this.root.dataset.mobileScene =
+      this.game.state.phase === 'home'
+        ? this.homeView === 'expedition'
+          ? 'expedition'
+          : 'guild'
+        : 'dungeon';
     if (this.game.state.run.routeRevision === 16) {
       const w = this.game.state.run.wheel;
       this.wheel = w
@@ -605,7 +735,12 @@ export class UI {
     const s = this.game.state;
     if (this.statusSide && !(document.getElementById('modal') as HTMLDialogElement).open)
       this.statusSide = null;
-    if (this.statusSide && s.phase !== 'combat') this.close();
+    if (
+      this.statusSide &&
+      s.phase !== 'combat' &&
+      !(this.homeView === 'expedition' && this.expedition.battleState(s))
+    )
+      this.close();
     if (this.talentBubble && s.phase !== 'configure') this.hideTalent();
     this.motion.sync(s.speed, (s.phase === 'combat' && !s.isRunning) || document.hidden);
     if (this.phase !== s.phase) {
@@ -614,7 +749,9 @@ export class UI {
       this.resultNode =
         s.phase === 'camp' &&
         !!this.game.currentEvent()?.completed &&
-        (previous === 'combat' || (previous === 'event' && s.run.routeRevision === 16))
+        (previous === 'combat' ||
+          (previous === 'event' && this.game.currentEvent()?.kind !== 'supply') ||
+          previous === 'reward')
           ? s.run.index
           : -1;
       if (
@@ -625,13 +762,24 @@ export class UI {
         this.transitionUntil = Date.now() + (this.motion.reduced ? 0 : 680 / s.speed);
       this.showPack =
         ['opening', 'combat'].includes(s.phase) ||
-        (s.phase === 'camp' && !this.game.currentEvent()?.completed);
+        (s.phase === 'camp' &&
+          (!this.game.currentEvent()?.completed ||
+            (!previous &&
+              ['battle', 'boss', 'elite', 'ending'].includes(this.game.currentEvent()!.kind))));
       if (s.phase === 'awakening') this.ritualStarted = Date.now();
+    }
+    // Result playback is a one-shot entry into camp, not a reaction to later arrange logs.
+    if (this.resultNode === s.run.index && s.phase === 'camp' && !this.resultPlaying) {
+      this.resultNode = -1;
+      this.showPack =
+        this.game.looseItems().length > 0 ||
+        ['battle', 'boss', 'elite', 'ending'].includes(this.game.currentEvent()!.kind);
     }
     const equipmentVisible =
       s.phase !== 'combat' && (s.run.starterOffers.length > 0 || this.game.looseItems().length > 0);
     if (this.resultPlaying) this.showPack = false;
-    else if (equipmentVisible && s.phase !== 'awakening') this.showPack = true;
+    else if (equipmentVisible && s.phase !== 'awakening' && !s.run.resonanceNarration)
+      this.showPack = true;
     if (s.phase === 'awakening') this.showPack = false;
     if (s.phase === 'camp' && this.game.currentEvent()?.completed && safelyGraduated(s))
       this.showPack = true;
@@ -651,12 +799,20 @@ export class UI {
       s.phase !== 'home' || this.homeView !== 'guild';
     document.getElementById('roster-screen')!.hidden =
       s.phase !== 'home' || this.homeView !== 'roster';
-    const featureVisible = s.phase === 'home' && ['library', 'guild-tree'].includes(this.homeView);
+    const featureVisible =
+      s.phase === 'home' && ['library', 'guild-tree', 'expedition'].includes(this.homeView);
     document.getElementById('guild-feature-screen')!.hidden = !featureVisible;
     document.getElementById('guild-nav')!.hidden =
-      featureVisible || !['home', 'chapter'].includes(s.phase);
+      (featureVisible && !(this.homeView === 'expedition' && this.expedition.showNavigation)) ||
+      !['home', 'chapter'].includes(s.phase);
     document.querySelectorAll<HTMLElement>('#guild-nav button').forEach((b) => {
-      const selected = b.dataset.action === (this.homeView === 'roster' ? 'roster' : 'guild');
+      const selected =
+        b.dataset.action ===
+        (this.homeView === 'roster'
+          ? 'roster'
+          : this.homeView === 'expedition' && !this.expedition.showingExploration
+            ? 'expedition'
+            : 'guild');
       b.classList.toggle('selected', selected);
       b.setAttribute('aria-current', selected ? 'page' : 'false');
     });
@@ -676,6 +832,9 @@ export class UI {
     document.getElementById('adventure-screen')!.classList.toggle('compact', true);
     document
       .getElementById('adventure-screen')!
+      .classList.toggle('combat-screen', s.phase === 'combat');
+    document
+      .getElementById('adventure-screen')!
       .classList.toggle('ritual-screen', s.phase === 'awakening');
     document
       .getElementById('adventure-screen')!
@@ -692,7 +851,11 @@ export class UI {
       document.getElementById('event-label')!.textContent = s.run.prologue
         ? s.run.prologue === 'departure'
           ? '公会启程'
-          : '整备完成'
+          : s.run.prologue === 'equipped'
+            ? '整备完成'
+            : s.run.prologue === 'resonance'
+              ? '选择初始共鸣'
+              : '准备就绪'
         : s.phase === 'opening'
           ? `起始补给 ${Math.min(2, s.run.starterRound + 1)}/2`
           : s.phase === 'initial'
@@ -712,22 +875,85 @@ export class UI {
     }
     document.getElementById('view-pack')!.hidden = !active || !this.showPack;
     document.getElementById('journey-panel')!.hidden = !active || this.showPack;
-    this.decision();
     this.journey();
+    // Queue newly added narration before deciding whether an event sheet may open.
+    this.decision();
     if (active) {
       this.prepareEncounter();
       this.footer();
+      if (this.recycling?.credited)
+        this.motion.pulse(document.getElementById('point-redeem'), 'reforge-notify', 220, false);
     }
     document.getElementById('combat-hud')!.hidden = !active;
   }
   get holdingJourney() {
     return (
-      this.game.state.phase === 'journey' &&
-      (this.showPack || this.journeyPlaying || Date.now() < this.transitionUntil)
+      this.resourcesBlocked ||
+      !!this.recycling ||
+      (this.game.state.phase === 'journey' &&
+        (this.showPack || this.journeyPlaying || Date.now() < this.transitionUntil))
     );
   }
   get holdingCombat() {
-    return this.game.state.phase === 'combat' && Date.now() < this.transitionUntil;
+    return (
+      this.resourcesBlocked ||
+      (this.game.state.phase === 'combat' && Date.now() < this.transitionUntil)
+    );
+  }
+  private ensureResources() {
+    const urls = missingAssets(visibleAssets(this.game.state, this.homeView));
+    if (!urls.length && !this.resourceTask) {
+      this.resourcesBlocked = false;
+      this.resourceFailed = false;
+      this.resourceDialog?.close();
+      this.root.removeAttribute('aria-busy');
+      registerCharacterParts();
+      return true;
+    }
+    this.resourcesBlocked = true;
+    if (this.resourceTask || this.resourceFailed) return false;
+    this.resourceTask = true;
+    const epoch = this.resourceEpoch;
+    let dialog = this.resourceDialog;
+    if (!dialog) {
+      dialog = document.createElement('dialog');
+      dialog.id = 'resource-wait';
+      dialog.setAttribute('aria-label', '准备页面资源');
+      dialog.innerHTML =
+        '<strong>准备页面</strong><p role="status"></p><progress max="100" value="0"></progress><button hidden>重试</button>';
+      dialog.addEventListener('cancel', (e) => e.preventDefault());
+      dialog.querySelector('button')!.onclick = () => {
+        this.resourceFailed = false;
+        this.render();
+      };
+      document.body.append(dialog);
+      this.resourceDialog = dialog;
+    }
+    const button = dialog.querySelector('button')!;
+    button.hidden = true;
+    this.root.setAttribute('aria-busy', 'true');
+    if (!dialog.open) dialog.showModal();
+    const panel = dialog;
+    void preloadAssets((done, total) => {
+      if (epoch !== this.resourceEpoch) return;
+      panel.querySelector('p')!.textContent = `加载素材 ${done}/${total}`;
+      panel.querySelector('progress')!.value = total ? (done * 100) / total : 100;
+    }, urls)
+      .then(() => {
+        if (epoch !== this.resourceEpoch) return;
+        this.resourceTask = false;
+        registerCharacterParts();
+        this.render();
+      })
+      .catch((error) => {
+        if (epoch !== this.resourceEpoch) return;
+        this.resourceTask = false;
+        this.resourceFailed = true;
+        panel.querySelector('p')!.textContent =
+          error instanceof Error ? error.message : '资源加载失败';
+        button.hidden = false;
+      });
+    return false;
   }
   private get resultPlaying() {
     const s = this.game.state;
@@ -747,6 +973,7 @@ export class UI {
     if (
       s.phase === 'journey' &&
       !s.run.prologue &&
+      !s.run.resonanceNarration &&
       !this.showPack &&
       !this.journeyPlaying &&
       this.game.currentEvent()!.kind === 'battle' &&
@@ -774,6 +1001,15 @@ export class UI {
     document.getElementById('guild-wallet')!.innerHTML =
       `<div><strong>${uiIcon('energy')}体力 ${e.value} / ${ENERGY_CAP}</strong><small>${wait ? `恢复 ${Math.floor(wait / 60)}:${String(wait % 60).padStart(2, '0')}` : '体力已满'}</small></div><div class="guild-currencies"><strong>${uiIcon('gold')}金币 ${s.meta.gold}</strong><strong>${uiIcon('medal')}勋章 ${s.meta.medals}</strong></div>`;
     document.getElementById('home-chapter')!.textContent = `第 ${s.meta.highestChapter} 关`;
+    let expeditionButton = document.querySelector<HTMLButtonElement>('.guild-remote-expedition');
+    if (!expeditionButton) {
+      expeditionButton = document.createElement('button');
+      expeditionButton.className = 'guild-remote-expedition';
+      expeditionButton.dataset.action = 'exploration';
+      document.getElementById('home-screen')!.append(expeditionButton);
+    }
+    const job = s.meta.expedition?.dispatch;
+    expeditionButton.innerHTML = `${uiIcon('dungeon')}驻地探索${job && job.readyAt <= Date.now() ? '<small>探索待领取</small>' : ''}`;
     const pending = s.meta.pendingPages.length;
     if (
       this.changed(
@@ -783,6 +1019,7 @@ export class UI {
     )
       document.querySelector('.guild-progress-controls')!.innerHTML =
         `<button data-action="guild-level" id="guild-level-button">${uiIcon('guild')}公会 Lv.${s.meta.guildLevel}</button><button data-action="guild-tree">${uiIcon('guild-bonus')}公会增幅</button><button data-action="library">${uiIcon('library')}典籍</button>${pending ? `<button data-action="pending-pages">待领残页 ${pending}</button>` : ''}`;
+    if (this.homeView !== 'roster') return;
     if (
       !this.changed(
         'roster',
@@ -877,7 +1114,7 @@ export class UI {
         el.classList.contains('in-combat') && !e && s.player.hp > 0 && s.phase === 'camp'
           ? el.querySelector<HTMLElement>('.enemy-fighter')
           : null;
-      el.innerHTML = `<div class="scene-ground" aria-hidden="true"></div><div class="battle-scene"><div class="trial-altar" aria-hidden="true"></div><div class="fighter hero-fighter">${heroRig(s.run.profession, s.run.trainee?.appearance)}<span>${esc(s.run.trainee?.name ?? '勇者')}</span></div><span class="versus">${e ? '⚔' : '✦'}</span><div class="fighter enemy-fighter">${e ? foeRig(e) : '<span class="trail-marker">♜</span>'}<span>${e ? esc(e.name) : s.phase === 'opening' ? '整备行囊' : safelyGraduated(s) && this.game.currentEvent()?.completed ? '培养完成' : '前方的旅程'}</span></div></div><div class="fighter-health"><div class="health-side hero-health"><strong id="hero-health-name"></strong><span id="player-hp"></span><div class="bar"><i id="player-bar"></i></div><div id="hero-effects" class="hero-effects"></div></div><div class="health-side enemy-health"><strong id="enemy-health-name"></strong><span id="enemy-hp"></span><div class="bar enemy-bar"><i id="enemy-bar"></i></div><div id="enemy-effects" class="enemy-effects"></div></div></div><div id="turn-order" class="turn-order"></div><div id="field-items" class="field-items"></div>`;
+      el.innerHTML = `<div class="scene-ground" aria-hidden="true"></div><div class="battle-scene"><div class="trial-altar" aria-hidden="true"></div><div class="fighter hero-fighter">${heroRig(s.run.profession, s.run.trainee?.appearance)}<span>${esc(s.run.trainee?.name ?? '勇者')}</span></div><span class="versus">${e ? '⚔' : '✦'}</span><div class="fighter enemy-fighter">${e ? foeRig(e) : '<span class="trail-marker">♜</span>'}<span>${e ? esc(e.name) : s.phase === 'opening' ? '整备行囊' : safelyGraduated(s) && this.game.currentEvent()?.completed ? '培养完成' : '前方的旅程'}</span></div></div><div class="fighter-health"><div class="health-side hero-health">${heroHead(s.run.profession, s.run.trainee?.appearance, '1P')}<strong id="hero-health-name"></strong><span id="player-hp"></span><div class="bar"><i id="player-bar"></i></div><div id="hero-effects" class="hero-effects"></div></div><div class="health-side enemy-health">${e ? enemyHead(e) : ''}<strong id="enemy-health-name"></strong><span id="enemy-hp"></span><div class="bar enemy-bar"><i id="enemy-bar"></i></div><div id="enemy-effects" class="enemy-effects"></div></div></div><div id="turn-order" class="turn-order"></div><div id="field-items" class="field-items"></div>`;
       this.motion.depart(defeated, el.querySelector('.battle-scene'));
     }
     el.classList.toggle(
@@ -912,17 +1149,14 @@ export class UI {
       );
     el.classList.toggle('shielded', s.player.shield > 0);
     el.dataset.profession = s.run.profession;
-    document.getElementById('player-hp')!.innerHTML =
-      `${professionIcon(s.run.profession)}<span class="health-value">♥ ${Math.ceil(s.player.hp)}/${Math.ceil(s.player.maxHp)}${s.player.shield ? ` · ◇${Math.ceil(s.player.shield)}` : ''}</span>`;
+    document.getElementById('player-hp')!.innerHTML = combatVitals(s.player.hp, s.player.maxHp);
     this.motion.health(
       document.getElementById('player-bar')!,
       s.player.hp,
       s.player.maxHp,
       s.run.trainee?.id ?? 'hero',
     );
-    document.getElementById('enemy-hp')!.innerHTML = e
-      ? `${professionIcon(e.profession ?? 'warrior')}<span class="health-value">${e.isBoss ? 'BOSS · ' : ''}${Math.ceil(e.hp)}/${e.maxHp}</span>`
-      : '';
+    document.getElementById('enemy-hp')!.innerHTML = e ? combatVitals(e.hp, e.maxHp) : '';
     this.motion.health(
       document.getElementById('enemy-bar')!,
       e?.hp ?? 0,
@@ -963,8 +1197,10 @@ export class UI {
           : '';
     }
     const p = finalAttributes(s, this.game.editable());
-    document.getElementById('combat-hud')!.innerHTML =
-      `<strong>${esc(s.run.trainee?.name ?? '勇者')} ${professionIcon(s.run.profession)}<small>${realmName(s.run.realm)}</small></strong><div class="hud-life"><span aria-label="生命">${uiIcon('hp')}${Math.ceil(s.player.hp)}/${Math.ceil(s.player.maxHp)}</span><div class="hud-health-track"><i style="width:${Math.max(0, Math.min(100, (s.player.hp / s.player.maxHp) * 100))}%"></i></div></div><div class="hud-values"><span aria-label="攻击">${uiIcon('attack')}<b>${Math.round(p.attack)}</b></span><span aria-label="防御">${uiIcon('defense')}<b>${p.defense.toFixed(0)}</b></span><span aria-label="速度">${uiControl('speed')}<b>${this.game.playerSpeed()}</b></span></div>`;
+    document.getElementById('combat-hud')!.innerHTML = combatHud(s, {
+      ...p,
+      speed: this.game.playerSpeed(),
+    });
   }
   private route() {
     const s = this.game.state;
@@ -989,13 +1225,12 @@ export class UI {
       this.resonanceTiers[k] = r.tier;
     }
     if (!this.changed('resonance', s.phase + '|' + s.revision)) return;
-    document.getElementById('resonance-strip')!.innerHTML = Array.from({ length: 4 }, (_, n) => {
-      const k = s.run.resonances[n];
-      if (!k)
-        return `<div class="resonance-slot empty">${icon('spark', 20)}<b>${n ? '待觉醒' : '初始共鸣'}</b><small>${n ? `试炼 ${runRoute(s).trials[n - 1] + 1}` : '启程'}</small></div>`;
-      const r = resonanceScore(s.inventory, this.game.editable() ? s.draft : s.placements, k);
-      return `<button class="resonance-slot ${resonanceRankClass(RESONANCES[k].rank)} ${r.tier ? 'lit' : ''}" data-inspect-resonance="${k}">${icon(RESONANCES[k].icon, 12)}<b>${RESONANCES[k].name}</b><small>${resonanceRankName(RESONANCES[k].rank)} · ${r.score}/${r.next ?? r.thresholds[2]}</small><span class="resonance-meter"><i style="width:${Math.min(100, (r.score / (r.next ?? r.thresholds[2])) * 100)}%"></i></span><span class="tier-marks">${[1, 2, 3].map((n) => `<i class="${r.tier >= n ? 'on' : ''}"></i>`).join('')}</span></button>`;
-    }).join('');
+    document.getElementById('resonance-strip')!.innerHTML = combatResonances(
+      s,
+      this.game.editable(),
+      'data-inspect-resonance',
+      ['启程', ...runRoute(s).trials.map((n) => `试炼 ${n + 1}`)],
+    );
     for (const k of promoted)
       this.motion.pulse(
         document.querySelector(`[data-inspect-resonance="${k}"]`),
@@ -1005,8 +1240,11 @@ export class UI {
   }
   private footer() {
     const s = this.game.state;
-    const waiting = this.journeyPlaying || (s.phase === 'journey' && !this.showPack);
-    const ready = s.phase === 'camp' && !waiting;
+    const waiting =
+      !!this.recycling ||
+      this.journeyPlaying ||
+      (s.phase === 'journey' && !this.showPack && !s.run.resonanceNarration);
+    const ready = (s.phase === 'camp' || !!s.run.resonanceNarration) && !waiting;
     const canReforge = this.showPack && this.game.editable() && s.run.points >= 6;
     const notifyContinue = ready && !this.footerReady;
     const notifyReforge = canReforge && !this.reforgeReady;
@@ -1040,11 +1278,11 @@ export class UI {
       html =
         s.run.starterRound < 2
           ? `<button class="primary-button" data-action="claim-starters">继续补给 ${s.run.starterRound + 1}/2</button>`
-          : '<button class="primary-button" data-action="finish-opening">选择初始共鸣</button>';
+          : '<button class="primary-button" data-action="finish-opening">继续</button>';
     else if (s.phase === 'camp')
       html = `<button class="primary-button" data-action="continue" ${waiting ? 'disabled' : ''}>${waiting ? '历程播放中' : s.run.pendingPromotion && (s.run.routeRevision !== 16 || s.run.events[s.run.index + 1]?.kind === 'promotion') ? '进入晋阶' : safelyGraduated(s) && this.game.currentEvent()?.completed ? '确认毕业' : this.game.completed() ? '继续探险' : '开始冒险'}</button>`;
     else if (s.phase === 'journey')
-      html = `<button class="primary-button" data-action="continue-story" ${waiting ? 'disabled' : ''}>${waiting ? '历程播放中' : '继续'}</button>`;
+      html = `<button class="primary-button" data-action="${s.run.resonanceNarration ? 'continue-resonance' : 'continue-story'}" ${waiting ? 'disabled' : ''}>${waiting ? '历程播放中' : '继续'}</button>`;
     else if (s.phase === 'awakening')
       html = `<button class="primary-button" data-action="finish-awakening" ${this.ritualReady ? '' : 'disabled'}>${this.ritualReady ? '继续' : '境界觉醒'}</button>`;
     else if (s.phase === 'combat')
@@ -1056,8 +1294,16 @@ export class UI {
           ? `<button id="point-redeem" class="reforge-button ${canReforge ? 'reforge-ready' : ''}" data-action="redeem" aria-label="重铸随机装备，消耗6点，当前${s.run.points}点" ${!canReforge ? 'disabled' : ''}>${uiIcon('reforge')}<span>重铸</span><small id="point-count">${s.run.points}/6</small></button>`
           : `<button class="backpack-button" data-action="open-pack" aria-label="查看背包">${uiIcon('backpack')}背包</button>`;
     document.getElementById('adventure-footer')!.innerHTML =
-      `${utility}<div class="footer-main">${html}</div><button class="speed-button" data-action="cycle-speed" aria-label="切换播放速度">${uiControl('speed')}<span>${s.speed}×</span></button>`;
+      `${utility}<div class="footer-main">${html}</div>${s.phase === 'awakening' ? '' : `<button class="speed-button" data-action="cycle-speed" aria-label="切换播放速度">${uiControl('speed')}<span>${s.speed}×</span></button>`}`;
     const footer = document.getElementById('adventure-footer')!;
+    footer.dataset.ritual = String(s.phase === 'awakening');
+    if (this.recycling) {
+      footer
+        .querySelectorAll<HTMLButtonElement>('button')
+        .forEach((button) => (button.disabled = true));
+      const main = footer.querySelector('.footer-main button');
+      if (main) main.textContent = this.recycling.credited ? '点数已回收' : '回收装备中';
+    }
     footer.dataset.readiness = waiting ? 'waiting' : ready ? 'ready' : 'decision';
     if (notifyContinue)
       this.motion.pulse(footer.querySelector('.footer-main button'), 'continue-ready', 650, false);
@@ -1075,7 +1321,7 @@ export class UI {
     document.getElementById('journey-status')!.textContent =
       `${Math.min(3, s.run.stages + 1)} 阶段 · ${this.game.completed()}/${s.run.events.length}`;
     const el = document.getElementById('journey-history')!;
-    const flow = `${s.run.index}|${s.run.prologue ?? ''}|${!!this.game.currentEvent()?.completed}`;
+    const flow = `${s.run.index}|${s.run.prologue ?? ''}|${!!s.run.resonanceNarration}|${!!this.game.currentEvent()?.completed}`;
     if (flow !== this.journeyFlow) {
       this.journeyFlow = flow;
       this.journeyFollow = true;
@@ -1099,7 +1345,11 @@ export class UI {
       this.journeyRendered = [];
       this.journeyQueue = [];
     }
-    const restoredHistory = !this.journeyRendered.length;
+    // The departure line is new narration even on the very first adventure render.
+    // A longer saved history stays visible without replaying old entries.
+    const restoredHistory =
+      !this.journeyRendered.length &&
+      !(s.run.prologue === 'departure' && s.run.journey.length === 1);
     const pending = s.run.journey.slice(this.journeyRendered.length);
     for (const g of journeyGroups(pending)) {
       let group = el.querySelector<HTMLElement>(`[data-journey-node="${g.event}"]`);
@@ -1376,6 +1626,10 @@ export class UI {
     }
     container.classList.remove('wheel-dialog');
     container.classList.toggle(
+      'resonance-picker',
+      ['initial', 'reward'].includes(s.phase) && s.run.rewards[0]?.kind === 'resonance',
+    );
+    container.classList.toggle(
       'dig-dialog',
       s.phase === 'event' && this.game.currentEvent()?.kind === 'dig',
     );
@@ -1388,50 +1642,61 @@ export class UI {
     }
     const needed =
       ['event', 'reward', 'initial'].includes(s.phase) &&
-      (s.run.routeRevision !== 16 || !this.journeyPlaying);
+      (s.run.routeRevision !== 16 || !this.journeyPlaying) &&
+      !(s.phase === 'event' && s.run.supply && s.run.supply.elapsed < SUPPLY_SECONDS);
     if (!needed) {
       if (container.open) container.close();
       return;
     }
-    if (!container.open) container.showModal();
-    if (!this.changed('decision', s.phase + '|' + s.revision + '|' + this.selectedTrial)) return;
+    if (!this.changed('decision', s.phase + '|' + s.revision + '|' + this.selectedTrial)) {
+      if (!container.open) container.showModal();
+      return;
+    }
     if (isTrial) {
       el.innerHTML = trialView(s, this.selectedTrial);
+      if (!container.open) container.showModal();
       return;
     }
     let title = '',
-      body = '';
+      body = '',
+      narrative = '';
     if (['initial', 'reward'].includes(s.phase)) {
       const r = s.run.rewards[0];
       title = r.title;
-      body = `<div class="choice-grid">${
-        r.kind === 'buff'
-          ? r.buffs
+      body =
+        r.kind === 'resonance'
+          ? resonanceCandidates(
+              s,
+              r,
+              !r.refreshUsed &&
+                this.game
+                  .resonanceChoices(s.phase === 'initial')
+                  .some((k) => !r.resonances.includes(k)),
+            )
+          : `<div class="choice-grid">${r.buffs
               .map(
                 (k, n) =>
                   `<button class="reward-card" data-reward="${n}"><strong>${BUFFS[k].name}</strong><p>${BUFFS[k].description}</p></button>`,
               )
-              .join('')
-          : r.resonances
-              .map((k) => {
-                const d = RESONANCES[k],
-                  score = resonanceScore(s.inventory, s.draft, k);
-                return `<button class="resonance-choice ${resonanceRankClass(d.rank)}" data-resonance="${k}">${icon(d.icon, 22)}<strong>${d.name}</strong><small class="resonance-kind">${d.kind === 'profession' ? '职业' : '物品'} · ${d.series} · ${resonanceRankName(d.rank)}</small><div class="resonance-levels">${d.effects.map((effect, n) => `<span class="${score.tier > n ? 'reached' : ''}"><b>${score.thresholds[n]}</b>${esc(effect)}</span>`).join('')}</div><small>${d.requires.length ? '前置：' + d.requires.map((k) => RESONANCES[k].name).join(' / ') : '基础候选'} · 当前 ${score.score} 点</small></button>`;
-              })
-              .join('')
-      }</div>${r.kind === 'buff' ? '<button class="text-button" data-action="skip-reward">离开祭坛</button>' : ''}`;
+              .join(
+                '',
+              )}</div><button class="text-button" data-action="skip-reward">离开祭坛</button>`;
     }
     if (s.phase === 'event') {
       const e = this.game.currentEvent()!;
       title = EVENT_NAMES[e.kind];
-      if (e.kind === 'supply' && s.run.routeRevision === 16)
-        body = `<div class="supply-reveal" role="status"><span class="supply-runes">✦</span>${s.run.supply!.result === 'low' ? '' : '<div class="supply-reel" aria-hidden="true"><span>旅人补给<br>大吉<br>旅人补给<br>大吉<br>旅人补给</span></div>'}<strong>旅人的馈赠正在揭晓</strong></div>`;
-      else if (e.kind === 'treasure' && s.run.routeRevision === 16)
+      narrative = eventStory(e.kind, e.variant, runRoute(s).hasExtreme);
+      if (e.kind === 'supply' && s.run.routeRevision === 16) {
+        const great = s.run.supply!.result === 'great';
+        title = great ? '大吉补给' : '旅人补给';
+        narrative = `${great ? '旅人寻到了三件更珍贵的装备' : '旅人留下了三件备用装备'}，愿它们助你平安归来。领取补给，整理行囊后继续前行。`;
+        body = '<button class="primary-button" data-event="take">确认</button>';
+      } else if (e.kind === 'treasure' && s.run.routeRevision === 16)
         body = `<div class="event-actions"><button class="danger-button" data-event="open">消耗 ${lifeAmount(s.player.hp * 0.1)} 生命，取出装备</button><button data-event="skip">离开</button></div>`;
       else if (e.kind === 'treasure' || e.kind === 'supply')
         body = `<button class="primary-button" data-event="${e.kind === 'treasure' ? 'open' : 'take'}">${e.kind === 'treasure' ? '打开宝箱' : '接受补给'}</button>`;
       if (e.kind === 'rest')
-        body = `<div class="choice-grid"><button class="reward-card" data-event="heal"><strong>饮下月泉</strong><p>恢复 ${Math.round(Math.min(s.player.maxHp - s.player.hp, s.player.maxHp * 0.35))} 生命</p></button><button class="reward-card" data-event="vigor" ${s.run.routeRevision !== 16 && s.run.buffs.vitality >= 3 ? 'disabled' : ''}><strong>凝聚泉华</strong><p>最大生命 +12%</p></button></div>`;
+        body = `<div class="spring-health" role="group" aria-label="当前生命"><div><strong>当前生命</strong><span>${lifeAmount(s.player.hp)} / ${lifeAmount(s.player.maxHp)}</span></div><div class="bar"><i style="width:${Math.max(0, Math.min(100, (s.player.hp / s.player.maxHp) * 100))}%"></i></div></div><div class="choice-grid"><button class="reward-card" data-event="heal"><strong>饮下月泉</strong><p>恢复最大生命的${SPRING_HEAL * 100}%</p></button><button class="reward-card" data-event="vigor" ${s.run.routeRevision !== 16 && s.run.buffs.vitality >= 3 ? 'disabled' : ''}><strong>凝聚泉华</strong><p>${s.run.routeRevision === 16 ? `最大生命 +${SPRING_MAX_LIFE * 100}%` : BUFFS.vitality.description}</p></button></div>`;
       if (e.kind === 'dig') body = this.digBoard();
       if (e.kind === 'choice')
         body =
@@ -1453,7 +1718,10 @@ export class UI {
             ? `${this.wheelGraphic()}<p>50% 高阶装备 · 30% 点数 · 15% 治疗 · 5% 反噬</p><div class="event-actions"><button class="primary-button" data-event="spin">转动轮盘</button><button data-event="skip">离开</button></div>`
             : `<div class="event-actions"><button class="danger-button" data-event="sacrifice" ${s.player.hp <= Math.ceil(s.player.maxHp * 0.15) ? 'disabled' : ''}>献祭 ${Math.ceil(s.player.maxHp * 0.15)} 生命</button><button data-event="skip">离开</button></div>`;
     }
-    el.innerHTML = `<h2 id="decision-title">${esc(title)}</h2>${s.phase === 'event' ? `<p class="event-narrative">${esc(eventStory(this.game.currentEvent()!.kind, this.game.currentEvent()!.variant, runRoute(s).hasExtreme))}</p>` : ''}${body}`;
+    el.innerHTML = `<h2 id="decision-title">${esc(title)}</h2>${narrative ? `<p class="event-narrative">${esc(narrative)}</p>` : ''}${body}`;
+    container.setAttribute('aria-label', title);
+    container.setAttribute('aria-labelledby', 'decision-title');
+    if (!container.open) container.showModal();
   }
 
   private digBoard() {
@@ -1490,10 +1758,19 @@ export class UI {
     const v = window.visualViewport,
       w = v?.width ?? window.innerWidth,
       h = v?.height ?? window.innerHeight,
-      scale = Math.min(w / 390, h / 844, 1.15);
+      { mobile, scale, frameWidth, frameHeight, contentWidth, contentHeight } = viewportFit(w, h);
+    this.root.classList.toggle('mobile-frame', mobile);
     document.documentElement.style.setProperty('--game-scale', String(scale));
-    document.documentElement.style.setProperty('--game-width', `${390 * scale}px`);
-    document.documentElement.style.setProperty('--game-height', `${844 * scale}px`);
+    document.documentElement.style.setProperty('--game-width', `${frameWidth}px`);
+    document.documentElement.style.setProperty('--game-height', `${frameHeight}px`);
+    document.documentElement.style.setProperty(
+      '--game-left',
+      `${(frameWidth - contentWidth) / 2}px`,
+    );
+    document.documentElement.style.setProperty(
+      '--game-top',
+      `${(frameHeight - contentHeight) / 2}px`,
+    );
   }
   private guildBonusText(b: import('./types').GuildBonus) {
     const text = (name: string, fixed: number, percent: number) =>
@@ -1522,9 +1799,20 @@ export class UI {
   }
   private guildFeature() {
     const s = this.game.state;
+    const panel = document.getElementById('guild-feature-screen')!;
+    panel.classList.toggle('expedition-page', this.homeView === 'expedition');
+    if (this.homeView === 'expedition') {
+      panel.classList.remove('guild-route-page', 'library-page');
+      this.expedition.render(s);
+      if (this.statusSide && (document.getElementById('modal') as HTMLDialogElement).open) {
+        const view = this.expedition.battleState(s);
+        if (view)
+          document.getElementById('modal-body')!.innerHTML = statusDetails(view, this.statusSide);
+      }
+      return;
+    }
     const key = `${this.homeView}|${s.revision}|${this.libraryFilter}|${this.guildSelectedNode}`;
     if (!this.changed('guild-feature', key)) return;
-    const panel = document.getElementById('guild-feature-screen')!;
     const before = panel.querySelector('.guild-route-scroll')?.scrollTop;
     panel.classList.toggle('guild-route-page', this.homeView === 'guild-tree');
     panel.classList.toggle('library-page', this.homeView === 'library');
@@ -1600,13 +1888,25 @@ export class UI {
         '<div class="toolbar"><button data-action="export">导出存档</button><label class="import-label">导入存档<input id="import-file" type="file" accept=".json"></label><button class="danger-button" data-action="reset">清空公会进度</button></div>',
     );
   }
-  private modal(html: string) {
+  private modal(html: string, skin?: 'event' | 'guild') {
     this.hideTalent();
     document
       .getElementById('modal')!
-      .classList.remove('archive-modal', 'tome-modal', 'guild-total-modal', 'battle-status-modal');
+      .classList.remove(
+        'archive-modal',
+        'tome-modal',
+        'guild-total-modal',
+        'battle-status-modal',
+        'resonance-detail-modal',
+        'resonance-pack-modal',
+      );
     document.getElementById('modal-body')!.innerHTML = html;
     const dialog = document.getElementById('modal') as HTMLDialogElement;
+    dialog.dataset.skin =
+      skin ??
+      (['home', 'chapter', 'configure', 'tome', 'summary'].includes(this.game.state.phase)
+        ? 'guild'
+        : 'event');
     dialog.setAttribute('aria-label', dialog.querySelector('h2')?.textContent ?? '详情');
     if (!dialog.open) dialog.showModal();
   }
@@ -1614,7 +1914,14 @@ export class UI {
     (document.getElementById('modal') as HTMLDialogElement).close();
     document
       .getElementById('modal')!
-      .classList.remove('archive-modal', 'tome-modal', 'guild-total-modal', 'battle-status-modal');
+      .classList.remove(
+        'archive-modal',
+        'tome-modal',
+        'guild-total-modal',
+        'battle-status-modal',
+        'resonance-detail-modal',
+        'resonance-pack-modal',
+      );
     this.inspectedTome = null;
     this.statusSide = null;
   }
@@ -1666,6 +1973,14 @@ export class UI {
     }
   }
   replace(game: Game) {
+    this.resourceEpoch++;
+    this.resourceTask = this.resourceFailed = this.resourcesBlocked = false;
+    this.resourceDialog?.close();
+    this.expedition.reset();
+    this.recycling?.cleanup();
+    this.recycling = null;
+    this.pack.setLocked(false);
+    delete this.root.dataset.recycling;
     this.motion.reset();
     this.hideTalent();
     this.statusSide = null;

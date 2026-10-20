@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { Window } from 'happy-dom';
 const source = await readFile(new URL('../轮回地牢.html', import.meta.url), 'utf8');
@@ -16,6 +17,20 @@ const webScript = webHtml.match(/<script[^>]*src="([^"]+)"/)?.[1];
 assert.ok(webScript);
 const webScriptFile = new URL('../dist/' + webScript.replace(/^\.\//, ''), import.meta.url);
 const webCode = await readFile(webScriptFile, 'utf8');
+const manifest = JSON.parse(
+  await readFile(new URL('../dist/asset-manifest.json', import.meta.url), 'utf8'),
+);
+assert.ok(manifest.assets.length >= 30);
+for (const asset of manifest.assets) {
+  const bytes = await readFile(
+    new URL('../dist/' + asset.url.replace(/^\.\//, ''), import.meta.url),
+  );
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), asset.hash, asset.url);
+  assert.equal(bytes.length, asset.size, asset.url);
+}
+const worker = await readFile(new URL('../dist/asset-worker.js', import.meta.url), 'utf8');
+assert.ok(worker.includes(manifest.revision));
+assert.ok(!worker.includes('__ASSET_MANIFEST__'));
 assert.doesNotMatch(webCode, /data:image\/png;base64/);
 const spriteReferences = [
   ...webCode.matchAll(/new URL\("([^"\s]+\.png)",import\.meta\.url\)\.href/g),
@@ -90,6 +105,8 @@ try {
       now += 100;
       frameTime += 100;
       frameCallback(frameTime);
+      const manual = win.document.querySelector('[data-action="continue-resonance"]');
+      if (manual && !manual.disabled) click('[data-action="continue-resonance"]');
     }
     assert.equal(save().phase, phase);
   };
@@ -210,15 +227,28 @@ try {
   assert.equal(win.document.querySelectorAll('.pack-piece').length, save().draft.length);
   assert.equal(win.document.querySelectorAll('.pack-cell').length, 42);
   click('[data-action="finish-opening"]');
-  assert.equal(save().phase, 'initial');
+  // A legal starter layout can leave equipment unplaced. Allow its reclaim
+  // animation and point settlement to finish before the resonance step.
+  playbackUntil('initial');
+  for (let n = 0; n < 100 && !win.document.querySelector('[data-resonance]'); n++) {
+    now += 100;
+    frameTime += 100;
+    frameCallback(frameTime);
+  }
   assert.equal(win.document.querySelectorAll('[data-resonance]').length, 3);
   click('[data-resonance]');
   assert.equal(save().run.prologue, 'ready');
-  playbackUntil('camp');
-  assert.equal(save().phase, 'camp');
+  playbackUntil('journey');
   assert.equal(save().run.resonances.length, 1);
-  click('[data-action="continue"]');
+  for (let n = 0; n < 100 && save().run.prologue === 'ready'; n++) {
+    now += 100;
+    frameTime += 100;
+    frameCallback(frameTime);
+    const next = win.document.querySelector('[data-action="continue-resonance"]');
+    if (next && !next.disabled) click('[data-action="continue-resonance"]');
+  }
   assert.equal(save().phase, 'journey');
+  assert.equal(save().run.prologue, undefined);
   assert.equal(win.document.getElementById('view-pack').hidden, true);
   assert.equal(win.document.querySelector('#decision-sheet').open, false);
   assert.ok(win.document.getElementById('journey-history').textContent.trim());

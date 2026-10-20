@@ -37,13 +37,16 @@ test('linear route has 90 ordinary nodes, four milestones and exactly the approv
   for (let level = 1; level <= 30; level++)
     assert.equal(GUILD_NODES.filter((n) => n.level === level && !n.critical).length, 3);
 });
-test('single-cell badges contain only profession, while both warrior and rogue swords share the category icon', () => {
+test('single-cell badges contain only profession, while both warrior and rogue swords share the category mark', () => {
   const g = start();
   const gem = itemBadge(g.makeItem('warrior_gem'));
   assert.doesNotMatch(gem, /<path|undefined|阶/);
-  assert.match(gem, /width="28"/);
-  assert.match(itemBadge(g.makeItem('warrior_blade_2')), /<path/);
-  assert.match(itemBadge(g.makeItem('rogue_assassin_2')), /<path/);
+  assert.match(gem, /<text[^>]*>战<\/text>/);
+  assert.doesNotMatch(gem, /data-category/);
+  assert.match(itemBadge(g.makeItem('warrior_blade_2')), /data-category="sword"/);
+  assert.match(itemBadge(g.makeItem('rogue_assassin_2')), /data-category="sword"/);
+  assert.match(itemBadge(g.makeItem('warrior_blade_2')), /<text[^>]*>剑<\/text>/);
+  assert.match(itemBadge(g.makeItem('rogue_assassin_2')), /<text[^>]*>刺<\/text>/);
 });
 test('level unlocks do not give attributes; nodes charge once and enforce order, level and home phase', () => {
   const g = new Game();

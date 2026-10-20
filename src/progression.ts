@@ -27,7 +27,7 @@ export function heroRating(power: number, outcome: Outcome, version = 15): Ratin
     power >= s ? 'S' : power >= a ? 'A' : power >= b ? 'B' : power >= c ? 'C' : 'D';
   return outcome !== 'win' && ['A', 'S'].includes(rank) ? 'B' : rank;
 }
-const profession = { 战士: 'warrior', 法师: 'mage', 盗贼: 'rogue' } as const;
+const profession = { 战士: 'warrior', 法师: 'mage', 刺客: 'rogue' } as const;
 export const TOMES = catalogue.tomes.map((t) => ({
   ...t,
   profession: profession[t.profession as keyof typeof profession],
@@ -71,6 +71,21 @@ export function currentHero(h: HeroRecord, bonus: GuildBonus): HeroRecord {
     hp: Math.round(updated.hp),
     defense: +updated.defense.toFixed(1),
   };
+  const { sources: adjusted, mixed } = heroBattleBuild(h);
+  const before = estimateBuild(h.stats, adjusted, mixed),
+    after = estimateBuild(stats, adjusted, mixed);
+  const baseValue = before.output * 2 + before.sustain * 3,
+    nextValue = after.output * 2 + after.sustain * 3;
+  const build = Math.max(0, h.score.build + Math.round(nextValue - baseValue));
+  return {
+    ...structuredClone(h),
+    power: h.score.growth + build + h.score.performance,
+    stats,
+    score: { ...h.score, build },
+  };
+}
+/** Graduate combat uses the same frozen equipment, links, talents and learned skills. */
+export function heroBattleBuild(h: HeroRecord) {
   const a = analyzePack(h.loadout?.equipment ?? [], h.loadout?.placements ?? []);
   const sources: import('./skill-types').Source[] = a.active.map((i) => ({
     id: i.id,
@@ -89,7 +104,7 @@ export function currentHero(h: HeroRecord, bonus: GuildBonus): HeroRecord {
   if (h.tomeId)
     sources.push({
       id: 'tome:' + h.tomeId,
-      name: h.tomeId,
+      name: tome(h.tomeId)?.name ?? h.tomeId,
       kind: 'tome',
       skills: tomeSkills(h.tomeId, h.tomeLevel ?? 1),
       profession: tome(h.tomeId)!.profession,
@@ -98,7 +113,7 @@ export function currentHero(h: HeroRecord, bonus: GuildBonus): HeroRecord {
     if (h.resonanceTiers[k])
       sources.push({
         id: 'resonance:' + k,
-        name: k,
+        name: RESONANCES[k].name,
         kind: 'resonance',
         skills: resonanceSkills(DESIGN_RESONANCE_IDS[k], h.resonanceTiers[k]!),
         profession: h.profession,
@@ -106,17 +121,7 @@ export function currentHero(h: HeroRecord, bonus: GuildBonus): HeroRecord {
   const mixed =
     a.active.some((i) => i.branch === 'assassin') && a.active.some((i) => i.branch === 'archer');
   const adjusted = applyTalentSources(sources, h.talents);
-  const before = estimateBuild(h.stats, adjusted, mixed),
-    after = estimateBuild(stats, adjusted, mixed);
-  const baseValue = before.output * 2 + before.sustain * 3,
-    nextValue = after.output * 2 + after.sustain * 3;
-  const build = Math.max(0, h.score.build + Math.round(nextValue - baseValue));
-  return {
-    ...structuredClone(h),
-    power: h.score.growth + build + h.score.performance,
-    stats,
-    score: { ...h.score, build },
-  };
+  return { sources: adjusted, mixed, tiers: { ...h.resonanceTiers } };
 }
 export function tomeAttributes(id: string | null, level: number): Partial<Attributes> {
   const t = id ? tome(id) : null,
