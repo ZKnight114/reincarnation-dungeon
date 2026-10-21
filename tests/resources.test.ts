@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ResourceLoader } from '../src/resource-loader';
+import {
+  ResourceLoader,
+  ResourceBatchError,
+  resourceLabel,
+  type ResourceActivity,
+} from '../src/resource-loader';
+import { resourceDeadline } from '../src/resource-deadline';
 import { screenAssetNames, initialHomeView } from '../src/resource-plan';
 import { Game } from '../src/game';
 import { recruitAppearance, appearanceLayers } from '../src/character-parts';
@@ -9,6 +15,83 @@ import { spriteName } from '../src/backpack';
 import { foeSprite } from '../src/pixel';
 
 const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
+test('transient failure retries only its resource and reports download/decode/retry stages', async () => {
+  const attempts: string[] = [],
+    events: ResourceActivity[] = [];
+  const loader = new ResourceLoader(
+    async (key, stage) => {
+      attempts.push(key);
+      if (key === 'slow.png' && attempts.filter((value) => value === key).length === 1)
+        throw new Error('temporary network loss');
+      stage('decoding');
+      return key;
+    },
+    2,
+    1,
+    { retries: 1, delayMs: 0 },
+  );
+  const stop = loader.observe((event) => events.push(event));
+  await loader.batch(['good.png', 'slow.png']);
+  stop();
+  assert.deepEqual(attempts, ['good.png', 'slow.png', 'slow.png']);
+  assert.deepEqual(
+    events.filter((e) => e.key === 'slow.png').map((e) => e.stage),
+    ['loading', 'retrying', 'loading', 'decoding', 'ready'],
+  );
+  const progress: number[] = [];
+  await loader.batch(['good.png', 'slow.png'], (done) => progress.push(done));
+  assert.deepEqual(progress, [2], 'ready assets count immediately on subsequent attempts');
+  assert.equal(attempts.length, 3);
+});
+test('persistent failures name all failed assets and a later retry keeps successes', async () => {
+  let offline = true;
+  const attempts: string[] = [];
+  const loader = new ResourceLoader(
+    async (key) => {
+      attempts.push(key);
+      if (offline && key !== 'good.png') throw new Error('network unavailable');
+      return key;
+    },
+    2,
+    1,
+    { retries: 1, delayMs: 0 },
+  );
+  await assert.rejects(loader.batch(['good.png', 'bad.png', 'bad2.png']), (error) => {
+    assert.ok(error instanceof ResourceBatchError);
+    assert.equal(error.failures.length, 2);
+    assert.match(error.message, /2项资源未完成：bad.png/);
+    return true;
+  });
+  offline = false;
+  await loader.batch(['good.png', 'bad.png', 'bad2.png']);
+  assert.equal(attempts.filter((key) => key === 'good.png').length, 1);
+  assert.equal(attempts.filter((key) => key === 'bad.png').length, 3);
+  assert.equal(resourceLabel('data:image/png;base64,secret-large-bytes'), '内嵌图片');
+});
+test('stalled operations time out even if cancellation is ignored; successful work cancels watchdog', async () => {
+  let cancelled = 0;
+  await assert.rejects(
+    resourceDeadline(
+      () => new Promise<string>(() => {}),
+      10,
+      'download timeout',
+      () => cancelled++,
+    ),
+    /download timeout/,
+  );
+  assert.equal(cancelled, 1);
+  assert.equal(
+    await resourceDeadline(
+      async () => 'decoded',
+      10,
+      'decode timeout',
+      () => cancelled++,
+    ),
+    'decoded',
+  );
+  await new Promise((resolve) => setTimeout(resolve, 15));
+  assert.equal(cancelled, 1, 'successful decode does not trigger a late cancellation');
+});
 test('background uses two slots; foreground jumps ahead and promotes queued work', async () => {
   const started: string[] = [],
     finish = new Map<string, (value: string) => void>();

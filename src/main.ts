@@ -7,6 +7,9 @@ import {
   loadingProgress,
   preloadAssets,
   loadingBackground,
+  loadingActivity,
+  resetLoadingActivity,
+  missingAssets,
 } from './loading';
 import { startupAssets } from './assets';
 import { registerCharacterParts } from './character-parts';
@@ -45,6 +48,7 @@ import './audio.css';
 
 let started = false,
   busy = false;
+let cachePreparation: Promise<void> | undefined;
 explorationAudio.attach();
 clearTimeout((window as unknown as { guildBootTimeout: number }).guildBootTimeout);
 function launch(state: GameState | null) {
@@ -169,7 +173,11 @@ async function boot() {
       loadingError('界面样式加载失败，请重试', () => location.reload());
       return;
     }
-    loadingProgress(0, 1, '读取进度');
+    const urls = startupAssets();
+    const count = urls.length + explorationAudio.resourceCount;
+    let imageDone = urls.length - missingAssets(urls).length,
+      audioDone = explorationAudio.readyCount;
+    loadingProgress(imageDone + audioDone, count + 1, '读取进度');
     let state: GameState;
     let saveError: unknown;
     try {
@@ -178,28 +186,33 @@ async function boot() {
       saveError = e;
       state = createState();
     }
-    await initializeAssetCache();
+    resetLoadingActivity();
+    loadingProgress(imageDone + audioDone, count + 1, '检查素材更新');
+    await (cachePreparation ??= initializeAssetCache());
     // Prepare the full catalogue before admission; unchanged web images come from hash cache.
-    const urls = startupAssets();
-    const count = urls.length + explorationAudio.resourceCount;
-    let imageDone = 0,
-      audioDone = 0;
     const progress = () =>
       loadingProgress(
         imageDone + audioDone,
         count + 1,
         '准备游戏素材 ' + (imageDone + audioDone) + '/' + count,
       );
-    await Promise.all([
-      preloadAssets((done) => {
-        imageDone = done;
-        progress();
-      }, urls),
+    const results = await Promise.allSettled([
+      preloadAssets(
+        (done) => {
+          imageDone = done;
+          progress();
+        },
+        urls,
+        'foreground',
+        loadingActivity,
+      ),
       explorationAudio.preload((done) => {
         audioDone = done;
         progress();
-      }),
+      }, loadingActivity),
     ]);
+    const imageResult = results[0];
+    if (imageResult.status === 'rejected') throw imageResult.reason;
     loadingBackground();
     registerCharacterParts();
     if (saveError) {

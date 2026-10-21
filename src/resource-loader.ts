@@ -1,4 +1,27 @@
 export type ResourcePriority = 'foreground' | 'background';
+export interface ResourceActivity {
+  key: string;
+  stage: 'loading' | 'decoding' | 'retrying' | 'ready' | 'failed';
+  attempt: number;
+  attempts: number;
+}
+export interface ResourceRetry {
+  retries?: number;
+  delayMs?: number;
+}
+export function resourceLabel(key: string) {
+  if (key.startsWith('data:')) return key.startsWith('data:audio') ? '内嵌音频' : '内嵌图片';
+  return key.split(/[?#]/, 1)[0].split('/').filter(Boolean).at(-1)?.slice(0, 80) ?? '游戏素材';
+}
+export class ResourceBatchError extends Error {
+  constructor(readonly failures: { key: string; reason: unknown }[]) {
+    const first = failures[0];
+    const cause = first.reason instanceof Error ? first.reason.message : '加载失败';
+    super(
+      `${failures.length}项资源未完成：${resourceLabel(first.key)}（${cause}）。已保留完成资源，请重试。`,
+    );
+  }
+}
 interface Task<T> {
   key: string;
   priority: ResourcePriority;
@@ -14,11 +37,17 @@ export class ResourceLoader<T> {
   private tasks = new Map<string, Task<T>>();
   private active = 0;
   private backgroundActive = 0;
+  private observers = new Set<(activity: ResourceActivity) => void>();
   constructor(
-    private load: (key: string) => Promise<T>,
+    private load: (key: string, stage: (value: 'decoding') => void) => Promise<T>,
     private concurrency = 6,
     private backgroundConcurrency = 2,
+    private retry: ResourceRetry = {},
   ) {}
+  observe(observer: (activity: ResourceActivity) => void) {
+    this.observers.add(observer);
+    return () => this.observers.delete(observer);
+  }
   get(key: string) {
     return this.ready.get(key);
   }
@@ -48,13 +77,43 @@ export class ResourceLoader<T> {
     priority: ResourcePriority = 'foreground',
   ) {
     const unique = [...new Set(keys)];
-    let done = 0;
+    let done = unique.filter((key) => this.has(key)).length;
     progress(done, unique.length);
+    const pending = unique.filter((key) => !this.has(key));
     const results = await Promise.allSettled(
-      unique.map((key) => this.request(key, priority).then(() => progress(++done, unique.length))),
+      pending.map((key) => this.request(key, priority).then(() => progress(++done, unique.length))),
     );
-    const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
-    if (failed) throw failed.reason;
+    const failures = results.flatMap((result, index) =>
+      result.status === 'rejected' ? [{ key: pending[index], reason: result.reason }] : [],
+    );
+    if (failures.length) throw new ResourceBatchError(failures);
+  }
+  private async loadTask(key: string) {
+    const attempts = 1 + (this.retry.retries ?? 0);
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      const report = (stage: ResourceActivity['stage']) => {
+        for (const observer of this.observers) {
+          // Presentation errors must not turn a successful resource into a failed transfer.
+          try {
+            observer({ key, stage, attempt, attempts });
+          } catch {}
+        }
+      };
+      report('loading');
+      try {
+        const value = await this.load(key, report);
+        report('ready');
+        return value;
+      } catch (error) {
+        if (attempt === attempts) {
+          report('failed');
+          throw error;
+        }
+        report('retrying');
+        await new Promise((resolve) => setTimeout(resolve, this.retry.delayMs ?? 500));
+      }
+    }
+    throw new Error('资源未完成');
   }
   private pump() {
     while (this.active < this.concurrency) {
@@ -76,7 +135,7 @@ export class ResourceLoader<T> {
         this.pump();
       };
       Promise.resolve()
-        .then(() => this.load(task.key))
+        .then(() => this.loadTask(task.key))
         .then(
           (value) => {
             this.ready.set(task.key, value);

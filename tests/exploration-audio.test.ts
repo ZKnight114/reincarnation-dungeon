@@ -127,15 +127,61 @@ test('preload deduplicates concurrent downloads; retry fetches only failed audio
     f.fail('/explore-heal');
     await Promise.all([f.audio.preload(), f.audio.preload()]);
     assert.equal(f.audio.readyCount, 24);
-    assert.equal(f.calls.length, 25);
+    assert.equal(f.calls.length, 26, 'only the failed sound retries automatically');
     assert.equal(f.audio.failed, 1);
     f.fail(null);
     await f.audio.preload();
-    assert.equal(f.calls.length, 26);
+    assert.equal(f.calls.length, 27);
     assert.equal(f.audio.failed, 0);
   } finally {
     f.audio.stopAll();
   }
+});
+test('audio download queue caps concurrency at two while preparing the full catalogue', async () => {
+  const context = new Context();
+  let active = 0,
+    peak = 0,
+    requests = 0;
+  const audio = new ExplorationAudio({
+    createContext: () => context as unknown as AudioContext,
+    entries: ['exploration-bgm', ...SOUND_IDS].map((id) => ({ id: id as AudioId, url: '/' + id })),
+    fetch: async () => {
+      requests++;
+      peak = Math.max(peak, ++active);
+      await new Promise((resolve) => setImmediate(resolve));
+      active--;
+      return new Response(new Uint8Array([1]));
+    },
+    hidden: () => false,
+  });
+  await audio.preload();
+  assert.equal(peak, 2);
+  assert.equal(requests, 25);
+  assert.equal(audio.readyCount, 25);
+});
+test('temporary audio loss recovers automatically without replaying successful downloads', async () => {
+  const context = new Context(),
+    calls: string[] = [];
+  const audio = new ExplorationAudio({
+    createContext: () => context as unknown as AudioContext,
+    entries: [
+      { id: 'exploration-bgm', url: '/music' },
+      { id: 'explore-heal', url: '/heal' },
+    ],
+    fetch: async (input) => {
+      const url = String(input);
+      calls.push(url);
+      if (url === '/music' && calls.filter((entry) => entry === url).length === 1)
+        throw new Error('temporary disconnect');
+      return new Response(new Uint8Array([1]));
+    },
+    hidden: () => false,
+  });
+  await audio.preload();
+  assert.equal(audio.failed, 0);
+  assert.equal(audio.readyCount, 2);
+  assert.equal(calls.filter((url) => url === '/music').length, 2);
+  assert.equal(calls.filter((url) => url === '/heal').length, 1);
 });
 test('music continues across pack and events, ducks for battle, and toggles independently of effects', async () => {
   const { audio, context, storage } = fixture();

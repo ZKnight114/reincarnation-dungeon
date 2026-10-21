@@ -37,13 +37,14 @@ async function settle(win) {
   }
   assert.fail('Startup never reached a completed or recoverable state');
 }
-async function boot(entries = [], failFirst = false, holdImages = false) {
+async function boot(entries = [], failedAttempts = 0, holdImages = false) {
   const win = new Window({ url: 'http://localhost/' });
   for (const [k, v] of entries) win.localStorage.setItem(k, v);
   win.document.body.innerHTML = source;
   const loads = new Map();
   const pending = [];
-  let fail = failFirst;
+  let remainingFailures = failedAttempts,
+    failingURL;
   Object.assign(globalThis, {
     window: win,
     document: win.document,
@@ -62,8 +63,9 @@ async function boot(entries = [], failFirst = false, holdImages = false) {
           return;
         }
         queueMicrotask(() => {
-          if (fail) {
-            fail = false;
+          if (!failingURL && remainingFailures > 0) failingURL = url;
+          if (url === failingURL && remainingFailures > 0) {
+            remainingFailures--;
             this.onerror?.();
             return;
           }
@@ -116,11 +118,25 @@ try {
   await staged.win.happyDOM.close();
 }
 
-const retry = await boot([], true);
+const transient = await boot([], 1);
+try {
+  assert.equal(
+    transient.win.document.getElementById('startup-loading'),
+    null,
+    'a single network interruption recovers without a manual retry',
+  );
+  assert.equal(transient.loads.size, manifest.assets.length);
+} finally {
+  await transient.win.happyDOM.close();
+}
+
+const retry = await boot([], 2);
 let valid;
 try {
   const { win, loads } = retry;
   assert.match(win.document.getElementById('loading-status').textContent, /启动失败/);
+  assert.match(win.document.getElementById('loading-status').textContent, /1项资源未完成/);
+  assert.match(win.document.getElementById('loading-detail').textContent, /未完成1项/);
   assert.equal(win.localStorage.getItem(key), null, 'resource failure must not create a save');
   assert.equal(win.document.getElementById('app').hidden, true);
   assert.ok(

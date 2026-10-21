@@ -17,6 +17,7 @@
       #loading-progress{width:min(280px,80vw);height:10px;background:#070f0a88;border:1px solid #9b7f4c;margin:40px 0 12px;overflow:hidden}
       #loading-fill{height:100%;width:0;background:linear-gradient(90deg,#ad843a,#f3d38b)}
       #loading-status{min-height:24px;font-size:12px}#loading-version{position:absolute;bottom:24px;font-size:11px;opacity:.7}
+      #loading-status{max-width:360px;line-height:1.6}#loading-detail{max-width:360px;width:100%;min-height:44px;font-size:11px;line-height:1.7;color:#eedec3;white-space:pre-line;overflow-wrap:anywhere;margin:0 0 10px}
       #startup-loading button{padding:9px 15px;background:#70552c;color:#fff2ca;border:1px solid #c1a36b;margin:5px;cursor:pointer}
       #loading-recovery{max-width:360px;max-height:45vh;overflow:auto;font-size:12px;overflow-wrap:anywhere}
       #startup-loading [hidden],#app[hidden]{display:none!important}
@@ -28,7 +29,7 @@
     </section>
     <div id="app" hidden></div>
     <script>
-      window.guildBootTimeout=setTimeout(function(){var s=document.getElementById('loading-status'),b=document.getElementById('loading-retry');if(s){s.textContent='程序加载超时，请重试';b.hidden=false;b.onclick=function(){location.reload()}}},30000);
+      window.guildBootTimeout=setTimeout(function(){var s=document.getElementById('loading-status'),b=document.getElementById('loading-retry');if(s){s.textContent='程序加载超时，请重试';b.hidden=false;b.onclick=function(){location.reload()}}},60000);
       window.addEventListener('error',function(e){if(e.target&&e.target.tagName==='SCRIPT'){clearTimeout(window.guildBootTimeout);var s=document.getElementById('loading-status'),b=document.getElementById('loading-retry');if(s){s.textContent='程序加载失败，请重试';b.hidden=false;b.onclick=function(){location.reload()}}}},true);
     </script>
     <script type="module" src="/src/main.ts"></script>

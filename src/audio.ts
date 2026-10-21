@@ -1,5 +1,7 @@
 /** Presentation only. Audio failures never block an action or change the save. */
 import { audioEntries, type AudioId, type SoundId } from './audio-assets';
+import { ResourceLoader, type ResourceActivity } from './resource-loader';
+import { resourceDeadline } from './resource-deadline';
 
 export const AUDIO_SETTINGS_KEY = 'guild-exploration-audio-v1';
 export interface AudioSettings {
@@ -43,7 +45,7 @@ export class ExplorationAudio {
   settings: AudioSettings = { music: true, effects: true };
   private context: AudioContext | null = null;
   private buffers = new Map<AudioId, AudioBuffer>();
-  private tasks = new Map<AudioId, Promise<void>>();
+  private downloads: ResourceLoader<AudioBuffer>;
   private voices = new Set<Voice>();
   private cooldowns = new Map<SoundId, number>();
   private musicBus: GainNode | null = null;
@@ -58,6 +60,36 @@ export class ExplorationAudio {
   private epoch = 0;
   failed = 0;
   constructor(private env = browserEnvironment()) {
+    // Two sounds plus four images at most: avoid a 25-request audio burst at startup.
+    this.downloads = new ResourceLoader(
+      async (url, stage) => {
+        const context = this.getContext();
+        if (!context) throw new Error('音频不可用');
+        const entry = this.env.entries.find((entry) => entry.url === url)!;
+        const abort = new AbortController();
+        const bytes = await resourceDeadline(
+          async () => {
+            const response = await this.env.fetch(url, { signal: abort.signal });
+            if (!response.ok) throw new Error('音频下载失败');
+            return response.arrayBuffer();
+          },
+          entry.id === 'exploration-bgm' ? 60_000 : 30_000,
+          '音频下载超时',
+          () => abort.abort(),
+        );
+        stage('decoding');
+        const buffer = await resourceDeadline(
+          () => context.decodeAudioData(bytes),
+          15_000,
+          '音频解码超时',
+        );
+        this.buffers.set(entry.id, buffer);
+        return buffer;
+      },
+      2,
+      2,
+      { retries: 1 },
+    );
     try {
       const saved = JSON.parse(env.storage?.getItem(AUDIO_SETTINGS_KEY) ?? 'null');
       if (saved && typeof saved.music === 'boolean' && typeof saved.effects === 'boolean')
@@ -100,43 +132,25 @@ export class ExplorationAudio {
     }
     return this.context;
   }
-  async preload(progress: (done: number, total: number) => void = () => {}) {
+  async preload(
+    progress: (done: number, total: number) => void = () => {},
+    onActivity?: (activity: ResourceActivity) => void,
+  ) {
     if (!this.supported) {
       progress(0, 0);
       return;
     }
-    const context = this.getContext();
-    let done = 0;
-    progress(done, this.env.entries.length);
-    await Promise.allSettled(
-      this.env.entries.map(async ({ id, url }) => {
-        try {
-          if (!context) throw new Error('Audio unavailable');
-          if (!this.buffers.has(id)) {
-            let task = this.tasks.get(id);
-            if (!task) {
-              task = (async () => {
-                const abort = new AbortController();
-                const timeout = setTimeout(() => abort.abort(), 12_000);
-                try {
-                  const response = await this.env.fetch(url, { signal: abort.signal });
-                  if (!response.ok) throw new Error('Audio download failed');
-                  const bytes = await response.arrayBuffer();
-                  const buffer = await context.decodeAudioData(bytes);
-                  this.buffers.set(id, buffer);
-                } finally {
-                  clearTimeout(timeout);
-                }
-              })().finally(() => this.tasks.delete(id));
-              this.tasks.set(id, task);
-            }
-            await task;
-          }
-        } finally {
-          progress(++done, this.env.entries.length);
-        }
-      }),
-    );
+    const stop = onActivity ? this.downloads.observe(onActivity) : () => {};
+    try {
+      await this.downloads.batch(
+        this.env.entries.map((entry) => entry.url),
+        progress,
+      );
+    } catch {
+      // Only pictures are required for admission; failed sounds can retry in settings.
+    } finally {
+      stop();
+    }
     this.failed = this.env.entries.length - this.buffers.size;
     this.reconcile();
   }

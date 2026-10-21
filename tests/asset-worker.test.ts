@@ -96,6 +96,26 @@ test('updating one image keeps the rest; current hash wins for reused URLs', asy
   assert.equal(await (await v2('./assets/B.png'))!.text(), b);
   assert.equal(count, 3, 'only modified image downloads');
 });
+test('leaving an incomplete update preserves finished hashes across the next worker start', async () => {
+  const stores = new Map<string, Store>(),
+    requests: string[] = [];
+  const a = entry('./assets/A.png', 'A'),
+    b = entry('./assets/B.png', 'B');
+  let interrupted = true;
+  const network = async (url: string) => {
+    requests.push(url);
+    if (url.endsWith('B.png') && interrupted) throw new Error('connection interrupted');
+    return new Response(url.endsWith('A.png') ? 'A' : 'B');
+  };
+  const first = worker([a, b], stores, network);
+  await first(a.url);
+  await assert.rejects(first(b.url), /interrupted/);
+  interrupted = false;
+  const resumed = worker([a, b], stores, network);
+  await Promise.all([resumed(a.url), resumed(b.url)]);
+  assert.equal(requests.filter((url) => url.endsWith('A.png')).length, 1);
+  assert.equal(requests.filter((url) => url.endsWith('B.png')).length, 2);
+});
 test('audio shares hash caching with images; changing one sound downloads only that sound', async () => {
   const stores = new Map<string, Store>(),
     requests: string[] = [];
