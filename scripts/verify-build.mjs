@@ -28,6 +28,22 @@ for (const asset of manifest.assets) {
   assert.equal(createHash('sha256').update(bytes).digest('hex'), asset.hash, asset.url);
   assert.equal(bytes.length, asset.size, asset.url);
 }
+const packaged = [];
+for (const pack of manifest.packs ?? []) {
+  const bytes = await readFile(new URL('../dist/' + pack.url.slice(2), import.meta.url));
+  assert.equal(bytes.length, pack.size);
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), pack.hash);
+  for (const entry of pack.assets) {
+    const part = bytes.subarray(entry.offset, entry.offset + entry.size);
+    assert.equal(createHash('sha256').update(part).digest('hex'), entry.hash);
+    packaged.push(entry.url);
+  }
+}
+assert.deepEqual(
+  packaged.sort(),
+  manifest.assets.map((asset) => asset.url).sort(),
+  'Cold packages must contain the complete runtime media catalogue',
+);
 const worker = await readFile(new URL('../dist/asset-worker.js', import.meta.url), 'utf8');
 assert.ok(worker.includes(manifest.revision));
 assert.ok(!worker.includes('__ASSET_MANIFEST__'));

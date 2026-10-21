@@ -1,4 +1,6 @@
 import { startupAssets, spriteUrl } from './assets';
+import { pageMediaCache } from './page-media-cache';
+import { resourceDeadline } from './resource-deadline';
 import {
   ResourceLoader,
   resourceLabel,
@@ -6,8 +8,13 @@ import {
   type ResourcePriority,
 } from './resource-loader';
 const resources = new ResourceLoader<HTMLImageElement>(
-  (url, stage) =>
-    new Promise((resolve, reject) => {
+  async (url, stage) => {
+    const source = await resourceDeadline(
+      () => pageMediaCache.imageUrl(url),
+      45_000,
+      '图片下载超时',
+    );
+    return new Promise<HTMLImageElement>((resolve, reject) => {
       const img = new Image();
       let settled = false;
       const finish = (error?: string) => {
@@ -33,13 +40,14 @@ const resources = new ResourceLoader<HTMLImageElement>(
           () => finish('图片解码失败'),
         );
       };
-      img.src = url;
-    }),
+      img.src = source;
+    });
+  },
   4,
   2,
   { retries: 1 },
 );
-export const decodedAsset = (url: string) => resources.get(url);
+export const decodedAsset = (url: string) => resources.get(pageMediaCache.original(url));
 export const missingAssets = (urls: string[]) => urls.filter((url) => !resources.has(url));
 const el = (id: string) => document.getElementById(id)!;
 const activity = new Map<string, ResourceActivity>();

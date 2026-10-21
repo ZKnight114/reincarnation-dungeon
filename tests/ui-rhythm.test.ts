@@ -40,8 +40,23 @@ test('opening UI plays supply, equipment completion, resonance prompt and result
   const ready = () =>
     !!w.document.querySelector('[data-action="continue-resonance"]:not(:disabled)');
   try {
+    assert.equal(w.document.querySelectorAll('.journey-pending').length, 1);
+    assert.equal(w.document.querySelectorAll('.journey-new').length, 0);
+    assert.equal(ui.holdingJourney, true, 'the scene paints before the first departure line');
+    assert.equal(
+      w.document.querySelector('#adventure-footer .footer-main button')!.textContent,
+      '冒险中...',
+    );
+    now += 150;
+    ui.render();
     assert.equal(w.document.querySelectorAll('.journey-new').length, 1);
-    assert.equal(ui.holdingJourney, true, 'the very first departure line animates');
+    now += 300;
+    ui.render();
+    assert.equal(
+      ui.holdingJourney,
+      true,
+      'the departure reveal remains visible long enough to perceive',
+    );
     playUntil(() => g.state.phase === 'opening');
     assert.match(g.state.run.journey[0].text, /公会.*装备补给/);
     click('[data-action="claim-starters"]');

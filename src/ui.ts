@@ -693,7 +693,11 @@ export class UI {
     const sources = Array.from(
       this.root.querySelectorAll<SVGElement>('#field-items [data-pack-item]'),
     ).filter((source) => ids.has(source.dataset.packItem!));
-    const flight = recyclingFlight(sources, target, this.motion.reduced);
+    const flight = recyclingFlight(sources, target, this.motion.reduced, () => {
+      this.audio.effect('explore-reforge', 1, 'reclaim');
+      this.motion.pulse(document.getElementById('point-redeem'), 'reforge-notify', 160, false);
+    });
+    if (this.motion.reduced) this.audio.effect('explore-reforge', 1, 'reclaim');
     this.recycling = {
       game: this.game,
       action,
@@ -911,7 +915,7 @@ export class UI {
         this.motion.pulse(document.getElementById('point-redeem'), 'reforge-notify', 220, false);
     }
     document.getElementById('combat-hud')!.hidden = !active;
-    this.sounds.sync(this.game, this.showPack && !this.resultPlaying, this.wheel);
+    this.sounds.sync(this.game, this.showPack && !this.resultPlaying, this.wheel, !!this.recycling);
     this.root.dataset.audio = JSON.stringify(this.audio.diagnostics);
   }
   get holdingJourney() {
@@ -1313,9 +1317,9 @@ export class UI {
           ? `<button class="primary-button" data-action="claim-starters">继续补给 ${s.run.starterRound + 1}/2</button>`
           : '<button class="primary-button" data-action="finish-opening">继续</button>';
     else if (s.phase === 'camp')
-      html = `<button class="primary-button" data-action="continue" ${waiting ? 'disabled' : ''}>${waiting ? '历程播放中' : s.run.pendingPromotion && (s.run.routeRevision !== 16 || s.run.events[s.run.index + 1]?.kind === 'promotion') ? '进入晋阶' : safelyGraduated(s) && this.game.currentEvent()?.completed ? '确认毕业' : this.game.completed() ? '继续探险' : '开始冒险'}</button>`;
+      html = `<button class="primary-button" data-action="continue" ${waiting ? 'disabled' : ''}>${waiting ? '冒险中...' : s.run.pendingPromotion && (s.run.routeRevision !== 16 || s.run.events[s.run.index + 1]?.kind === 'promotion') ? '进入晋阶' : safelyGraduated(s) && this.game.currentEvent()?.completed ? '确认毕业' : this.game.completed() ? '继续探险' : '开始冒险'}</button>`;
     else if (s.phase === 'journey')
-      html = `<button class="primary-button" data-action="${s.run.resonanceNarration ? 'continue-resonance' : 'continue-story'}" ${waiting ? 'disabled' : ''}>${waiting ? '历程播放中' : '继续'}</button>`;
+      html = `<button class="primary-button" data-action="${s.run.resonanceNarration ? 'continue-resonance' : 'continue-story'}" ${waiting ? 'disabled' : ''}>${waiting ? '冒险中...' : '继续'}</button>`;
     else if (s.phase === 'awakening')
       html = `<button class="primary-button" data-action="finish-awakening" ${this.ritualReady ? '' : 'disabled'}>${this.ritualReady ? '继续' : '境界觉醒'}</button>`;
     else if (s.phase === 'combat')
@@ -1408,6 +1412,9 @@ export class UI {
       );
     }
     this.journeyQueue = Array.from(el.querySelectorAll<HTMLElement>('.journey-pending'));
+    // Let the new scene paint before revealing the first departure frame.
+    if (!this.journeyRendered.length && !restoredHistory && !this.motion.reduced)
+      this.journeyNext = Date.now() + 120;
     this.revealJourney();
     this.journeyRendered = signatures;
     if (!this.showPack) el.scrollTop = this.journeyFollow ? el.scrollHeight : this.journeyScroll;
@@ -1448,7 +1455,7 @@ export class UI {
         ? Math.max(450, 900 / this.game.state.speed)
         : this.motion.reduced
           ? 0
-          : 240 / this.game.state.speed);
+          : 460 / this.game.state.speed);
     entry.addEventListener('animationend', () => entry.classList.remove('journey-new'), {
       once: true,
     });

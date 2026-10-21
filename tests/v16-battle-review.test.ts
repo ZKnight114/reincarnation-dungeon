@@ -188,6 +188,11 @@ test('manual continue flies loose equipment to reforge, credits once, then advan
   assert.equal(g.state.run.index, oldIndex);
   assert.equal(g.state.run.points, points);
   assert.ok(node('.loot-reclaim-layer'));
+  assert.equal(
+    win.document.querySelectorAll('.loot-reclaim-layer i').length,
+    loose,
+    'one point per equipment',
+  );
   assert.equal(ui.holdingJourney, true);
   assert.equal((node('[data-action="continue"]') as HTMLButtonElement).disabled, true);
   tap('[data-action="continue"]');

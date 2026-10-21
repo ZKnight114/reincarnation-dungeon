@@ -1,17 +1,23 @@
 import { startupAssets } from './assets';
+import { initializePageMediaCache } from './page-media-cache';
 
 /** Optional web-only cache. Offline HTML and Vite development never register a worker. */
 export async function initializeAssetCache() {
   if (
     !import.meta.env.PROD ||
     !/^https?:$/.test(window.location.protocol) ||
-    !('serviceWorker' in window.navigator) ||
     !startupAssets().some((url) => !url.startsWith('data:'))
   )
     return;
+  const workerURL = new URL('asset-worker.js', document.baseURI);
+  const scope = new URL('./', workerURL).href;
+  if (/MicroMessenger/i.test(navigator.userAgent)) {
+    // WeChat gets first-download packages and page persistence even if its worker API exists.
+    await initializePageMediaCache(scope);
+    return;
+  }
   try {
-    const workerURL = new URL('asset-worker.js', document.baseURI);
-    const scope = new URL('./', workerURL).href;
+    if (!navigator.serviceWorker) throw new Error('Background cache unavailable');
     await Promise.race([
       (async () => {
         const registration = await navigator.serviceWorker.register(workerURL, {
@@ -39,6 +45,7 @@ export async function initializeAssetCache() {
       new Promise<void>((resolve) => window.setTimeout(resolve, 4000)),
     ]);
   } catch {
-    // Private mode, unsupported caching, or registration failure uses ordinary image loading.
+    // Embedded browsers may support page storage even without a working Service Worker.
   }
+  if (!navigator.serviceWorker?.controller) await initializePageMediaCache(scope);
 }

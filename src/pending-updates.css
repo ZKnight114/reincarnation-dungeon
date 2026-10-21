@@ -226,7 +226,7 @@
   filter: drop-shadow(-8px 0 5px #b5d4d060);
 }
 #adventure-screen #journey-history .journey-entry.journey-new {
-  animation-duration: calc(0.22s / var(--motion-speed, 1));
+  animation-duration: calc(0.42s * var(--motion-factor, 1));
 }
 #adventure-screen .adventure-footer[data-readiness='waiting'] .footer-main .primary-button {
   --ui-skin: var(--ui-disabled);

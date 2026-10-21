@@ -198,14 +198,16 @@
   display: none;
 }
 #adventure-screen #journey-history .journey-entry.journey-new {
-  animation: journey-reveal 0.22s ease-out both;
+  animation: journey-reveal 0.42s ease-out both;
 }
 @keyframes journey-reveal {
   from {
     opacity: 0;
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 

@@ -57,7 +57,12 @@ export class ExplorationSounds {
     this.pendingLoot = false;
     this.audio.stopAll();
   }
-  sync(game: Game, packVisible: boolean, legacyWheel?: { ready: boolean } | null) {
+  sync(
+    game: Game,
+    packVisible: boolean,
+    legacyWheel?: { ready: boolean } | null,
+    reclaimAnimated = false,
+  ) {
     const s = game.state,
       previous = this.previous;
     if (previous && !exploring(s.phase) && s.phase !== 'summary' && previous.phase !== s.phase)
@@ -80,7 +85,11 @@ export class ExplorationSounds {
         if (s.phase === 'awakening' && transitioned) this.audio.effect('explore-promotion');
         if (s.run.resonances.length > previous.resonances) this.audio.effect('explore-resonance');
         const history = s.run.journey.slice(previous.history);
-        if (history.some((l) => ['主动重铸', '回收未入包装备'].includes(l.title)))
+        if (
+          history.some(
+            (l) => l.title === '主动重铸' || (!reclaimAnimated && l.title === '回收未入包装备'),
+          )
+        )
           this.audio.effect('explore-reforge');
         const redeemed = previous.points - s.run.points >= 6;
         if (redeemed) this.audio.effect('explore-reforge');

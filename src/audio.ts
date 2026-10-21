@@ -2,6 +2,7 @@
 import { audioEntries, type AudioId, type SoundId } from './audio-assets';
 import { ResourceLoader, type ResourceActivity } from './resource-loader';
 import { resourceDeadline } from './resource-deadline';
+import { pageMediaCache } from './page-media-cache';
 
 export const AUDIO_SETTINGS_KEY = 'guild-exploration-audio-v1';
 export interface AudioSettings {
@@ -36,7 +37,8 @@ function browserEnvironment(): AudioEnvironment {
   return {
     createContext: Context ? () => new Context() : null,
     entries: audioEntries(),
-    fetch: (...args) => globalThis.fetch(...args),
+    fetch: (input, init) =>
+      pageMediaCache.response(input instanceof Request ? input.url : String(input), init),
     storage,
     hidden: () => typeof document !== 'undefined' && document.hidden,
   };
@@ -58,6 +60,9 @@ export class ExplorationAudio {
   private wantsWheel = false;
   private unlocked = false;
   private epoch = 0;
+  private musicRetry: Promise<void> | null = null;
+  private lastMusicRetry = -Infinity;
+  private lastPrime = -Infinity;
   failed = 0;
   constructor(private env = browserEnvironment()) {
     // Two sounds plus four images at most: avoid a 25-request audio burst at startup.
@@ -112,6 +117,11 @@ export class ExplorationAudio {
       music: this.musicVoices.size,
       effects: this.voices.size,
       wheel: !!this.wheelVoice,
+      musicReady: this.buffers.has('exploration-bgm'),
+      musicEnabled: this.settings.music,
+      unlocked: this.unlocked,
+      active: this.active,
+      failed: this.failed,
     };
   }
   private getContext() {
@@ -124,6 +134,10 @@ export class ExplorationAudio {
         this.effectsBus.gain.value = 0.5;
         this.musicBus.connect(this.context.destination);
         this.effectsBus.connect(this.context.destination);
+        this.context.onstatechange = () => {
+          // Mobile engines can interrupt output while their page stays visible.
+          if (this.context?.state === 'running') this.reconcile();
+        };
       } catch {
         this.context = null;
         this.musicBus = this.effectsBus = null;
@@ -159,16 +173,33 @@ export class ExplorationAudio {
     const context = this.getContext();
     if (!context || this.env.hidden()) return;
     try {
-      if (context.state !== 'running') await context.resume();
+      const resume = context.state !== 'running' ? context.resume() : Promise.resolve();
+      // Start inside the gesture, before awaiting resume. Some mobile WebViews also need
+      // a source activation on touchend/click even when state already says "running".
+      if (typeof context.createBuffer === 'function' && Date.now() - this.lastPrime >= 80) {
+        this.lastPrime = Date.now();
+        try {
+          const primer = context.createBufferSource();
+          primer.buffer = context.createBuffer(1, 1, context.sampleRate);
+          primer.connect(context.destination);
+          primer.onended = () => primer.disconnect();
+          primer.start(0);
+        } catch {
+          /* Resume still completes if this optional primer is unavailable. */
+        }
+      }
+      await resume;
       this.unlocked = context.state === 'running';
+      this.recoverMusic();
       this.reconcile();
     } catch {
-      this.unlocked = false;
+      this.unlocked = context.state === 'running';
     }
   }
   attach() {
     if (typeof window === 'undefined') return;
-    window.addEventListener('pointerdown', () => void this.unlock(), { capture: true });
+    for (const event of ['pointerdown', 'pointerup', 'touchend', 'click'])
+      window.addEventListener(event, () => void this.unlock(), { capture: true, passive: true });
     window.addEventListener(
       'keydown',
       (event) => {
@@ -185,13 +216,39 @@ export class ExplorationAudio {
     window.addEventListener('pagehide', () => this.stopAll());
   }
   setScene(active: boolean, duck = false) {
+    const entering = active && !this.active;
     if (this.active && !active) {
       this.wantsWheel = false;
       this.stopAll();
     }
     this.active = active;
     this.duck = duck;
+    if (entering) this.recoverMusic();
     this.reconcile();
+  }
+  private recoverMusic() {
+    if (
+      !this.active ||
+      !this.settings.music ||
+      this.buffers.has('exploration-bgm') ||
+      this.musicRetry ||
+      this.env.hidden() ||
+      Date.now() - this.lastMusicRetry < 10_000
+    )
+      return;
+    const entry = this.env.entries.find((entry) => entry.id === 'exploration-bgm');
+    if (!entry) return;
+    this.lastMusicRetry = Date.now();
+    this.musicRetry = this.downloads
+      .request(entry.url)
+      .then(() => {
+        this.failed = this.env.entries.length - this.buffers.size;
+        this.reconcile();
+      })
+      .catch(() => {})
+      .finally(() => {
+        this.musicRetry = null;
+      });
   }
   setSettings(next: Partial<AudioSettings>) {
     this.settings = { ...this.settings, ...next };
@@ -203,6 +260,7 @@ export class ExplorationAudio {
       for (const voice of [...this.voices]) this.stopVoice(voice);
       this.stopWheel();
     }
+    this.recoverMusic();
     this.reconcile();
   }
   private playable() {
@@ -228,10 +286,11 @@ export class ExplorationAudio {
     };
     return voice;
   }
-  effect(id: SoundId, speed = 1) {
+  effect(id: SoundId, speed = 1, cue?: 'reclaim') {
     if (!this.settings.effects || !this.effectsBus || !this.playable() || !this.buffers.has(id))
       return false;
     const now = this.context!.currentTime;
+    const reclaim = id === 'explore-reforge' && cue === 'reclaim';
     const interval = [
       'explore-melee-hit',
       'explore-crossbow',
@@ -242,12 +301,16 @@ export class ExplorationAudio {
       : id === 'explore-ui-confirm'
         ? 0.12
         : 0.25;
-    if (now - (this.cooldowns.get(id) ?? -Infinity) < interval) return false;
-    this.cooldowns.set(id, now);
+    // Point flights already own one-shot callbacks. Preserve every arrival, including
+    // simultaneous arrivals in a large batch; normal repeated actions stay throttled.
+    if (!reclaim) {
+      if (now - (this.cooldowns.get(id) ?? -Infinity) < interval) return false;
+      this.cooldowns.set(id, now);
+    }
     const same = [...this.voices].filter((voice) => voice.id === id);
     if (same.length >= 2) this.stopVoice(same[0]);
     if (this.voices.size >= 6) this.stopVoice(this.voices.values().next().value!);
-    const voice = this.voice(id, this.effectsBus);
+    const voice = this.voice(id, this.effectsBus, reclaim ? 0.55 : 1);
     if (!voice) return false;
     this.voices.add(voice);
     const full = voice.source.buffer!.duration;
@@ -257,9 +320,13 @@ export class ExplorationAudio {
       'explore-magic-hit',
       'explore-poison',
     ].includes(id);
-    const duration = combat ? Math.min(full, Math.max(0.09, 0.6 / Math.max(1, speed))) : full;
+    const duration = reclaim
+      ? Math.min(full, 0.16)
+      : combat
+        ? Math.min(full, Math.max(0.09, 0.6 / Math.max(1, speed)))
+        : full;
     if (duration < full) {
-      voice.gain.gain.setValueAtTime(1, now + Math.max(0, duration - 0.025));
+      voice.gain.gain.setValueAtTime(reclaim ? 0.55 : 1, now + Math.max(0, duration - 0.025));
       voice.gain.gain.linearRampToValueAtTime(0, now + duration);
     }
     voice.source.start(now, 0, duration);

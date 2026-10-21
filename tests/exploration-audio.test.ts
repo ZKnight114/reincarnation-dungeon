@@ -5,6 +5,7 @@ import { SOUND_IDS, type AudioId } from '../src/audio-assets';
 import { ExplorationSounds, attackSound } from '../src/exploration-sounds';
 import { Game } from '../src/game';
 import { start, positionEvent, add } from './helpers';
+import { Window } from 'happy-dom';
 
 class Param {
   value = 1;
@@ -133,6 +134,87 @@ test('preload deduplicates concurrent downloads; retry fetches only failed audio
     await f.audio.preload();
     assert.equal(f.calls.length, 27);
     assert.equal(f.audio.failed, 0);
+  } finally {
+    f.audio.stopAll();
+  }
+});
+
+test('entering exploration recovers a missing BGM once without downloading prepared effects again', async () => {
+  const f = fixture();
+  try {
+    f.fail('/exploration-bgm');
+    await f.audio.preload();
+    assert.equal(f.audio.diagnostics.musicReady, false);
+    f.fail(null);
+    await f.audio.unlock();
+    f.audio.setScene(true);
+    for (let n = 0; n < 30 && !f.audio.diagnostics.musicReady; n++)
+      await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(f.audio.diagnostics.musicReady, true);
+    assert.equal(f.audio.diagnostics.music, 1);
+    assert.equal(f.audio.failed, 0);
+    assert.equal(f.calls.filter((url) => url === '/exploration-bgm').length, 3);
+    assert.equal(f.calls.filter((url) => url !== '/exploration-bgm').length, 24);
+    f.audio.setScene(true);
+    await f.audio.unlock();
+    assert.equal(f.calls.length, 27, 'renders and subsequent gestures do not download again');
+  } finally {
+    f.audio.stopAll();
+  }
+});
+
+test('click and touchend unlock mobile output with a silent source inside the gesture', async () => {
+  const previousWindow = globalThis.window,
+    previousDocument = globalThis.document;
+  const w = new Window({ url: 'http://localhost/' });
+  Object.assign(globalThis, { window: w, document: w.document });
+  class MobileContext extends Context {
+    sampleRate = 48000;
+    createBuffer() {
+      return { key: -1, duration: 1 / this.sampleRate };
+    }
+  }
+  const context = new MobileContext();
+  const audio = new ExplorationAudio({
+    createContext: () => context as unknown as AudioContext,
+    entries: [{ id: 'exploration-bgm', url: '/music' }],
+    fetch: async () => new Response(new Uint8Array([0])),
+    hidden: () => false,
+  });
+  try {
+    await audio.preload();
+    audio.attach();
+    audio.setScene(true);
+    w.dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+    assert.equal(context.sources[0].buffer?.key, -1, 'primer starts before resume resolves');
+    assert.deepEqual(context.sources[0].started, [0]);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(audio.diagnostics.music, 1);
+    audio.stopAll();
+    context.state = 'suspended';
+    w.dispatchEvent(new w.Event('touchend'));
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(context.state, 'running');
+    assert.equal(audio.diagnostics.music, 1);
+    assert.equal(context.resumes, 2);
+  } finally {
+    audio.stopAll();
+    Object.assign(globalThis, { window: previousWindow, document: previousDocument });
+    await w.happyDOM.close();
+  }
+});
+
+test('equipment-point cues are short and separately audible without using the full reforge tail', async () => {
+  const f = fixture();
+  try {
+    await f.audio.preload();
+    await f.audio.unlock();
+    for (let n = 0; n < 3; n++) {
+      assert.equal(f.audio.effect('explore-reforge', 1, 'reclaim'), true);
+    }
+    assert.equal(f.context.sources.length, 3);
+    assert.ok(f.context.sources.every((source) => source.started?.[2] === 0.16));
+    assert.ok(f.context.gains.slice(2).every((gain) => gain.gain.targets.includes(0)));
   } finally {
     f.audio.stopAll();
   }
@@ -351,6 +433,19 @@ test('restoring narration never replays history; new growth and healing play onc
   r.presenter.sync(g, false);
   r.presenter.sync(g, false);
   assert.deepEqual(r.played, ['explore-heal']);
+});
+
+test('animated equipment reclaim does not replay the batch sound on credit', () => {
+  const g = start(),
+    r = recorder();
+  r.presenter.sync(g, true);
+  g.chronicle('回收未入包装备', '3件装备转为3点', 'loot');
+  r.presenter.sync(g, true, null, true);
+  r.presenter.sync(g, true);
+  assert.deepEqual(r.played, []);
+  g.chronicle('主动重铸', '装备转为1点', 'loot');
+  r.presenter.sync(g, true);
+  assert.deepEqual(r.played, ['explore-reforge']);
 });
 test('loot reveal waits for displayed pack after victory narration, then only plays once', () => {
   const g = start(),

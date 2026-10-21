@@ -16,6 +16,7 @@ import { registerCharacterParts } from './character-parts';
 import { initializeAssetCache } from './asset-cache';
 import type { GameState } from './types';
 import { explorationAudio } from './audio';
+import { pageMediaCache } from './page-media-cache';
 
 // Styles intentionally build on earlier layers; preserve this cascade order.
 import './style.css';
@@ -190,12 +191,24 @@ async function boot() {
     loadingProgress(imageDone + audioDone, count + 1, '检查素材更新');
     await (cachePreparation ??= initializeAssetCache());
     // Prepare the full catalogue before admission; unchanged web images come from hash cache.
-    const progress = () =>
+    const progress = () => {
+      const transfer = pageMediaCache.transferTotal;
+      const ready = (imageDone + audioDone) / (count + 1);
       loadingProgress(
-        imageDone + audioDone,
-        count + 1,
-        '准备游戏素材 ' + (imageDone + audioDone) + '/' + count,
+        transfer
+          ? Math.min(0.99, (0.8 * pageMediaCache.transferDone) / transfer + 0.2 * ready)
+          : ready,
+        1,
+        '准备游戏素材 ' +
+          (imageDone + audioDone) +
+          '/' +
+          count +
+          (transfer
+            ? ` · 下载 ${(pageMediaCache.transferDone / 1048576).toFixed(1)}/${(transfer / 1048576).toFixed(1)}MB`
+            : ''),
       );
+    };
+    pageMediaCache.onTransfer = progress;
     const results = await Promise.allSettled([
       preloadAssets(
         (done) => {
@@ -214,13 +227,20 @@ async function boot() {
     const imageResult = results[0];
     if (imageResult.status === 'rejected') throw imageResult.reason;
     loadingBackground();
+    pageMediaCache.bindStyles(document);
     registerCharacterParts();
     if (saveError) {
       recovery(saveError);
       return;
     }
     loadingProgress(count, count + 1, '准备进入');
+    document.getElementById('app')!.dataset.mediaCache = JSON.stringify({
+      pageCache: pageMediaCache.active,
+      hits: pageMediaCache.hits,
+      downloads: pageMediaCache.downloads,
+    });
     launch(state);
+    pageMediaCache.releaseTransfers();
   } catch (e) {
     loadingError('启动失败：' + (e instanceof Error ? e.message : String(e)), () => void boot());
   } finally {
