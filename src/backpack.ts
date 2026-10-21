@@ -687,7 +687,8 @@ export function buildSources(state: GameState, draft = false) {
         name: RESONANCES[key].name,
         kind: 'resonance',
         skills: resonanceSkills(DESIGN_RESONANCE_IDS[key], a.tiers[key]),
-        profession: state.run.profession,
+        profession:
+          RESONANCES[key].kind === 'profession' ? RESONANCES[key].profession : state.run.profession,
       });
   return applyTalentSources(sources, state.run.trainee?.talents ?? []);
 }

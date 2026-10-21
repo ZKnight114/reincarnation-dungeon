@@ -1,5 +1,8 @@
+import { CombatRules } from './combat-rules';
+import { ENEMY_SHIELD_CAP, HERO_SHIELD_CAP, shieldActionScale } from './combat-balance';
 import type {
   BattleRuntime,
+  BattleStatus,
   Condition,
   Fighter,
   Skill,
@@ -15,7 +18,7 @@ export const COUNTERS: Record<Profession, Record<Profession, number>> = {
   rogue: { warrior: 0.9, mage: 1.15, rogue: 1 },
 };
 export const enrageMultiplier = (round: number) =>
-  round <= 15 ? 1 : Math.min(1.8, 1.2 + Math.floor((round - 16) / 2) * 0.2);
+  round < 10 ? 1 : round < 12 ? 1.1 : round < 14 ? 1.25 : round < 16 ? 1.5 : 1.8;
 export const damageValue = (
   raw: number,
   type: DamageType,
@@ -31,6 +34,11 @@ export const damageValue = (
       COUNTERS[attacker][defender]);
 export const statusValue = (f: Fighter, kind: StatusKind) =>
   Math.max(0, ...f.statuses.filter((s) => s.kind === kind).map((s) => s.value));
+/** Native DOT already stores its talent bonus; passive DOT keeps a raw, save-stable value. */
+export function dotStrength(runtime: BattleRuntime, status: BattleStatus) {
+  const source = runtime.sources.find((s) => s.id === status.source);
+  return status.value * (source?.kind === 'resonance' ? 1 + (source.talentDamage ?? 0) : 1);
+}
 export const fighterSpeed = (f: Fighter) => f.speed * (1 - statusValue(f, 'chill'));
 export interface BattleSignal {
   source: string;
@@ -174,6 +182,33 @@ export function battleRuntime(
 
 export class BattleEngine {
   private lastSourceWorked = false;
+  private lastDamage = { hp: 0, total: 0 };
+  private rules() {
+    return new CombatRules(this.r, this.round, {
+      damage: (source, target, raw, type) => {
+        if (this.alive() && target.hp > 0)
+          this.damage(target, raw, type, 'hero', source.id, 0, false);
+      },
+      shield: (source, raw) => {
+        const before = this.r.hero.shield;
+        this.r.hero.shield = Math.min(
+          this.r.hero.maxHp * HERO_SHIELD_CAP,
+          before + raw * (1 + (source.shieldBonus ?? 0)),
+        );
+        if (this.r.hero.shield > before)
+          this.emit({ source: source.id, kind: 'shield', amount: this.r.hero.shield - before });
+      },
+      heal: (source, raw) => {
+        const amount =
+          this.r.hero.hp > 0 ? Math.max(0, Math.min(raw, this.r.hero.maxHp - this.r.hero.hp)) : 0;
+        this.r.hero.hp += amount;
+        if (amount) this.emit({ source: source.id, kind: 'healing', amount });
+        return amount;
+      },
+      trigger: (source) => this.emit({ source: source.id, kind: 'trigger', amount: 1 }),
+    });
+  }
+
   constructor(
     public r: BattleRuntime,
     public round: number,
@@ -207,7 +242,7 @@ export class BattleEngine {
   private dot(f: Fighter, k: 'poison' | 'burn', attack: number) {
     return Math.min(
       attack * 0.4,
-      f.statuses.filter((s) => s.kind === k).reduce((n, s) => n + s.value, 0),
+      f.statuses.filter((s) => s.kind === k).reduce((n, s) => n + dotStrength(this.r, s), 0),
     );
   }
   private enemyScale() {
@@ -241,18 +276,38 @@ export class BattleEngine {
     source: string,
     ignore = 0,
     direct = true,
+    applyTalent = true,
   ) {
     const self = this.actor(side),
       before = target.hp,
       shield = target.shield;
+    // Apply profession damage once to every matching source, including passives and DOT.
+    // Item mastery remains limited to native direct damage; talent reflection is excluded.
+    if (side === 'hero' && applyTalent) {
+      const src = this.r.sources.find((s) => s.id === source);
+      raw *= 1 + (src?.talentDamage ?? 0) + (direct ? (src?.talentDirect ?? 0) : 0);
+    }
     const defense = target.defense * (1 - statusValue(target, 'break'));
     const amount = this.neutral
       ? raw *
         (type === 'true' ? 1 : 60 / (60 + defense * (1 - ignore) * (type === 'magic' ? 0.7 : 1)))
-      : damageValue(raw, type, defense, self.profession, target.profession, ignore) *
-        (side === 'enemy' ? this.enemyScale() : 1);
+      : damageValue(
+          raw,
+          type,
+          defense,
+          (side === 'hero' ? this.r.sources.find((s) => s.id === source)?.profession : undefined) ??
+            self.profession,
+          target.profession,
+          ignore,
+        ) * (side === 'enemy' ? this.enemyScale() : 1);
     const protectedAmount = direct
-      ? amount * (1 - Math.min(0.45, statusValue(target, 'smoke')))
+      ? amount *
+        (1 -
+          Math.min(
+            0.45,
+            statusValue(target, 'smoke') +
+              target.statuses.filter((s) => s.kind === 'guard').reduce((n, s) => n + s.value, 0),
+          ))
       : amount;
     const absorbed = Math.min(shield, protectedAmount);
     target.shield -= absorbed;
@@ -263,14 +318,16 @@ export class BattleEngine {
       this.emit({ source: 'hero', kind: 'blocked', amount: absorbed });
       this.emit({ source: 'hero', kind: 'hurt', amount: before - target.hp });
     }
+    const hpLoss = before - target.hp;
+    const shieldBroke = shield > 0 && target.shield === 0;
     this.phase();
-    if (side === 'hero' && direct && before > target.hp && this.r.hero.hp > 0) {
+    if (side === 'hero' && direct && hpLoss > 0 && this.r.hero.hp > 0) {
       const src = this.r.sources.find((s) => s.id === source);
       const key = 'talentLifesteal:' + this.round;
       const healed = Math.max(
         0,
         Math.min(
-          (before - target.hp) * (src?.lifesteal ?? 0),
+          hpLoss * (src?.lifesteal ?? 0),
           self.maxHp * 0.02 - (this.r.flags[key] ?? 0),
           self.maxHp - self.hp,
         ),
@@ -287,19 +344,37 @@ export class BattleEngine {
         Math.min((before - target.hp) * rate, target.attack * 0.1 - (this.r.flags[key] ?? 0)),
       );
       this.r.flags[key] = (this.r.flags[key] ?? 0) + reflected;
-      if (reflected) this.damage(self, reflected, 'true', 'hero', this.r.sources[0].id, 0, false);
+      if (reflected)
+        this.damage(
+          this.r.minions.find((m) => m.id === source) ?? self,
+          reflected,
+          'true',
+          'hero',
+          this.r.sources[0].id,
+          0,
+          false,
+          false,
+        );
     }
     if (side === 'enemy' && target.hp > 0 && this.alive())
       this.respond(
         shield > 0,
-        shield > 0 && target.shield === 0,
+        shieldBroke,
         before,
         target.hp,
         protectedAmount,
         direct,
         this.r.minions.find((m) => m.id === source) ?? self,
       );
-    return before - target.hp;
+    if (side === 'enemy' && direct && this.r.hero.hp > 0)
+      this.rules().enemyHit(
+        absorbed,
+        shieldBroke,
+        before,
+        amount > 0 && statusValue(target, 'smoke') > 0,
+      );
+    this.lastDamage = { hp: hpLoss, total: absorbed + hpLoss };
+    return hpLoss;
   }
   private respond(
     hadShield: boolean,
@@ -342,6 +417,7 @@ export class BattleEngine {
             source.id,
             0,
             false,
+            false, // Native counter strength already includes its profession talent.
           );
         }
       }
@@ -365,13 +441,15 @@ export class BattleEngine {
   ) {
     const kind = action.status!,
       value = Math.min(
-        ['poison', 'burn'].includes(kind) ? Infinity : kind === 'smoke' ? 0.45 : 0.3,
-        (action.a ?? 0) * (1 + bonus) * (['poison', 'burn'].includes(kind) ? self.attack : 1),
+        ['poison', 'burn', 'regen'].includes(kind) ? Infinity : kind === 'smoke' ? 0.45 : 0.3,
+        kind === 'regen'
+          ? (action.h ?? 0) * self.maxHp + (action.a ?? 0) * self.attack
+          : (action.a ?? 0) * (1 + bonus) * (['poison', 'burn'].includes(kind) ? self.attack : 1),
       ),
       remaining = action.duration ?? 2;
     const old = target.statuses.find((s) => s.kind === kind && s.source === source);
     if (old) {
-      old.value = value;
+      old.value = kind === 'regen' ? Math.max(old.value, value) : value;
       old.remaining = remaining;
     } else target.statuses.push({ kind, value, remaining, source });
   }
@@ -391,13 +469,15 @@ export class BattleEngine {
     let consumed = 0,
       worked = false,
       lastTarget = target;
+    const context = side === 'hero' && direct ? this.rules().beforeSkill(source, target) : null;
     for (const [actionIndex, action] of skill.actions.entries()) {
       if (!this.alive()) break;
       if (!this.condition(action.when, selfSnapshot, snapshot)) continue;
       const charge = source.id + ':heal:' + index + ':' + actionIndex;
       if (
         action.kind === 'heal' &&
-        ((this.r.charges[charge] ?? 0) >= (action.limit ?? 3) || self.hp >= self.maxHp)
+        ((!action.unlimited && (this.r.charges[charge] ?? 0) >= (action.limit ?? 3)) ||
+          self.hp >= self.maxHp)
       )
         continue;
       worked = true;
@@ -408,7 +488,9 @@ export class BattleEngine {
       if (action.kind === 'damage') {
         const bonus = action.dot
           ? Math.min(
-              this.dot(snapshot, action.dot, self.attack) * (action.dotScale ?? 1),
+              this.dot(snapshot, action.dot, self.attack) *
+                (action.dotScale ?? 1) *
+                (context ? this.rules().dotScale(action.dot, context) : 1),
               self.attack * (action.cap ?? 1),
             )
           : action.received
@@ -417,28 +499,48 @@ export class BattleEngine {
               ? Math.min(consumed * action.consumed, self.attack * (action.cap ?? 1))
               : 0;
         raw += bonus;
+        // Star energy is part of the tome's native hit, including its damage attribution.
+        if (context?.tome === 'mage_arcane_tome')
+          raw += (context.energy * [10, 15, 20][context.level - 1] * self.attack) / 100;
         if (action.bonusWhen && this.condition(action.bonusWhen, selfSnapshot, snapshot))
           raw *= 1 + (action.bonus ?? 0);
         if (source.kind === 'item' && action.type !== 'true' && direct)
           raw *=
             1 + (source.damageBonus ?? 0) + (source.ranged ? statusValue(snapshot, 'mark') : 0);
-        raw *= 1 + (source.talentDamage ?? 0) + (direct ? (source.talentDirect ?? 0) : 0);
         for (let n = 0; n < (action.hits ?? 1) && this.alive(); n++) {
           const victim = forcedTarget ?? this.target(side);
           lastTarget = victim;
           const ignore =
-            !action.ignoreWhen || this.condition(action.ignoreWhen, selfSnapshot, victim)
+            !action.ignoreWhen ||
+            this.condition(
+              action.ignoreWhen,
+              selfSnapshot,
+              source.kind === 'tome' ? snapshot : victim,
+            )
               ? (action.ignore ?? 0)
               : 0;
+          const beforeVictim = structuredClone(victim);
+          const modifiers = context
+            ? this.rules().modifiers(context, victim, action.type ?? 'physical')
+            : { ignore: 0, bonus: 0 };
           const hpDamage = this.damage(
             victim,
-            raw,
+            raw * (1 + modifiers.bonus),
             action.type ?? 'physical',
             side,
             source.id,
-            ignore,
+            Math.min(0.7, ignore + modifiers.ignore),
             direct,
           );
+          if (context)
+            this.rules().hit(
+              context,
+              victim,
+              beforeVictim,
+              action.type ?? 'physical',
+              hpDamage,
+              this.lastDamage.total,
+            );
           if (
             side === 'enemy' &&
             this.r.enemyId === 'bat' &&
@@ -456,15 +558,27 @@ export class BattleEngine {
       } else if (action.kind === 'shield') {
         const before = self.shield;
         self.shield = Math.min(
-          self.maxHp * 0.5,
-          self.shield + raw * (1 + (source.shieldBonus ?? 0)),
+          self.maxHp * (side === 'hero' ? HERO_SHIELD_CAP : ENEMY_SHIELD_CAP),
+          self.shield +
+            raw *
+              shieldActionScale(side, skill.cooldown) *
+              (1 + (source.shieldBonus ?? 0)) *
+              (context ? this.rules().shieldScale(context) : 1),
         );
+        if (context && self.shield > before) {
+          context.worked = true;
+          context.support = true;
+        }
         if (side === 'hero')
           this.emit({ source: source.id, kind: 'shield', amount: self.shield - before });
       } else if (action.kind === 'heal') {
         const restored = Math.min(self.maxHp - self.hp, raw * (1 + (source.healBonus ?? 0)));
         self.hp += restored;
         if (restored > 0) {
+          if (context) {
+            context.worked = true;
+            context.support = true;
+          }
           this.r.charges[charge] = (this.r.charges[charge] ?? 0) + 1;
           this.emit({ source: source.id, kind: 'healing', amount: restored });
         }
@@ -478,7 +592,23 @@ export class BattleEngine {
             (source.statusBonus?.[action.status!] ?? 0) +
               (['poison', 'burn'].includes(action.status!) ? (source.talentDamage ?? 0) : 0),
           );
+      } else if (action.kind === 'regen' || action.kind === 'guard') {
+        this.applyStatus(
+          self,
+          {
+            ...action,
+            status: action.kind,
+          },
+          self,
+          source.id,
+        );
+        if (context) context.worked = true;
       } else if (action.kind === 'smoke') {
+        const beforeSmoke = statusValue(self, 'smoke');
+        const beforeDuration = Math.max(
+          0,
+          ...self.statuses.filter((s) => s.kind === 'smoke').map((s) => s.remaining),
+        );
         this.applyStatus(
           self,
           { ...action, status: 'smoke' },
@@ -486,6 +616,17 @@ export class BattleEngine {
           source.id,
           source.smokeBonus ?? 0,
         );
+        if (
+          context &&
+          (statusValue(self, 'smoke') > beforeSmoke ||
+            Math.max(
+              0,
+              ...self.statuses.filter((s) => s.kind === 'smoke').map((s) => s.remaining),
+            ) > beforeDuration)
+        ) {
+          context.worked = true;
+          context.support = true;
+        }
       } else if (action.kind === 'counter') {
         this.r.charges[source.id + ':counter'] = 1;
         this.r.flags[source.id + ':counter'] = raw * (1 + (source.talentDamage ?? 0));
@@ -494,6 +635,10 @@ export class BattleEngine {
         self.shield -= consumed;
       }
     }
+    if (context) {
+      if (worked && skill.actions.some((a) => a.kind === 'status')) context.worked = true;
+      this.rules().afterSkill(context, consumed);
+    }
     if (worked && side === 'hero') {
       this.lastSourceWorked = true;
       this.emit({ source: source.id, kind: 'trigger', amount: 1 });
@@ -501,6 +646,7 @@ export class BattleEngine {
     return worked;
   }
   opening(initializeEnemy = true) {
+    this.rules().opening();
     for (const source of this.r.sources)
       source.skills.forEach((s, i) => {
         if (!s.trigger && !s.cooldown && !s.every) this.execute(source, s, 'hero', i);
@@ -517,32 +663,49 @@ export class BattleEngine {
       opposite = side === 'hero' ? 'enemy' : 'hero';
     for (const target of targets)
       for (const kind of ['poison', 'burn'] as const) {
-        const statuses = target.statuses.filter((s) => s.kind === kind),
-          sum = statuses.reduce((n, s) => n + s.value, 0),
+        const statuses = target.statuses
+            .filter((s) => s.kind === kind)
+            .map((s) => ({ status: s, raw: dotStrength(this.r, s) })),
+          sum = statuses.reduce((n, s) => n + s.raw, 0),
           factor = sum > attacker.attack * 0.4 ? (attacker.attack * 0.4) / sum : 1;
-        for (const s of statuses) {
+        let worked = false;
+        for (const { status: s, raw } of statuses) {
           if (target.hp <= 0) break;
+          // Cap the combined effective strength after talents, then resolve each source once.
           this.damage(
             target,
-            s.value * factor,
+            raw * factor,
             kind === 'poison' ? 'true' : 'magic',
             opposite,
             s.source,
             0,
             false,
+            false,
           );
+          worked ||= this.lastDamage.total > 0;
         }
+        if (side === 'enemy') this.rules().dotTick(kind, target, worked);
       }
+    if (side === 'hero' && this.r.hero.hp > 0) {
+      for (const s of this.r.hero.statuses.filter((s) => s.kind === 'regen')) {
+        const restored = Math.min(this.r.hero.maxHp - this.r.hero.hp, s.value);
+        this.r.hero.hp += restored;
+        s.remaining--;
+        if (restored) this.emit({ source: s.source, kind: 'healing', amount: restored });
+      }
+      this.r.hero.statuses = this.r.hero.statuses.filter((s) => s.remaining > 0);
+    }
     this.r.minions = this.r.minions.filter((m) => m.hp > 0);
   }
   private expire(side: 'hero' | 'enemy') {
     for (const target of side === 'hero' ? [this.r.hero] : [this.r.enemy, ...this.r.minions]) {
-      for (const s of target.statuses) if (s.kind !== 'smoke') s.remaining--;
+      for (const s of target.statuses)
+        if (!['smoke', 'guard', 'regen'].includes(s.kind)) s.remaining--;
       target.statuses = target.statuses.filter((s) => s.remaining > 0);
     }
     if (side === 'enemy')
       for (const f of [this.r.hero, this.r.enemy]) {
-        for (const s of f.statuses) if (s.kind === 'smoke') s.remaining--;
+        for (const s of f.statuses) if (s.kind === 'smoke' || s.kind === 'guard') s.remaining--;
         f.statuses = f.statuses.filter((s) => s.remaining > 0);
       }
   }
@@ -618,6 +781,7 @@ export class BattleEngine {
     if (this.r.enemyTurn) return;
     this.statuses('enemy');
     if (!this.alive()) return;
+    this.rules().enemyStart();
     const n = ++this.r.enemyActions,
       id = this.r.enemyId,
       guard =
@@ -678,6 +842,7 @@ export class BattleEngine {
     }
     if (!this.alive() || cursor.index >= steps.length) {
       this.r.minions = this.r.minions.filter((m) => m.hp > 0);
+      this.rules().enemyEnd();
       this.expire('enemy');
       this.r.enemyTurn = null;
     }
@@ -689,45 +854,6 @@ export class BattleEngine {
 }
 
 const cache = new Map<string, { output: number; sustain: number; strength: number }>();
-const pressureCache = new Map<string, { output: number; protection: number }>();
-/** Neutral 12-round pressure sample, separate from the immutable graduation score. */
-export function estimatePressure(stats: Attributes, sources: Source[], mixed = false) {
-  const key = JSON.stringify([stats, sources, mixed]);
-  const cached = pressureCache.get(key);
-  if (cached) return cached;
-  let output = 0,
-    protection = 0;
-  for (const wounded of [false, true]) {
-    const hero = fighter(stats, 'warrior', stats.hp * (wounded ? 0.45 : 1));
-    const enemy = fighter(
-      { attack: stats.hp * 0.16 + stats.defense * 0.65, hp: 1e9, defense: 12, speed: 10 },
-      'warrior',
-    );
-    const r = battleRuntime(hero, enemy, structuredClone(sources), 'reference', mixed);
-    const engine = new BattleEngine(
-      r,
-      1,
-      (s) => {
-        if (s.kind === 'damage') output += s.amount;
-        if ((s.kind === 'shield' || s.kind === 'healing') && !isEnemySource(s.source))
-          protection += s.amount;
-      },
-      true,
-    );
-    engine.opening();
-    for (let round = 1; round <= 12; round++) {
-      engine.round = round;
-      hero.hp = Math.max(hero.hp, stats.hp * 0.25);
-      enemy.hp = wounded ? 2e8 : 1e9;
-      engine.heroTurn();
-      engine.enemyTurn();
-    }
-  }
-  const result = { output: output / 24, protection: Math.min(stats.hp * 0.3, protection / 24) };
-  if (pressureCache.size > 500) pressureCache.clear();
-  pressureCache.set(key, result);
-  return result;
-}
 export function estimateBuild(stats: Attributes, sources: Source[], mixed = false) {
   const key = JSON.stringify([stats, sources, mixed]);
   const found = cache.get(key);

@@ -1,5 +1,5 @@
 {
-  "revision": 2,
+  "revision": 4,
   "professionRole": "counter-tag-only",
   "damageCounterMatrix": {
     "战士": {
@@ -20,12 +20,12 @@
   },
   "trueDamageCounterMultiplier": 1,
   "enrage": {
-    "afterCompletedRounds": 15,
+    "afterCompletedRounds": 9,
     "steps": {
-      "16": 1.2,
-      "18": 1.4,
-      "20": 1.6,
-      "22": 1.8
+      "10": 1.1,
+      "12": 1.25,
+      "14": 1.5,
+      "16": 1.8
     },
     "cap": 1.8
   },
@@ -35,58 +35,29 @@
       {
         "stage": 1,
         "kind": "Boss",
-        "hpMultiplier": 2.8,
+        "hpMultiplier": 1.3,
         "attackMultiplier": 1.1
       },
       {
         "stage": 2,
         "kind": "Boss",
-        "hpMultiplier": 3.4,
-        "attackMultiplier": 1.18
+        "hpMultiplier": 1.35,
+        "attackMultiplier": 1.65
       },
       {
         "stage": 3,
         "kind": "Boss",
-        "hpMultiplier": 4,
-        "attackMultiplier": 1.25
+        "hpMultiplier": 1.45,
+        "attackMultiplier": 2
       }
     ],
     "extraTrial": {
       "kind": "Boss",
-      "relativeTo": "current-stage-boss",
-      "hpMultiplier": 1.25,
-      "attackMultiplier": 1.15
+      "relativeTo": "chapter-end-normal-budget",
+      "hpMultiplier": 1.55,
+      "attackMultiplier": 2.1
     },
     "bossTemplateIds": ["golem", "ogre", "dragon", "bone_king", "queen"]
-  },
-  "adaptiveGrowth": {
-    "status": "proposal-not-calibrated",
-    "sampleTiming": "next-encounter-generation",
-    "freezeAfterGeneration": true,
-    "ignoreCurrentHp": true,
-    "includeUnpackedItems": false,
-    "inputs": [
-      "final-hero-attributes",
-      "packed-item-levels",
-      "adjacency",
-      "active-resonances",
-      "bound-tome"
-    ],
-    "evaluationRounds": 6,
-    "strengthFormula": "sqrt(averageEffectiveOutput * effectiveSurvivalBudget)",
-    "referenceBuilds": "pending-offline-calibration-per-chapter-progress",
-    "peakRetention": 0.85,
-    "trackPeakAt": "confirmed-continue-after-initial-setup",
-    "effectiveStrengthFormula": "max(currentStrength, 0.85 * runPeakStrength)",
-    "ratioFormula": "effectiveStrength / referenceStrength",
-    "ratioKnee": 2,
-    "minimumGrowth": 0.75,
-    "growthFormula": "max(0.75, ratio <= 2 ? sqrt(ratio) : sqrt(2) * (ratio/2)^0.25)",
-    "hpExponent": 1,
-    "attackExponent": 0.7,
-    "scaleDefense": false,
-    "scaleSpeed": false,
-    "persist": ["generated-enemy-stats", "snapshot-version", "run-peak-strength"]
   },
   "enemies": [
     {
@@ -306,5 +277,91 @@
       "phase": "每场首次生命降至50%H及以下且仍存活时，进入狩猎第二阶段：下一次毒刺直接伤害＋30%，仅一次；不额外召唤、不重置当前计数。",
       "response": "战士职业克制；高频多段清幼蛛，毒／灼烧继续作用本体，有限治疗抵御持续损耗。"
     }
-  ]
+  ],
+  "battleTargets": {
+    "normal": {
+      "burst": [3, 5],
+      "sustain": [4, 6]
+    },
+    "boss": {
+      "burst": [6, 8],
+      "sustain": [9, 12]
+    },
+    "extremeBoss": {
+      "burst": [7, 9],
+      "sustain": [11, 14]
+    },
+    "qualification": "中上构筑的调参参考，职业克制、Boss模板、掉落和布局仍会造成偏差；更弱构筑允许失败"
+  },
+  "fixedGrowth": {
+    "progressFormula": "min(1, index / (normalLength - 1))",
+    "playerAdaptation": false,
+    "extremeAttackStep": 0.16,
+    "inputs": [
+      "chapter",
+      "route-progress",
+      "enemy-template",
+      "stage-boss",
+      "trial-tier",
+      "extreme-step"
+    ],
+    "status": "implemented-fixed-v16",
+    "chapters": [
+      {
+        "attack": [13, 8, 16],
+        "hp": [220, 550, 2800],
+        "chapter": 1
+      },
+      {
+        "attack": [16, 11, 20],
+        "hp": [255, 800, 3400],
+        "chapter": 2
+      },
+      {
+        "attack": [19, 14, 25],
+        "hp": [285, 1050, 4100],
+        "chapter": 3
+      },
+      {
+        "attack": [24, 18, 37],
+        "hp": [310, 1150, 4600],
+        "chapter": 4
+      },
+      {
+        "attack": [28, 21, 43],
+        "hp": [335, 1250, 4900],
+        "chapter": 5
+      },
+      {
+        "attack": [31, 24, 49],
+        "hp": [360, 1350, 5200],
+        "chapter": 6
+      },
+      {
+        "attack": [35, 27, 56],
+        "hp": [380, 1450, 5500],
+        "chapter": 7
+      },
+      {
+        "attack": [39, 30, 63],
+        "hp": [400, 1550, 5750],
+        "chapter": 8
+      },
+      {
+        "attack": [43, 33, 70],
+        "hp": [420, 1675, 6000],
+        "chapter": 9
+      },
+      {
+        "attack": [47, 36, 78],
+        "hp": [440, 1800, 6200],
+        "chapter": 10
+      }
+    ],
+    "speedFormula": "round((10 + floor(3*progress) + floor((chapter-1)/3)) * speciesSpeed)",
+    "freezeAfterGeneration": true,
+    "defenseFormula": "(4 + 6*progress + 2.2*(chapter-1)) * speciesDefense",
+    "extremeHpStep": 0.12,
+    "curveFormula": "base + linear * progress + quadratic * progress^2"
+  }
 }

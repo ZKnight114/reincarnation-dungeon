@@ -1,0 +1,18 @@
+.audio-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 12px 0;
+}
+.audio-options button {
+  min-width: 0;
+  width: auto;
+  padding: 8px 10px;
+}
+.audio-options button[aria-pressed='false'] {
+  opacity: 0.75;
+}
+.audio-options small,
+.audio-options .audio-retry {
+  grid-column: 1 / -1;
+}

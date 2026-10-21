@@ -11,8 +11,8 @@ import {
 import { startupAssets } from './assets';
 import { registerCharacterParts } from './character-parts';
 import { initializeAssetCache } from './asset-cache';
-import { initialHomeView, visibleAssets } from './resource-plan';
 import type { GameState } from './types';
+import { explorationAudio } from './audio';
 
 // Styles intentionally build on earlier layers; preserve this cascade order.
 import './style.css';
@@ -40,9 +40,12 @@ import './combat-layout.css';
 import './viewport.css';
 import './identity-marks.css';
 import './resource-loading.css';
+import './boss-view.css';
+import './audio.css';
 
 let started = false,
   busy = false;
+explorationAudio.attach();
 clearTimeout((window as unknown as { guildBootTimeout: number }).guildBootTimeout);
 function launch(state: GameState | null) {
   if (started) return;
@@ -55,10 +58,6 @@ function launch(state: GameState | null) {
   started = true;
   loadingProgress(1, 1, '准备进入');
   finishLoading();
-  // Background failures are retried only when their page is opened, never block play.
-  void preloadAssets(() => {}, startupAssets(), 'background')
-    .then(registerCharacterParts)
-    .catch(() => {});
   let previous = performance.now(),
     uiTime = 0;
   function frame(now: number) {
@@ -96,7 +95,7 @@ function launch(state: GameState | null) {
   window.addEventListener('pagehide', () => ui.persist());
 }
 function recovery(error: unknown) {
-  const raw = localStorage.getItem(SAVE_KEY) ?? localStorage.getItem('recursion-dungeon-save-v14');
+  const raw = localStorage.getItem(SAVE_KEY);
   if (raw)
     try {
       localStorage.setItem(SAVE_KEY + '-recovery-' + Date.now(), raw);
@@ -180,12 +179,27 @@ async function boot() {
       state = createState();
     }
     await initializeAssetCache();
-    const critical = visibleAssets(state, initialHomeView(state));
-    const count = critical.length;
-    await preloadAssets(
-      (done, total) => loadingProgress(done, total + 1, `准备当前页面 ${done}/${total}`),
-      critical,
-    );
+    // Prepare the full catalogue before admission; unchanged web images come from hash cache.
+    const urls = startupAssets();
+    const count = urls.length + explorationAudio.resourceCount;
+    let imageDone = 0,
+      audioDone = 0;
+    const progress = () =>
+      loadingProgress(
+        imageDone + audioDone,
+        count + 1,
+        '准备游戏素材 ' + (imageDone + audioDone) + '/' + count,
+      );
+    await Promise.all([
+      preloadAssets((done) => {
+        imageDone = done;
+        progress();
+      }, urls),
+      explorationAudio.preload((done) => {
+        audioDone = done;
+        progress();
+      }),
+    ]);
     loadingBackground();
     registerCharacterParts();
     if (saveError) {

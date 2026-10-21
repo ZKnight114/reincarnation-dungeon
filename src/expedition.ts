@@ -239,9 +239,16 @@ export function simulateExpedition(s: GameState): ExpeditionReport {
       healed: sum('healing'),
       enemyHealed: sum('healing', true),
       ...(source ? { sourceId: source.id } : {}),
+      ...(activated ? { activatedSource: activated.source } : {}),
+      triggeredSources: [
+        ...new Set(signals.filter((s) => s.kind === 'trigger').map((s) => s.source)),
+      ],
       heroFighter: structuredClone(r.hero),
       enemyFighter: structuredClone(r.enemy),
       timers: { ...r.timers },
+      flags: { ...r.flags },
+      charges: { ...r.charges },
+      phase: r.phase,
       firedAt: Object.fromEntries(
         Object.entries(r.flags).filter(([key]) => key.endsWith(':firedAt')),
       ),

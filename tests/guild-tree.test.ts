@@ -218,19 +218,21 @@ test('first activation delay remains independent of cooldown and is preserved wh
   assert.ok(resumed.enemy.hp < 10000);
   assert.equal(resumed.timers['heavy:0'], 3);
 });
-test('enemy adaptation has bounded growth and purchasing guild perks never increases the encounter budget', () => {
+test('purchasing guild perks and improving build growth never increases fixed encounter stats', () => {
   const g = start();
   g.state.run.index = 20;
-  const low = generateEnemy(g.state, 200, () => 0.2),
-    high = generateEnemy(g.state, 20000, () => 0.2);
-  assert.ok(high.maxHp > low.maxHp);
-  assert.ok(high.maxHp / low.maxHp < Math.sqrt(20000 / 200));
-  assert.ok(high.attack > low.attack);
-  assert.ok(generateEnemy(g.state, 40000, () => 0.2).attack > high.attack);
+  const low = generateEnemy(g.state, () => 0.2);
+  g.state.run.growth.attack += 500;
+  g.state.run.growth.hp += 5000;
+  g.state.run.peakStrength = 40000;
+  assert.deepEqual(
+    generateEnemy(g.state, () => 0.2),
+    low,
+  );
   g.state.meta.guildLevel = 30;
   g.state.meta.guildPurchased = 94;
   assert.deepEqual(
-    generateEnemy(g.state, 200, () => 0.2),
+    generateEnemy(g.state, () => 0.2),
     low,
   );
 });

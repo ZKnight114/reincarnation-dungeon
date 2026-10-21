@@ -14,7 +14,14 @@ const kinds = new Set([
   'tome',
 ]);
 export function statusIcon(kind: string) {
-  const key = kinds.has(kind) ? kind : 'info';
+  const aliases: Record<string, string> = {
+    regen: 'tome',
+    guard: 'shield',
+    phase: 'rage',
+    energy: 'tome',
+    lifesteal: 'poison',
+  };
+  const key = aliases[kind] ?? (kinds.has(kind) ? kind : 'info');
   return `<img class="status-symbol status-${key}" src="${spriteUrl('ui/status/' + key)}" alt="" aria-hidden="true">`;
 }
 /** Input must already be escaped. Keep names alongside icons in effect descriptions. */

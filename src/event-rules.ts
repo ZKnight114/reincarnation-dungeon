@@ -38,5 +38,3 @@ export const lifeAmount = (amount: number) =>
     : amount > 0 && amount < 1
       ? amount.toFixed(2)
       : String(Math.round(amount));
-export const enemyAttackMultiplier = (chapter: number, boss: boolean) =>
-  chapter <= 3 ? 1.05 : chapter <= 6 ? (boss ? 1.5 : 1.35) : boss ? 1.75 : 1.8;

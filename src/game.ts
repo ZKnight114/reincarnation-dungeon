@@ -1,3 +1,5 @@
+import { DESIGN_RESONANCE_IDS } from './resonances';
+import { TOME_STREAM } from './combat-rules';
 import {
   analysis,
   availableItems,
@@ -140,6 +142,7 @@ const emptyCombat = (): GameState['combat'] => ({
 export function createState(now = Date.now()): GameState {
   return {
     version: 15,
+    combatRevision: 3,
     layoutRevision: 1,
     rulesRevision: 2,
     footprintRevision: 1,
@@ -605,6 +608,7 @@ export class Game {
         this.state.run.resonances,
         initial,
         this.resonanceFamilies(),
+        this.state.run.boundTome?.id ?? null,
       ),
     );
   }
@@ -648,15 +652,14 @@ export class Game {
       !r.resonances.includes(key) ||
       s.run.resonances.includes(key) ||
       s.run.resonances.length >= 4 ||
-      !resonanceAvailable(key, s.run.profession, s.run.resonances, s.phase === 'initial', [
-        'sword',
-        'spear',
-        'shield',
-        'staff',
-        'focus',
-        'ranged',
-        'support',
-      ])
+      !resonanceAvailable(
+        key,
+        s.run.profession,
+        s.run.resonances,
+        s.phase === 'initial',
+        ['sword', 'spear', 'shield', 'staff', 'focus', 'ranged', 'support'],
+        s.run.boundTome?.id ?? null,
+      )
     )
       return '请选择当前奖励中的共鸣';
     s.run.resonances.push(key);
@@ -664,9 +667,10 @@ export class Game {
     s.phase = s.run.rewards.length ? 'reward' : 'camp';
     s.revision++;
     this.log(`获得共鸣 ${s.run.resonances.length}/4 · ${RESONANCES[key].name}`, 'reward');
+    const contribution = resonanceScore(s.inventory, s.draft, key).tier;
     this.chronicle(
       '共鸣觉醒',
-      `获得「${RESONANCES[key].name}」。${RESONANCES[key].description}`,
+      `获得「${RESONANCES[key].name}」。${contribution ? `当前贡献已激活第 ${contribution} 阶段。` : '贡献不足，继续整理装备以激活。'}`,
       'growth',
       s.run.resonances.length === 1 ? 0 : s.run.index + 1,
     );
@@ -685,7 +689,6 @@ export class Game {
     if (s.run.resonanceAtNode && !s.run.rewards.length) {
       s.run.resonanceAtNode = false;
       s.isRunning = true;
-      s.run.peakStrength = Math.max(s.run.peakStrength, analysis(s, false, false).strength);
       if (s.run.routeRevision === 16) {
         s.run.resonanceNarration = true;
         s.run.storyElapsed = 0;
@@ -759,7 +762,6 @@ export class Game {
     if (this.currentEvent()?.completed) s.run.index++;
     s.revision++;
     s.isRunning = true;
-    s.run.peakStrength = Math.max(s.run.peakStrength, analysis(s, false, false).strength);
     this.beginEvent();
     return null;
   }
@@ -779,7 +781,7 @@ export class Game {
         : eventStory(event.kind, event.variant, runRoute(s).hasExtreme),
     );
     if (['battle', 'boss', 'elite'].includes(event.kind) && !s.run.encounter)
-      s.run.encounter = generateEnemy(s, analysis(s, false, false).strength, this.random);
+      s.run.encounter = generateEnemy(s, this.random);
   }
   continueJourney() {
     const s = this.state;
@@ -888,14 +890,13 @@ export class Game {
       event = this.currentEvent();
     if (!event || !['battle', 'boss', 'elite'].includes(event.kind)) return;
     // The encounter is already frozen before the trial choice or battle presentation.
-    const base =
-      s.run.encounter ?? generateEnemy(s, analysis(s, false, false).strength, this.random);
+    const base = s.run.encounter ?? generateEnemy(s, this.random);
     s.enemy = structuredClone(base);
     const stage = runRoute(s).trials.indexOf(s.run.index);
     if (stage >= 0) {
       const tier = s.run.trials[stage] ?? 0;
-      s.enemy.hp = s.enemy.maxHp = Math.round(base.maxHp * [1, 1.2, 1.45][tier]);
-      s.enemy.attack = base.attack * [1, 1.12, 1.28][tier];
+      s.enemy.hp = s.enemy.maxHp = Math.round(base.maxHp * TRIALS[tier].hp);
+      s.enemy.attack = base.attack * TRIALS[tier].attack;
     }
     s.run.enemyHistory.push(s.enemy.profession!);
     s.run.enemyHistory = s.run.enemyHistory.slice(-2);
@@ -1045,7 +1046,11 @@ export class Game {
       choices: ResonanceKey[] = [];
     const take = (candidates: ResonanceKey[]) => {
       const weight = (k: ResonanceKey) =>
-        resonanceScore(s.inventory, s.draft, k).tier > 0 ? 3 : 1;
+        (resonanceScore(s.inventory, s.draft, k).tier > 0 ? 3 : 1) *
+        (s.run.boundTome &&
+        DESIGN_RESONANCE_IDS[k]?.slice(0, -2) === TOME_STREAM[s.run.boundTome.id]
+          ? 2
+          : 1);
       let roll = this.random() * candidates.reduce((n, k) => n + weight(k), 0),
         key = candidates.at(-1)!;
       for (const k of candidates) {
@@ -1057,10 +1062,19 @@ export class Game {
       }
       choices.push(key);
     };
+    const paired =
+      initial && s.run.boundTome
+        ? pool.filter(
+            (k) =>
+              DESIGN_RESONANCE_IDS[k]?.slice(0, -2) === TOME_STREAM[s.run.boundTome!.id] &&
+              RESONANCES[k].rank === 1,
+          )
+        : [];
+    if (paired.length) take(paired);
     const preferred = pool.filter((k) =>
       initial ? resonanceScore(s.inventory, s.draft, k).tier > 0 : RESONANCES[k].rank > 1,
     );
-    if (preferred.length) take(preferred);
+    if (!choices.length && preferred.length) take(preferred);
     while (choices.length < 3) {
       const next = pool.filter((k) => !choices.includes(k));
       if (!next.length) break;
@@ -1700,8 +1714,8 @@ export class Game {
     const s = this.state,
       c = s.combat;
     c.round++;
-    if (c.round === 14) this.log('敌人即将在第16回合狂暴', 'battle');
-    if (c.round === 16) this.log('敌人进入狂暴，伤害提高20%', 'battle');
+    if (c.round === 9) this.log('敌人将在第10回合开始狂暴', 'battle');
+    if (c.round === 10) this.log('敌人进入狂暴，伤害提高10%', 'battle');
     s.run.rounds++;
     c.order = this.playerSpeed() >= this.enemySpeed() ? ['hero', 'enemy'] : ['enemy', 'hero'];
     if (c.runtime) c.runtime.heroFirst = c.order[0] === 'hero';

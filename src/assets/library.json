@@ -1,5 +1,6 @@
 {
   "policy": "先检索素材库，优先复用；无合适资源再绘制",
+  "audioLibrary": "src/assets/audio/library.json",
   "style": "精细像素西幻，暗青／古铜／羊皮纸，左上光照",
   "uiSource": "art-direction/pixel-v19-tomes-ui",
   "uiSourceRequests": 2,

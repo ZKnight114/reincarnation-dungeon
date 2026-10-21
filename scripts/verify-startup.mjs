@@ -4,12 +4,16 @@ import assert from 'node:assert/strict';
 import { Window } from 'happy-dom';
 
 const source = await readFile(new URL('../轮回地牢.html', import.meta.url), 'utf8');
-const key = 'recursion-dungeon-save-v15';
-// Deliberately hold two background images to prove they cannot keep the home page loading.
+const key = (await readFile(new URL('../src/save.ts', import.meta.url), 'utf8')).match(
+  /export const SAVE_KEY = '([^']+)'/,
+)[1];
+// Hold two equipment images: the full catalogue must be ready before admission.
 const manifest = JSON.parse(
   await readFile(new URL('../dist/asset-manifest.json', import.meta.url), 'utf8'),
 );
-const backgroundURLs = new Set(
+// This harness stubs images and deliberately has no WebAudio implementation.
+manifest.assets = manifest.assets.filter((asset) => asset.url.endsWith('.png'));
+const heldURLs = new Set(
   await Promise.all(
     ['M-0-', 'M-A2-'].map(async (prefix) => {
       const asset = manifest.assets.find((a) => a.url.split('/').at(-1).startsWith(prefix));
@@ -33,7 +37,7 @@ async function settle(win) {
   }
   assert.fail('Startup never reached a completed or recoverable state');
 }
-async function boot(entries = [], failFirst = false, holdBackground = false) {
+async function boot(entries = [], failFirst = false, holdImages = false) {
   const win = new Window({ url: 'http://localhost/' });
   for (const [k, v] of entries) win.localStorage.setItem(k, v);
   win.document.body.innerHTML = source;
@@ -50,7 +54,7 @@ async function boot(entries = [], failFirst = false, holdBackground = false) {
       naturalWidth = 128;
       naturalHeight = 192;
       set src(url) {
-        if (holdBackground && backgroundURLs.has(url)) {
+        if (holdImages && heldURLs.has(url)) {
           pending.push(() => {
             loads.set(url, 1);
             this.onload?.();
@@ -73,20 +77,41 @@ async function boot(entries = [], failFirst = false, holdBackground = false) {
     },
   });
   new Function(win.document.querySelector('script[type="module"]:not([src])').textContent)();
-  await settle(win);
+  if (holdImages) {
+    for (let n = 0; n < 150; n++) {
+      if (pending.length + loads.size === manifest.assets.length) break;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+  } else await settle(win);
   return { win, loads, pending };
 }
 
 const staged = await boot([], false, true);
 try {
-  assert.equal(!!staged.win.document.getElementById('startup-loading'), false);
-  assert.ok(staged.win.document.querySelector('.guild-art'));
-  assert.ok(staged.pending.length > 0, 'background images are still pending at admission');
+  assert.equal(!!staged.win.document.getElementById('startup-loading'), true);
+  assert.equal(staged.win.document.getElementById('app').hidden, true);
+  assert.equal(
+    staged.win.localStorage.getItem(key),
+    null,
+    'no admission/save before all images are ready',
+  );
+  assert.equal(staged.pending.length, heldURLs.size);
+  assert.equal(staged.loads.size, manifest.assets.length - heldURLs.size);
   assert.ok(
-    staged.loads.size < manifest.assets.length / 2,
-    'admission cannot wait for the whole catalogue',
+    Number(staged.win.document.getElementById('loading-percent').textContent.replace('%', '')) <
+      100,
   );
   staged.pending.forEach((done) => done());
+  await settle(staged.win);
+  assert.equal(!!staged.win.document.getElementById('startup-loading'), false);
+  assert.equal(staged.loads.size, manifest.assets.length);
+  staged.win.document.querySelector('[data-action="library"]').click();
+  assert.match(staged.win.document.getElementById('guild-feature-screen').textContent, /公会典籍/);
+  assert.equal(
+    !!staged.win.document.getElementById('resource-wait')?.open,
+    false,
+    'page switching does not reopen loading',
+  );
 } finally {
   await staged.win.happyDOM.close();
 }
@@ -105,7 +130,7 @@ try {
   await settle(win);
   assert.equal(win.document.getElementById('startup-loading'), null);
   assert.ok(win.document.querySelector('.guild-art'));
-  assert.ok(loads.size >= 30, 'retry loads the real resource list');
+  assert.equal(loads.size, manifest.assets.length, 'retry prepares the full resource list');
   assert.ok(
     [...loads.values()].every((n) => n === 1),
     'retry reuses already decoded assets',
@@ -152,5 +177,5 @@ try {
   await recovery.win.happyDOM.close();
 }
 console.log(
-  'Offline startup verified: real resource progress, failure/retry/cache, corrupt-save preservation and backup recovery.',
+  'Offline startup verified: full catalogue before admission, immediate page switching, failure/retry/cache, corrupt-save preservation and backup recovery.',
 );

@@ -16,10 +16,15 @@ export interface ExpeditionFrame {
   healed: number;
   enemyHealed: number;
   sourceId?: string;
+  activatedSource?: string;
+  triggeredSources?: string[];
   heroFighter?: Fighter;
   enemyFighter?: Fighter;
   timers?: Record<string, number>;
   firedAt?: Record<string, number>;
+  flags?: Record<string, number>;
+  charges?: Record<string, number>;
+  phase?: boolean;
   heroActions?: number;
   enemyActions?: number;
   minions?: Minion[];

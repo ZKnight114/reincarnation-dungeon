@@ -11,10 +11,17 @@ let js = await readFile(scriptFile, 'utf8');
 
 // Vite emits sprite URLs relative to its JS bundle. Embed them here, keeping
 // binary assets out of the normal web bundle and the editable game modules.
-const spriteReferences = [...js.matchAll(/new URL\("([^"\s]+\.png)",import\.meta\.url\)\.href/g)];
+const spriteReferences = [
+  ...js.matchAll(/new URL\("([^"\s]+\.(?:png|mp3|wav))",import\.meta\.url\)\.href/g),
+];
 for (const match of spriteReferences) {
   const asset = await readFile(new URL(match[1], scriptFile));
-  js = js.replaceAll(match[0], JSON.stringify(`data:image/png;base64,${asset.toString('base64')}`));
+  const mime = match[1].endsWith('.mp3')
+    ? 'audio/mpeg'
+    : match[1].endsWith('.wav')
+      ? 'audio/wav'
+      : 'image/png';
+  js = js.replaceAll(match[0], JSON.stringify(`data:${mime};base64,${asset.toString('base64')}`));
 }
 if (/new URL\([^)]*,import\.meta\.url\)\.href/.test(js)) {
   throw new Error('Standalone build contains an unresolved asset URL. Update the embedding step.');

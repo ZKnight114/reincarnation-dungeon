@@ -41,6 +41,19 @@ for (const [, name] of spriteReferences) {
   assert.equal(bytes.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', name);
   assert.ok(source.includes('data:image/png;base64,' + bytes.toString('base64')), name);
 }
+const audioReferences = [
+  ...webCode.matchAll(/new URL\("([^"\s]+\.(?:mp3|wav))",import\.meta\.url\)\.href/g),
+];
+assert.equal(audioReferences.length, 25, 'All exploration audio must ship in both formats');
+for (const [, name] of audioReferences) {
+  const bytes = await readFile(new URL(name, webScriptFile));
+  const mime = name.endsWith('.wav') ? 'audio/wav' : 'audio/mpeg';
+  assert.ok(source.includes('data:' + mime + ';base64,' + bytes.toString('base64')), name);
+  assert.ok(
+    manifest.assets.some((asset) => asset.url.endsWith(name.slice(2))),
+    name,
+  );
+}
 assert.doesNotMatch(source, /new URL\([^)]*,import\.meta\.url\)\.href/);
 
 const win = new Window({ url: 'http://localhost/' }),
@@ -93,7 +106,10 @@ try {
     null,
     'Offline Loading must complete before game controls appear',
   );
-  const save = () => JSON.parse(win.localStorage.getItem('recursion-dungeon-save-v15'));
+  const saveKey = (await readFile(new URL('../src/save.ts', import.meta.url), 'utf8')).match(
+    /export const SAVE_KEY = '([^']+)'/,
+  )[1];
+  const save = () => JSON.parse(win.localStorage.getItem(saveKey));
   const click = (q) => {
     now += 500;
     const el = win.document.querySelector(q);
@@ -115,9 +131,9 @@ try {
   assert.ok(win.document.querySelector('.guild-art'));
   assert.equal(save().meta.energy.value, 60);
   assert.equal(save().meta.heroes.length, 0);
-  assert.equal(win.localStorage.getItem('recursion-dungeon-save-v8'), 'old');
-  assert.equal(win.localStorage.getItem('recursion-dungeon-save-v7'), 'old');
-  assert.equal(win.localStorage.getItem('recursion-dungeon-save-v1-recovery'), 'old');
+  assert.equal(win.localStorage.getItem('recursion-dungeon-save-v8'), null);
+  assert.equal(win.localStorage.getItem('recursion-dungeon-save-v7'), null);
+  assert.equal(win.localStorage.getItem('recursion-dungeon-save-v1-recovery'), null);
   assert.equal(win.localStorage.getItem('other-game'), 'keep');
   click('[data-action="chapters"]');
   assert.equal(save().phase, 'chapter');
@@ -278,7 +294,7 @@ try {
   assert.equal(save().speed, 2);
   assert.equal(save().isRunning, true);
   console.log(
-    `Standalone v15 guild → chapter carousel → targeted recruitment → four talents and allocation → six shape gifts with touch drags → initial resonance → discrete combat passed (${Math.round(Buffer.byteLength(source) / 1024)} KB).`,
+    `Standalone v16 combat3 guild → chapter carousel → targeted recruitment → four talents and allocation → six shape gifts with touch drags → initial resonance → discrete combat passed (${Math.round(Buffer.byteLength(source) / 1024)} KB).`,
   );
 } finally {
   Date.now = realNow;

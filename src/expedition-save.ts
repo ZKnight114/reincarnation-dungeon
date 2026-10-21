@@ -134,7 +134,9 @@ export function readExpedition(value: unknown, heroes: HeroRecord[]): Expedition
             for (const status of snapshot.statuses)
               check(
                 object(status) &&
-                  ['poison', 'burn', 'chill', 'break', 'mark', 'smoke'].includes(status.kind) &&
+                  ['poison', 'burn', 'chill', 'break', 'mark', 'smoke', 'regen', 'guard'].includes(
+                    status.kind,
+                  ) &&
                   number(status.value) &&
                   integer(status.remaining, 1000) &&
                   typeof status.source === 'string' &&
@@ -148,6 +150,22 @@ export function readExpedition(value: unknown, heroes: HeroRecord[]): Expedition
                 Object.keys(timers).length <= 256 &&
                 Object.entries(timers).every(([key, n]) => key.length <= 180 && integer(n, 1000)),
             );
+        for (const state of [f.flags, f.charges])
+          if (state !== undefined)
+            check(
+              object(state) &&
+                Object.keys(state).length <= 2048 &&
+                Object.entries(state).every(([k, n]) => k.length <= 200 && number(n)),
+            );
+        if (f.activatedSource !== undefined)
+          check(typeof f.activatedSource === 'string' && f.activatedSource.length <= 180);
+        if (f.triggeredSources !== undefined)
+          check(
+            Array.isArray(f.triggeredSources) &&
+              f.triggeredSources.length <= 60 &&
+              f.triggeredSources.every((id) => typeof id === 'string' && id.length <= 180),
+          );
+        if (f.phase !== undefined) check(typeof f.phase === 'boolean');
         if (f.heroActions !== undefined) check(integer(f.heroActions, 60));
         if (f.enemyActions !== undefined) check(integer(f.enemyActions, 60));
         if (f.warning !== undefined)

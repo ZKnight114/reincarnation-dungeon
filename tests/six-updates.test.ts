@@ -158,7 +158,7 @@ test('status lists show summed DOT strengths, remaining turns, minions, warning 
   g.state.combat.round = 16;
   const rows = statusRows(g.state, 'enemy');
   assert.match(rows.find((x) => x.kind === 'poison')!.detail!, /剩余 3 回合.*剩余 1 回合/);
-  assert.match(statusDetails(g.state, 'enemy'), /伤害 \+20%/);
+  assert.match(statusDetails(g.state, 'enemy'), /伤害 \+80%/);
   assert.match(statusDetails(g.state, 'enemy'), /下次行动：吐息/);
 });
 

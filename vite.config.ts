@@ -4,15 +4,15 @@ import { readFileSync } from 'node:fs';
 
 function assetManifest(): Plugin {
   return {
-    name: 'guild-image-cache',
+    name: 'guild-media-cache',
     apply: 'build',
     generateBundle(_, bundle) {
       const hash = (source: string | Uint8Array) =>
         createHash('sha256').update(source).digest('hex');
       const assets = Object.values(bundle)
-        .filter((file) => file.type === 'asset' && file.fileName.endsWith('.png'))
+        .filter((file) => file.type === 'asset' && /\.(png|mp3|wav)$/.test(file.fileName))
         .map((file) => {
-          if (file.type !== 'asset') throw new Error('Expected image asset');
+          if (file.type !== 'asset') throw new Error('Expected media asset');
           return {
             url: './' + file.fileName,
             hash: hash(file.source),

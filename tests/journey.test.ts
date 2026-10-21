@@ -154,7 +154,7 @@ test('old route saves are rejected instead of migrating incompatible layouts', (
   const g = start();
   const s: any = structuredClone(g.state);
   s.version = 9;
-  assert.throws(() => parseSave(JSON.stringify(s)), /v14/);
+  assert.throws(() => parseSave(JSON.stringify(s)), /旧存档/);
 });
 test('monthly spring offers actual healing versus a permanent basic max-health gain without filling missing life', () => {
   const g = start();

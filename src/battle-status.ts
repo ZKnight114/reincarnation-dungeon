@@ -1,4 +1,5 @@
-import { enrageMultiplier, statusValue } from './combat';
+import { dotStrength, enrageMultiplier, statusValue } from './combat';
+import { HERO_SHIELD_CAP, ENEMY_SHIELD_CAP } from './combat-balance';
 import { PROFESSIONS } from './backpack';
 import { ENEMY_TEMPLATES } from './enemies';
 import { esc } from './pack-ui';
@@ -18,6 +19,8 @@ const names: Record<StatusKind, string> = {
   break: '破防',
   mark: '标记',
   smoke: '烟幕',
+  regen: '回生',
+  guard: '减伤',
 };
 interface Row {
   kind: string;
@@ -38,18 +41,21 @@ export function statusRows(s: GameState, side: StatusSide): Row[] {
       badge: Math.ceil(f.shield),
       name: '护盾',
       value: `${Math.ceil(f.shield)} 点`,
-      detail: '优先抵消受到的伤害，耗尽后消失。',
+      detail: `优先抵消受到的伤害，耗尽后消失；储量上限为最大生命的${(side === 'hero' ? HERO_SHIELD_CAP : ENEMY_SHIELD_CAP) * 100}%。`,
     });
   const groups = new Set(f.statuses.map((x) => x.kind));
   for (const kind of groups) {
     const group = f.statuses.filter((x) => x.kind === kind),
       value = statusValue(f, kind);
-    const sum = group.reduce((n, x) => n + x.value, 0),
+    const sum = group.reduce(
+        (n, x) => n + (kind === 'poison' || kind === 'burn' ? dotStrength(r, x) : x.value),
+        0,
+      ),
       opposite = side === 'hero' ? r.enemy : r.hero;
     const detail = group
       .map(
         (x) =>
-          `${roundValue(x.value * (kind === 'poison' || kind === 'burn' ? 1 : 100))}${kind === 'poison' || kind === 'burn' ? ' 点强度' : '%'} · 剩余 ${x.remaining} 回合`,
+          `${roundValue(kind === 'poison' || kind === 'burn' ? dotStrength(r, x) : x.value * (kind === 'regen' ? 1 : 100))}${kind === 'poison' || kind === 'burn' || kind === 'regen' ? ' 点强度' : '%'} · 剩余 ${x.remaining} 回合`,
       )
       .join('；');
     const descriptions: Record<StatusKind, string> = {
@@ -58,18 +64,31 @@ export function statusRows(s: GameState, side: StatusSide): Row[] {
       chill: `速度降低 ${roundValue(value * 100)}%`,
       break: `防御降低 ${roundValue(value * 100)}%`,
       mark: `受到的远程物品伤害增幅 ${roundValue(value * 100)}%`,
-      smoke: `直接伤害减免 ${roundValue(Math.min(0.45, value) * 100)}%`,
+      smoke: `烟幕直接减伤 ${roundValue(Math.min(0.45, value) * 100)}%`,
+      regen: `每回合恢复 ${roundValue(sum)} 生命`,
+      guard: `直接伤害减免 ${roundValue(Math.min(0.45, sum) * 100)}%`,
     };
     rows.push({ kind, name: names[kind], value: descriptions[kind], detail, badge: group.length });
   }
   if (side === 'enemy') {
     if (r.warning) rows.push({ kind: 'warning', name: '技能预告', value: r.warning });
-    if (s.combat.round >= 16)
+    if (s.combat.round >= 10)
       rows.push({
         kind: 'rage',
         badge: Math.round((enrageMultiplier(s.combat.round) - 1) * 100),
         name: '狂暴',
         value: `伤害 +${Math.round((enrageMultiplier(s.combat.round) - 1) * 100)}%`,
+      });
+    if (r.phase)
+      rows.push({
+        kind: 'phase',
+        name: '第二阶段',
+        value:
+          r.enemyId === 'bone_king'
+            ? '技能伤害 +10%'
+            : r.flags.queenStrike
+              ? '下一次毒刺伤害 +30%'
+              : '狩猎阶段',
       });
     for (const m of r.minions.filter((m) => m.hp > 0))
       rows.push({
@@ -89,6 +108,42 @@ export function statusRows(s: GameState, side: StatusSide): Row[] {
       value: cooldown ? `剩余 ${cooldown} 回合` : '就绪',
       detail: '按自身周期自动发动。',
     });
+  }
+  if (side === 'hero') {
+    if (r.charges['v3:star'])
+      rows.push({
+        kind: 'energy',
+        badge: r.charges['v3:star'],
+        name: '星能',
+        value: `${r.charges['v3:star']} / 3 层`,
+        detail: '下一次星幕仪典消耗星能追加伤害。',
+      });
+    const steals = r.sources.filter((s) =>
+      s.skills.some(
+        (k) =>
+          k.passive &&
+          ['warrior_flurry_2', 'rogue_poison_2', 'rogue_volley_2'].includes(k.passive.id),
+      ),
+    );
+    if (steals.length)
+      rows.push({
+        kind: 'lifesteal',
+        name: '吸血',
+        value: '满足条件的实际生命伤害转为恢复',
+        detail:
+          steals
+            .map((s) => {
+              const p = s.skills.find((k) => k.passive)!.passive!,
+                n = p.tier - 1;
+              return p.id === 'warrior_flurry_2'
+                ? `战意回生：获得战意后的下次行动吸血${[3, 4, 5][n]}%，每回合上限${[0.5, 0.75, 1][n]}%最大生命`
+                : p.id === 'rogue_poison_2'
+                  ? `伏击要害：蚀影刃典攻击前已中毒的目标，吸血${[5, 8, 10][n]}%，每回合上限${[1, 1.5, 2][n]}%最大生命`
+                  : `猎手汲取：命中标记目标吸血${[3, 5, 7][n]}%，每回合上限${[0.5, 0.75, 1][n]}%最大生命`;
+            })
+            .join('；') +
+          '。只计算实际生命伤害，不含护盾、过量伤害、持续伤害和反击；共鸣合计每回合最多恢复2%最大生命。',
+      });
   }
   return rows;
 }

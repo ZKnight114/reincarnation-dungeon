@@ -209,6 +209,10 @@ test('trial victories grant three items, recovery, growth and a unique resonance
     assert.equal(g.skipReward(), false);
     const key = g.state.run.rewards[0].resonances[0];
     assert.equal(g.chooseResonance(key), null);
+    const result = [...g.state.run.journey].reverse().find((entry) => entry.title === '共鸣觉醒')!;
+    assert.ok(result.text.includes('获得「'));
+    assert.ok(!result.text.includes(' / '));
+    assert.ok(result.text.length < 60);
     assert.ok(g.chooseResonance(key));
     assert.doesNotThrow(() => parseSave(JSON.stringify(g.state)));
   }
@@ -368,7 +372,7 @@ test('full 37-node extreme run awards a fixed hero and currency once, then permi
 });
 
 test('malformed saves reject old schema, invalid jobs, reserved gear, duplicate heroes, invalid energy and forged score', () => {
-  assert.throws(() => parseSave('{"version":7}'), /v14/);
+  assert.throws(() => parseSave('{"version":7}'), /旧存档/);
   const g = start();
   g.retreat();
   const bad = (fn: (s: any) => void) => {

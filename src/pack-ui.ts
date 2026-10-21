@@ -23,6 +23,7 @@ import { itemBadge } from './item-badge';
 import { itemTalentText } from './talents';
 import type { Motion } from './motion';
 import type { Equipment, ResonanceKey } from './types';
+import type { SoundId } from './audio-assets';
 import {
   PACK_WIDTH,
   PACK_HEIGHT,
@@ -102,6 +103,7 @@ export class PackUI {
     private toast: (s: string) => void,
     private prepareArrange: () => void = () => {},
     private motion?: Motion,
+    private sound: (id: SoundId) => void = () => {},
   ) {
     this.root = document.getElementById('adventure-screen')!;
     document.getElementById('view-pack')!.innerHTML =
@@ -202,6 +204,7 @@ export class PackUI {
       if (!g || g.pointer !== e.pointerId) return;
       if (!g.dragging && Math.hypot(e.clientX - g.x, e.clientY - g.y) < 8) return;
       e.preventDefault();
+      if (!g.dragging) this.sound('explore-item-pickup');
       g.dragging = true;
       this.dragPreview(e.clientX, e.clientY);
     });
@@ -569,11 +572,13 @@ export class PackUI {
       next.set(id, { level: item.level, location });
       const previous = this.lastItems?.get(id);
       if (!this.lastItems) continue;
-      if (previous && previous.level < item.level)
+      if (previous && previous.level < item.level) {
         this.motion?.pulse(el, 'equipment-merged', 580, false);
-      else if (previous && previous.location !== location)
+        this.sound('explore-item-merge');
+      } else if (previous && previous.location !== location) {
         this.motion?.pulse(el, 'equipment-landed', 280, false);
-      else if (!previous && location === 'field') {
+        this.sound('explore-item-place');
+      } else if (!previous && location === 'field') {
         el.style.setProperty('--reveal-order', String(Math.min(2, reveal++)));
         this.motion?.pulse(el, 'equipment-revealed', 460, false);
       }

@@ -25,7 +25,7 @@ import { DESIGN_RESONANCE_IDS, RESONANCES, RESONANCE_KEYS } from '../src/resonan
 import { TOMES, guildConditions, currentHero, realmName } from '../src/progression';
 import { guildBenefits } from '../src/guild';
 import { chapterRoute } from '../src/journey';
-import { generateEnemy, growthMultiplier } from '../src/enemies';
+import { generateEnemy } from '../src/enemies';
 import { parseSave, loadSave, SAVE_KEY } from '../src/save';
 import {
   start,
@@ -163,18 +163,18 @@ test('shield cap, symmetric damage types and profession counters do not affect h
     },
   ]);
   new BattleEngine(r, 1).heroTurn();
-  assert.equal(r.hero.shield, 500);
+  assert.equal(r.hero.shield, 300);
 });
-test('all enemies enrage after fifteen complete rounds and cap at eighty percent extra damage', () => {
+test('all enemies enrage from round ten and cap at eighty percent extra damage', () => {
   assert.deepEqual(
-    [15, 16, 17, 18, 20, 22, 99].map((n) => +enrageMultiplier(n).toFixed(2)),
-    [1, 1.2, 1.2, 1.4, 1.6, 1.8, 1.8],
+    [9, 10, 11, 12, 14, 16, 99].map((n) => +enrageMultiplier(n).toFixed(2)),
+    [1, 1.1, 1.1, 1.25, 1.5, 1.8, 1.8],
   );
   const a = model(),
     b = model();
-  new BattleEngine(a, 15).enemyTurn();
-  new BattleEngine(b, 16).enemyTurn();
-  assert.ok(Math.abs((1000 - b.hero.hp) / (1000 - a.hero.hp) - 1.2) < 1e-8);
+  new BattleEngine(a, 9).enemyTurn();
+  new BattleEngine(b, 10).enemyTurn();
+  assert.ok(Math.abs((1000 - b.hero.hp) / (1000 - a.hero.hp) - 1.1) < 1e-8);
 });
 test('fourth-stage short spear adds its third-trigger hit without relying on translated item names', () => {
   const r = model('reference', [
@@ -225,9 +225,9 @@ test('multiple shield-break responses use frozen eligibility and cannot resurrec
   r.hero.shield = 1;
   const e = new BattleEngine(r, 1);
   e.enemyTurn();
-  assert.ok(r.flags['resonance:fortress:reaction:0']);
-  assert.ok(r.flags['resonance:warrior_shield_master:reaction:0']);
-  assert.ok(r.hero.shield > 100);
+  assert.ok(r.flags['v3:resonance:fortress:break']);
+  assert.ok(r.flags['v3:resonance:warrior_shield_master:break']);
+  assert.ok(r.hero.shield >= 90);
   const dead = model('reference', sources);
   dead.hero.hp = 1;
   new BattleEngine(dead, 1).enemyTurn();
@@ -313,18 +313,15 @@ test('bat life steal neither consumes charges at full health nor resurrects a le
   assert.equal(r.enemy.hp, 0);
   assert.equal(r.charges.batHeal, undefined);
 });
-test('encounter growth follows builds partially, freezes before trial selection and does not react to lost health', () => {
+test('fixed encounter stats freeze before trial selection and do not react to build growth or lost health', () => {
   const g = start();
   const s = g.state;
   s.run.index = 8;
-  const a = generateEnemy(s, 200, seed(3)),
-    b = generateEnemy(s, 800, seed(3));
-  assert.equal(a.templateId, b.templateId);
-  assert.equal(a.profession, b.profession);
-  assert.ok(b.maxHp > a.maxHp && b.maxHp < a.maxHp * 4);
-  assert.ok(growthMultiplier(4) < 4);
+  const a = generateEnemy(s, seed(3));
+  s.run.peakStrength = 8000;
+  assert.deepEqual(generateEnemy(s, seed(3)), a);
   s.player.hp = 1;
-  assert.deepEqual(generateEnemy(s, 200, seed(3)), a);
+  assert.deepEqual(generateEnemy(s, seed(3)), a);
   positionEvent(g, 'boss', 8);
   assert.equal(s.enemy!.isBoss, true);
   const before = structuredClone(s.enemy);
@@ -529,46 +526,31 @@ test('current combat resumes exact timers, statuses and sources and rejects forg
     assert.throws(() => parseSave(JSON.stringify(s)));
   }
 });
-test('v14 migration keeps the original raw backup, currency and hero identity without replaying opening effects', () => {
-  const g = start();
-  advanceCamp(g);
-  g.advanceTurn();
-  const raw: any = structuredClone(g.state);
-  raw.version = 14;
-  raw.combat.order = ['enemy', 'hero'];
-  raw.combat.actionIndex = 1;
-  delete raw.meta.guildLevel;
-  delete raw.meta.staminaSpent;
-  delete raw.meta.tomes;
-  delete raw.meta.pendingPages;
+test('old saves and backups are deleted without deleting resource caches', () => {
   const w = new Window({ url: 'http://localhost/' });
   globalThis.localStorage = w.localStorage as unknown as Storage;
-  const source = JSON.stringify(raw);
-  localStorage.setItem('recursion-dungeon-save-v14', source);
-  const restored = loadSave()!;
-  assert.equal(restored.version, 15);
-  assert.equal(restored.meta.gold, raw.meta.gold);
-  assert.equal(restored.run.trainee!.id, raw.run.trainee.id);
-  assert.equal(restored.combat.runtime!.heroActions, 0);
-  assert.equal(restored.combat.runtime!.enemyActions, 1);
-  assert.equal(restored.combat.runtime!.heroFirst, false);
-  assert.equal(localStorage.getItem('recursion-dungeon-save-v14-backup'), source);
-  assert.equal(localStorage.getItem('recursion-dungeon-save-v14'), source);
-  assert.equal(localStorage.getItem(SAVE_KEY), null);
+  for (const key of [
+    'recursion-dungeon-save-v14',
+    'recursion-dungeon-save-v15',
+    'recursion-dungeon-save-v15-backup-1',
+    'recursion-dungeon-save-v15-recovery-123',
+  ])
+    localStorage.setItem(key, '{}');
+  localStorage.setItem('asset-hash-cache', 'unchanged');
+  assert.equal(loadSave(), null);
+  assert.equal(localStorage.length, 1);
+  assert.equal(localStorage.getItem('asset-hash-cache'), 'unchanged');
+  localStorage.setItem(SAVE_KEY, JSON.stringify(createState()));
+  assert.ok(loadSave());
   w.happyDOM.close();
 });
-
-test('v14 camp cooldowns normalize to current item skills and discard removed item timers', () => {
+test('old save files are rejected instead of migrating retired battle recipes', () => {
   const raw: any = structuredClone(start().state);
+  delete raw.combatRevision;
+  assert.throws(() => parseSave(JSON.stringify(raw)), /旧存档/);
+  raw.combatRevision = 3;
   raw.version = 14;
-  for (const i of raw.inventory) raw.combat.timers[i.id] = 4;
-  raw.combat.timers['item-9999'] = 4;
-  const restored = parseSave(JSON.stringify(raw));
-  for (const i of restored.inventory)
-    assert.ok(
-      restored.combat.timers[i.id] <= (itemSkills(i.templateId, i.level)[0]?.cooldown ?? 0),
-    );
-  assert.equal(restored.combat.timers['item-9999'], undefined);
+  assert.throws(() => parseSave(JSON.stringify(raw)), /旧存档/);
 });
 
 test('cross-class tome grants only its own equipment series as a minority of loot and keeps profession fixed', () => {

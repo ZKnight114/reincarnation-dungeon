@@ -1,6 +1,7 @@
 import type { DamageType } from './types';
 
-export type StatusKind = 'poison' | 'burn' | 'chill' | 'break' | 'mark' | 'smoke';
+export type StatusKind =
+  'poison' | 'burn' | 'chill' | 'break' | 'mark' | 'smoke' | 'regen' | 'guard';
 export type Condition =
   | 'poison'
   | 'burn'
@@ -15,7 +16,8 @@ export type Condition =
   | 'selfLow'
   | 'smoke';
 export interface SkillAction {
-  kind: 'damage' | 'shield' | 'heal' | 'status' | 'counter' | 'consume' | 'smoke';
+  kind:
+    'damage' | 'shield' | 'heal' | 'status' | 'counter' | 'consume' | 'smoke' | 'regen' | 'guard';
   a?: number;
   h?: number;
   d?: number;
@@ -27,6 +29,7 @@ export interface SkillAction {
   status?: StatusKind;
   duration?: number;
   limit?: number;
+  unlimited?: boolean;
   dot?: 'poison' | 'burn';
   dotScale?: number;
   cap?: number;
@@ -36,6 +39,8 @@ export interface SkillAction {
   bonus?: number;
 }
 export interface Skill {
+  passive?: { id: string; tier: number };
+  tome?: { id: string; level: number };
   initialDelay?: number;
   cooldown: number;
   actions: SkillAction[];

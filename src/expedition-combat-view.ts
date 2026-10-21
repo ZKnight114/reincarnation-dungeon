@@ -40,7 +40,9 @@ export function expeditionBattleState(s: GameState): GameState | null {
     : { ...runtime.enemy, shield: frame.enemyShield };
   runtime.tiers = build.tiers;
   runtime.timers = { ...frame.timers };
-  runtime.flags = { ...frame.firedAt };
+  runtime.flags = { ...frame.flags, ...frame.firedAt };
+  runtime.charges = { ...frame.charges };
+  runtime.phase = frame.phase ?? false;
   runtime.heroActions = frame.heroActions ?? frame.round;
   runtime.enemyActions = frame.enemyActions ?? frame.round;
   runtime.minions = structuredClone(frame.minions ?? []);

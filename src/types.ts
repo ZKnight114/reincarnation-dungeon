@@ -271,6 +271,7 @@ export interface DigState {
   claimed: string[];
 }
 export interface GameState {
+  combatRevision?: 3;
   layoutRevision?: 1;
   rulesRevision?: number;
   footprintRevision?: number;
@@ -361,6 +362,7 @@ export interface GameState {
     autoExplore: boolean;
     dig: DigState | null;
     realm: number;
+    /** Retained for existing v16 saves; fixed enemy budgets do not read or update it. */
     peakStrength: number;
     encounter: Enemy | null;
     enemyHistory: Profession[];

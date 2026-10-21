@@ -96,6 +96,25 @@ test('updating one image keeps the rest; current hash wins for reused URLs', asy
   assert.equal(await (await v2('./assets/B.png'))!.text(), b);
   assert.equal(count, 3, 'only modified image downloads');
 });
+test('audio shares hash caching with images; changing one sound downloads only that sound', async () => {
+  const stores = new Map<string, Store>(),
+    requests: string[] = [];
+  let sound = 'sound-v1';
+  const image = entry('./assets/A.png', 'image');
+  const music = entry('./assets/explore.mp3', 'music');
+  const network = async (url: string) => {
+    requests.push(url);
+    return new Response(url.endsWith('.png') ? 'image' : url.endsWith('.mp3') ? 'music' : sound);
+  };
+  const first = worker([image, music, entry('./assets/wheel.wav', sound)], stores, network);
+  await Promise.all([first(image.url), first(music.url), first('./assets/wheel.wav')]);
+  assert.equal(requests.length, 3);
+  sound = 'sound-v2';
+  const next = worker([image, music, entry('./assets/wheel.wav', sound)], stores, network);
+  await Promise.all([next(image.url), next(music.url), next('./assets/wheel.wav')]);
+  assert.equal(requests.length, 4);
+  assert.ok(requests.at(-1)?.endsWith('wheel.wav'));
+});
 test('404 and hash mismatches never poison cache; unavailable storage and quota fall back', async () => {
   const stores = new Map<string, Store>();
   const asset = entry('./assets/A.png', 'correct');

@@ -1,3 +1,4 @@
+import { updateBossView } from './boss-view';
 import { foeRig, foeSprite, heroRig } from './pixel';
 import { Motion } from './motion';
 import { ENEMY_ANCHORS } from './actor-appearance';
@@ -277,6 +278,7 @@ export class ExpeditionUI {
       el.classList.toggle('active', n === frame.slot);
       el.hidden = n === frame.slot;
     });
+    updateBossView(this.root.querySelector('.battle-scene'), view.combat.runtime);
     updateExpeditionCooldown(this.root, h, view.combat.runtime!, frame.sourceId);
     if (frame.sourceId) {
       const item = this.root.querySelector(`[data-bound-item="${frame.sourceId}"]`);
@@ -290,6 +292,20 @@ export class ExpeditionUI {
       if (frame.sourceId.startsWith('tome:'))
         this.motion.pulse(this.root.querySelector('.combat-hud'), 'tome-fired', 500);
     }
+    for (const id of frame.triggeredSources ?? [])
+      if (id.startsWith('resonance:'))
+        this.motion.pulse(
+          this.root.querySelector(`[data-exp-resonance="${id.slice(10)}"]`),
+          'resonance-fired',
+          650,
+        );
+    const minionAttack = frame.activatedSource?.startsWith('minion:');
+    if (minionAttack)
+      this.motion.pulse(
+        this.root.querySelector(`[data-minion="${frame.activatedSource}"]`),
+        'minion-attacking',
+        260,
+      );
     const name = frame.sourceId
       ? view.combat.runtime!.sources.find((x) => x.id === frame.sourceId)?.name
       : undefined;
@@ -298,7 +314,7 @@ export class ExpeditionUI {
       `第 ${frame.round} 回合 · ${name ? name + '发动' : frame.actor === 'enemy' ? '敌人行动' : '勇者行动'}`,
     );
     this.motion.sync(this.speed);
-    if (frame.damage || frame.hurt)
+    if (!minionAttack && (frame.damage || frame.hurt))
       this.motion.act(
         frame.actor,
         h.profession === 'mage' && frame.actor === 'hero' ? 'arcane' : 'slash',

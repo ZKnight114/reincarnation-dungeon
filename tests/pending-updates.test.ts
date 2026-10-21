@@ -8,7 +8,7 @@ import { TALENTS, rollTalents, validTalents } from '../src/talents';
 import { bagCells, runBagCells, occupiedCells } from '../src/backpack';
 import { PACK_WIDTH, PACK_HEIGHT, PACK_PITCH, packPoint, shapeSize } from '../src/pack-geometry';
 import { parseSave } from '../src/save';
-import { generateEnemy, growthMultiplier } from '../src/enemies';
+import { generateEnemy } from '../src/enemies';
 import { seed, recruitToConfigure, prepare, start, positionEvent, setPlayer } from './helpers';
 import type { Aptitude } from '../src/types';
 
@@ -230,23 +230,23 @@ test('digging generates two, three and four fixed finds with reload retaining th
   assert.deepEqual([...counts].sort(), [2, 3, 4]);
 });
 
-test('monster soft growth continues beyond the previous cap without reacting to current life or purchased guild power', () => {
-  assert.ok(growthMultiplier(8) > growthMultiplier(3));
-  assert.ok(growthMultiplier(30) > growthMultiplier(8));
-  assert.ok(growthMultiplier(30) / growthMultiplier(3) < 10);
+test('fixed monster growth follows chapter progression without reacting to current life or purchased guild power', () => {
   const g = fresh();
   g.continueCamp();
   g.continueJourney();
-  const a = generateEnemy(g.state, 3000, () => 0.5);
+  const a = generateEnemy(g.state, () => 0.5);
   g.state.player.hp = 1;
   assert.deepEqual(
-    generateEnemy(g.state, 3000, () => 0.5),
+    generateEnemy(g.state, () => 0.5),
     a,
   );
   g.state.meta.guildLevel = 20;
   g.state.meta.guildPurchased = 10;
   assert.deepEqual(
-    generateEnemy(g.state, 3000, () => 0.5),
+    generateEnemy(g.state, () => 0.5),
     a,
   );
+  g.state.run.chapter = 10;
+  const later = generateEnemy(g.state, () => 0.5);
+  assert.ok(later.hp > a.hp && later.attack > a.attack);
 });

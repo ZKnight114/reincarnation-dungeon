@@ -32,7 +32,8 @@ import { migrateFootprints, OLD_SPEAR_CELLS } from './footprints';
 import { readExpedition } from './expedition-save';
 import type { Equipment, GameState, HeroRecord, Placement, Trainee } from './types';
 import type { BattleRuntime } from './skill-types';
-export const SAVE_KEY = 'recursion-dungeon-save-v15';
+import { HERO_SHIELD_CAP } from './combat-balance';
+export const SAVE_KEY = 'recursion-dungeon-save-v16-combat3';
 const LEGACY_FOOTPRINTS: Record<string, [number, number][]> = {
   warrior_pole_4: OLD_SPEAR_CELLS,
   mage_ice_4: [
@@ -359,15 +360,9 @@ function trainee(v: any): asserts v is Trainee {
       (TOMES.some((t) => t.id === v.tomeId) && integer(v.tomeLevel, 1, 3)),
   );
 }
-function resonanceList(raw: any, profession: any) {
+function resonanceList(raw: any, profession: any, tomeId: string | null = null) {
   check(Array.isArray(raw) && raw.length <= 4 && new Set(raw).size === raw.length);
-  check(validResonanceOrder(raw, profession));
-  for (const k of raw)
-    check(
-      !!RESONANCES[k as keyof typeof RESONANCES] &&
-        (RESONANCES[k as keyof typeof RESONANCES].kind === 'item' ||
-          RESONANCES[k as keyof typeof RESONANCES].profession === profession),
-    );
+  check(validResonanceOrder(raw, profession, tomeId));
 }
 function trials(v: any, stages: number) {
   check(Array.isArray(v) && v.length === 3 && v.every((t: any) => t === null || integer(t, 0, 2)));
@@ -398,7 +393,7 @@ function hero(v: any): asserts v is HeroRecord {
       ['D', 'C', 'B', 'A', 'S'].includes(h.rating) &&
       number(h.graduatedAt, 8.64e15),
   );
-  resonanceList(h.resonances, h.profession);
+  resonanceList(h.resonances, h.profession, h.tomeId ?? null);
   check(object(h.resonanceTiers) && Object.keys(h.resonanceTiers).length === h.resonances.length);
   for (const k of h.resonances) check(integer(h.resonanceTiers[k], 0, 3));
   check(h.resonances.length <= 1 + h.stages);
@@ -501,7 +496,10 @@ function allowedEquipment(i: Equipment, profession: string, tomeId?: string | nu
 export function parseSave(source: string): GameState {
   check(source.length < 6_000_000, '存档过大');
   const raw = JSON.parse(source);
-  check(object(raw) && [14, 15].includes(raw.version), '支持 v15 或 v14 公会存档');
+  check(
+    object(raw) && raw.combatRevision === 3 && raw.version === 15,
+    '旧存档已清空，请从新进度开始',
+  );
   safeKeys(raw);
   check(
     raw.version === 14 || raw.rulesRevision === undefined || [0, 1, 2].includes(raw.rulesRevision),
@@ -537,7 +535,7 @@ export function parseSave(source: string): GameState {
     s.meta.tomeGifts = PROFESSION_KEYS.filter((p) =>
       TOMES.some((t) => t.profession === p && s.meta.tomes[t.id]?.level > 0),
     );
-  check(object(s) && s.version === 15, '支持 v15 或 v14 公会存档');
+  check(object(s) && s.version === 15, '旧存档已清空，请从新进度开始');
   check(
     [
       'home',
@@ -829,7 +827,7 @@ export function parseSave(source: string): GameState {
       new Set(r.lastLootIds).size === r.lastLootIds.length &&
       r.lastLootIds.every((id: string) => ids.has(id)),
   );
-  resonanceList(r.resonances, r.profession);
+  resonanceList(r.resonances, r.profession, r.boundTome?.id ?? null);
   const active =
     !r.prologue &&
     ['initial', 'camp', 'journey', 'combat', 'event', 'awakening', 'reward'].includes(s.phase);
@@ -883,18 +881,15 @@ export function parseSave(source: string): GameState {
       for (const k of a.resonances)
         check(
           !!RESONANCES[k as keyof typeof RESONANCES] &&
-            (RESONANCES[k as keyof typeof RESONANCES].kind === 'item' ||
-              RESONANCES[k as keyof typeof RESONANCES].profession === r.profession) &&
             !r.resonances.includes(k) &&
-            resonanceAvailable(k, r.profession, r.resonances, s.phase === 'initial', [
-              'sword',
-              'spear',
-              'shield',
-              'staff',
-              'focus',
-              'ranged',
-              'support',
-            ]),
+            resonanceAvailable(
+              k,
+              r.profession,
+              r.resonances,
+              s.phase === 'initial',
+              ['sword', 'spear', 'shield', 'staff', 'focus', 'ranged', 'support'],
+              r.boundTome?.id ?? null,
+            ),
         );
       check(
         s.phase === 'initial' ||
@@ -1067,7 +1062,9 @@ export function parseSave(source: string): GameState {
       );
       for (const x of f.statuses)
         check(
-          ['poison', 'burn', 'chill', 'break', 'mark', 'smoke'].includes(x.kind) &&
+          ['poison', 'burn', 'chill', 'break', 'mark', 'smoke', 'regen', 'guard'].includes(
+            x.kind,
+          ) &&
             number(x.value) &&
             integer(x.remaining, 1, 3) &&
             text(x.source),
@@ -1377,6 +1374,12 @@ export function parseSave(source: string): GameState {
     c.skip = s.phase === 'combat' && s.skipCombat;
     s.skipCombat = false;
   }
+  // Accept and validate prior combat3 saves before lowering the live shield reserve.
+  // Existing progress, frozen enemy stats, cooldowns and source recipes remain intact.
+  if (c.runtime) {
+    c.runtime.hero.shield = Math.min(c.runtime.hero.shield, c.runtime.hero.maxHp * HERO_SHIELD_CAP);
+    if (s.phase === 'combat') s.player.shield = c.runtime.hero.shield;
+  }
   return s as GameState;
 }
 export function saveGame(state: GameState) {
@@ -1398,30 +1401,15 @@ export function saveGame(state: GameState) {
   }
   localStorage.setItem(SAVE_KEY, raw);
 }
+/** User requested a clean start: remove only this game's old saves and backups. */
+export function clearOldSaves() {
+  const keys = Array.from({ length: localStorage.length }, (_, n) => localStorage.key(n)!);
+  for (const key of keys)
+    if (key.startsWith('recursion-dungeon-save-') && !key.startsWith(SAVE_KEY))
+      localStorage.removeItem(key);
+}
 export function loadSave() {
+  clearOldSaves();
   const raw = localStorage.getItem(SAVE_KEY);
-  if (raw) {
-    if (
-      JSON.parse(raw).footprintRevision === undefined &&
-      !localStorage.getItem(SAVE_KEY + '-before-vertical-spear')
-    )
-      try {
-        localStorage.setItem(SAVE_KEY + '-before-vertical-spear', raw);
-      } catch {
-        /* Preserve the primary key. */
-      }
-    if (JSON.parse(raw).rulesRevision !== 2 && !localStorage.getItem(SAVE_KEY + '-before-15.2'))
-      try {
-        localStorage.setItem(SAVE_KEY + '-before-15.2', raw);
-      } catch {
-        /* Original key remains intact. */
-      }
-    return parseSave(raw);
-  }
-  const previous = localStorage.getItem('recursion-dungeon-save-v14');
-  if (!previous) return null;
-  // Back up exact bytes before migration; leave both old and backup keys in place.
-  const key = 'recursion-dungeon-save-v14-backup';
-  if (!localStorage.getItem(key)) localStorage.setItem(key, previous);
-  return parseSave(previous);
+  return raw ? parseSave(raw) : null;
 }

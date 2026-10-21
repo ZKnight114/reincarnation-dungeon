@@ -265,7 +265,7 @@ test('support, attack, tome and dependent resonance fire in that order, with ide
   });
   stepped.beginHeroTurn();
   stepped.nextHeroSource();
-  assert.equal(a.hero.shield, 10);
+  assert.equal(a.hero.shield, 6.5);
   assert.equal(a.enemy.hp, 1000);
   const restored = JSON.parse(JSON.stringify(a));
   const resumed = new BattleEngine(restored, 1, (s) => {

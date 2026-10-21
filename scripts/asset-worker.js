@@ -1,4 +1,4 @@
-/* Generated with a content manifest by Vite. Only image responses enter this cache. */
+/* Generated with a content manifest by Vite. Images and audio share the existing hash cache. */
 const manifest = __ASSET_MANIFEST__;
 const scope = self.registration.scope;
 const cacheName = 'guild-image-hashes-v1:' + new URL(scope).pathname;
@@ -58,7 +58,7 @@ async function load(request, hash) {
   const actual = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)))
     .map((n) => n.toString(16).padStart(2, '0'))
     .join('');
-  if (actual !== hash) throw new Error('Image content does not match its manifest');
+  if (actual !== hash) throw new Error('Media content does not match its manifest');
   if (store) {
     try {
       await store.put(key(hash), response.clone());
@@ -74,7 +74,7 @@ self.addEventListener('fetch', (event) => {
   if (
     !url.pathname.startsWith(new URL(scope).pathname) ||
     url.origin !== new URL(scope).origin ||
-    !url.pathname.endsWith('.png')
+    !/\.(png|mp3|wav)$/.test(url.pathname)
   )
     return;
   event.respondWith(

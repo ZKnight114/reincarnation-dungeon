@@ -1,3 +1,4 @@
+import { TOME_STREAM } from './combat-rules';
 import catalogue from './progression-catalogue.json';
 import { equipmentFamily, PROFESSION_CATEGORIES } from './categories';
 export { equipmentFamily } from './categories';
@@ -165,11 +166,13 @@ export function resonanceAvailable(
   chosen: ResonanceKey[],
   initial = false,
   availableFamilies = PROFESSION_CATEGORIES[profession],
+  tomeId: string | null = null,
 ) {
   const d = RESONANCES[key];
   return (
     (d.kind === 'profession'
-      ? d.profession === profession
+      ? d.profession === profession ||
+        (!!tomeId && DESIGN_RESONANCE_IDS[key]?.slice(0, -2) === TOME_STREAM[tomeId])
       : availableFamilies.includes(
           (
             {
@@ -188,19 +191,22 @@ export function resonanceAvailable(
     (!d.requires.length || d.requires.some((k) => chosen.includes(k)))
   );
 }
-export function validResonanceOrder(keys: ResonanceKey[], profession: Profession) {
+export function validResonanceOrder(
+  keys: ResonanceKey[],
+  profession: Profession,
+  tomeId: string | null = null,
+) {
   return keys.every(
     (k, n) =>
       !!RESONANCES[k] &&
-      resonanceAvailable(k, profession, keys.slice(0, n), n === 0, [
-        'sword',
-        'spear',
-        'shield',
-        'staff',
-        'focus',
-        'ranged',
-        'support',
-      ]),
+      resonanceAvailable(
+        k,
+        profession,
+        keys.slice(0, n),
+        n === 0,
+        ['sword', 'spear', 'shield', 'staff', 'focus', 'ranged', 'support'],
+        tomeId,
+      ),
   );
 }
 export function itemResonanceTiers(item: Equipment, tiers: Record<ResonanceKey, number>) {

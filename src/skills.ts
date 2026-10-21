@@ -205,7 +205,7 @@ function nativeItemSkills(id: string, level: number): Skill[] {
   }
 }
 
-export function tomeSkills(id: string, level: number): Skill[] {
+function coreTomeSkills(id: string, level: number): Skill[] {
   const n = (v: number[]) => at(v, level);
   switch (id) {
     case 'warrior_sword_tome':
@@ -307,175 +307,44 @@ export function tomeSkills(id: string, level: number): Skill[] {
   }
 }
 
+/** Passives use native battle events, never another automatic attack timer. */
 export function resonanceSkills(id: string, tier: number): Skill[] {
-  const n = (v: number[]) => at(v, tier);
-  const family = id.slice(0, -2),
-    rank = Number(id.at(-1));
-  const basicHit = (values: number[], cd = 3, type: 'physical' | 'magic' | 'true' = 'physical') => [
-    periodic(cd, hit(n(values), type)),
-  ];
-  const conditional = (
-    base: number[],
-    bonus: number[],
-    when: Condition,
-    type: 'physical' | 'magic' | 'true' = 'physical',
-    cd = 3,
-    bonusType = type,
-  ) => [periodic(cd, hit(n(base), type), hit(n(bonus), bonusType, { when }))];
-  const burst = (
-    base: number[],
-    state: 'burn' | 'poison',
-    scale: number[],
-    cap: number[],
-    type: 'magic' | 'true',
-    cd = 3,
-  ) => [
-    periodic(cd, hit(n(base), type, { dot: state, dotScale: n(scale) / 100, cap: n(cap) / 100 })),
-  ];
-  const piercing = (
-    base: number[],
-    condition: Condition,
-    ignore: number[],
-    type: 'physical' | 'magic',
-    cd = 4,
-    hits = 1,
-  ) => [periodic(cd, hit(n(base), type, { hits, ignore: n(ignore) / 100, ignoreWhen: condition }))];
-  switch (family) {
-    case 'warrior_heavy':
-      return rank === 1
-        ? basicHit([30, 45, 60])
-        : rank === 2
-          ? conditional([25, 40, 55], [15, 25, 35], 'break')
-          : conditional([70, 100, 130], [25, 40, 55], 'targetLow', 'physical', 4);
-    case 'warrior_flurry':
-      return rank === 1
-        ? [periodic(2, hit(n([10, 15, 20]), 'physical', { hits: 2 }))]
-        : rank === 2
-          ? [periodic(3, hit(n([20, 30, 40])), heal(n([1, 2, 3]), 0, 'first'))]
-          : piercing([20, 28, 36], 'break', [10, 20, 30], 'physical', 4, 3);
-    case 'warrior_guard':
-      return rank === 1
-        ? [periodic(3, shield(n([4, 6, 8])))]
-        : rank === 2
-          ? [
-              reactive(
-                'shieldHit',
-                hit(0, 'physical', { received: n([10, 15, 20]) / 100, cap: n([20, 30, 40]) / 100 }),
-              ),
-            ]
-          : [reactive('shieldBreak', shield(n([8, 12, 16])), hit(n([30, 50, 70])))];
-    case 'mage_flame':
-      return rank === 1
-        ? conditional([25, 40, 55], [10, 20, 30], 'burn', 'magic')
-        : rank === 2
-          ? burst([25, 40, 55], 'burn', [75, 100, 125], [20, 30, 40], 'magic')
-          : piercing([70, 100, 130], 'burn', [15, 25, 35], 'magic');
-    case 'mage_ice':
-      return rank === 1
-        ? conditional([25, 40, 55], [10, 20, 30], 'chill', 'magic')
-        : rank === 2
-          ? [periodic(3, shield(n([3, 4, 5])), hit(n([20, 30, 40]), 'magic', { when: 'first' }))]
-          : piercing([70, 100, 130], 'chill', [15, 25, 35], 'magic');
-    case 'mage_arcane':
-      return rank === 1
-        ? [periodic(3, shield(n([4, 6, 8])))]
-        : rank === 2
-          ? conditional([25, 40, 55], [20, 35, 50], 'icefire', 'magic')
-          : [reactive('tome', hit(n([25, 40, 55]), 'magic'), shield(n([2, 3, 4])))];
-    case 'rogue_poison':
-      return rank === 1
-        ? conditional([25, 40, 55], [8, 14, 20], 'poison', 'physical', 3, 'true')
-        : rank === 2
-          ? [periodic(3, hit(n([25, 40, 55])), heal(0, n([5, 8, 11]), 'poison'))]
-          : burst([25, 40, 55], 'poison', [75, 100, 125], [20, 30, 40], 'true', 4);
-    case 'rogue_volley':
-      return rank === 1
-        ? [periodic(3, hit(n([15, 22, 30]), 'physical', { hits: 2 }))]
-        : rank === 2
-          ? [periodic(3, hit(n([20, 30, 40])), heal(n([1, 2, 3]), 0, 'mark'))]
-          : piercing([20, 28, 36], 'mark', [10, 20, 30], 'physical', 4, 3);
-    case 'rogue_shadow':
-      return rank === 1
-        ? [periodic(3, shield(n([3, 5, 7])))]
-        : rank === 2
-          ? conditional([25, 40, 55], [15, 25, 35], 'smoke')
-          : [reactive('low50', heal(n([3, 5, 7])), shield(n([4, 6, 8])))];
-    case 'warrior_sword':
-      return rank === 1
-        ? basicHit([25, 40, 55])
-        : rank === 2
-          ? [periodic(3, hit(n([20, 30, 40])), hit(n([15, 25, 35])))]
-          : [
-              periodic(
-                4,
-                hit(n([65, 95, 125]), 'physical', { ignore: n([10, 20, 30]) / 100 }),
-                hit(n([15, 25, 35]), 'physical', { when: 'targetLow' }),
-              ),
-            ];
-    case 'warrior_spear':
-      return rank === 1
-        ? [periodic(2, hit(n([8, 12, 16]), 'physical', { hits: 2 }))]
-        : rank === 2
-          ? conditional([25, 40, 55], [10, 20, 30], 'break')
-          : [
-              periodic(
-                4,
-                hit(n([18, 25, 32]), 'physical', { hits: 3, ignore: n([10, 20, 30]) / 100 }),
-              ),
-            ];
-    case 'warrior_shield':
-      return rank === 1
-        ? [periodic(3, shield(n([3, 5, 7])))]
-        : rank === 2
-          ? [
-              reactive(
-                'shieldHit',
-                hit(0, 'physical', { received: n([8, 12, 16]) / 100, cap: n([15, 25, 35]) / 100 }),
-              ),
-            ]
-          : [reactive('shieldBreak', shield(n([4, 6, 8])), heal(n([2, 3, 4])))];
-    case 'mage_staff':
-      return rank === 1
-        ? basicHit([25, 40, 55], 3, 'magic')
-        : rank === 2
-          ? burst([20, 30, 40], 'burn', [50, 75, 100], [15, 25, 35], 'magic')
-          : piercing([65, 95, 125], 'burn', [15, 25, 35], 'magic');
-    case 'mage_book':
-      return rank === 1
-        ? basicHit([25, 40, 55], 3, 'magic')
-        : rank === 2
-          ? conditional([20, 30, 40], [10, 18, 26], 'chill', 'magic', 3, 'true')
-          : piercing([65, 95, 125], 'chill', [15, 25, 35], 'magic');
-    case 'mage_robe':
-      return rank === 1
-        ? [periodic(3, shield(n([3, 5, 7])))]
-        : rank === 2
-          ? [periodic(4, heal(n([1, 2, 3]), n([5, 8, 11])))]
-          : [reactive('support', hit(n([20, 35, 50]), 'magic'), shield(n([2, 3, 4])))];
-    case 'rogue_knife':
-      return rank === 1
-        ? basicHit([15, 22, 29], 2)
-        : rank === 2
-          ? conditional([10, 18, 26], [8, 14, 20], 'poison', 'true')
-          : conditional([65, 95, 125], [15, 25, 35], 'targetLow', 'physical', 4, 'true');
-    case 'rogue_ranged':
-      return rank === 1
-        ? [periodic(3, hit(n([12, 18, 24]), 'physical', { hits: 2 }))]
-        : rank === 2
-          ? conditional([20, 30, 40], [10, 20, 30], 'mark')
-          : [
-              periodic(
-                4,
-                hit(n([18, 25, 32]), 'physical', { hits: 3, ignore: n([10, 20, 30]) / 100 }),
-              ),
-            ];
-    case 'rogue_leather':
-      return rank === 1
-        ? [periodic(4, heal(n([2, 3, 4])))]
-        : rank === 2
-          ? [periodic(3, shield(n([3, 4, 5])))]
-          : [reactive('low50', heal(n([3, 5, 7])), hit(n([25, 40, 55])))];
-    default:
-      throw new Error('未定义共鸣技能：' + id);
+  return [{ cooldown: 0, actions: [], passive: { id, tier } }];
+}
+export function tomeSkills(id: string, level: number): Skill[] {
+  const skills = coreTomeSkills(id, level),
+    skill = skills[0];
+  skill.tome = { id, level };
+  const protect = (a: number, when?: Condition): SkillAction => ({
+    kind: 'guard',
+    a: a / 100,
+    duration: 1,
+    when,
+  });
+  if (id === 'warrior_sword_tome' && level >= 2) skill.actions.push(status('break', 10, 1));
+  if (id === 'warrior_spear_tome' && level === 3)
+    skill.actions.push(hit(25, 'physical', { when: 'break' }));
+  if (id === 'warrior_shield_tome' && level >= 2) skill.actions.push(protect(level === 3 ? 8 : 5));
+  if (id === 'mage_flame_tome') {
+    if (level >= 2)
+      Object.assign(skill.actions[0], { ignore: level === 3 ? 0.15 : 0.1, ignoreWhen: 'burn' });
+    if (level === 3) skill.actions[1].duration = 3;
   }
+  if (id === 'mage_ice_tome' && level >= 2) {
+    skill.actions.push({ ...shield(0, 10), when: 'chill' });
+    if (level === 3) skill.actions.push(protect(8, 'chill'));
+  }
+  if (id === 'mage_arcane_tome') skill.actions.pop();
+  if (id === 'rogue_poison_tome') {
+    if (level >= 2) skill.actions.push({ ...shield(0, 10), when: 'poison' });
+    if (level === 3) skill.actions[2].duration = 3;
+  }
+  if (id === 'rogue_ranged_tome' && level === 3)
+    skill.actions.push(hit(20, 'physical', { when: 'mark' }));
+  if (id === 'rogue_shadow_tome') {
+    skill.actions.find((a) => a.kind === 'heal')!.unlimited = true;
+    skill.actions.push({ kind: 'regen', h: [0.005, 0.0075, 0.01][level - 1], duration: 2 });
+    if (level >= 2) skill.actions.push(smoke(level === 3 ? 15 : 10));
+  }
+  return skills;
 }

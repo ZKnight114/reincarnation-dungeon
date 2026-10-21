@@ -116,7 +116,7 @@ export function heroBattleBuild(h: HeroRecord) {
         name: RESONANCES[k].name,
         kind: 'resonance',
         skills: resonanceSkills(DESIGN_RESONANCE_IDS[k], h.resonanceTiers[k]!),
-        profession: h.profession,
+        profession: RESONANCES[k].kind === 'profession' ? RESONANCES[k].profession : h.profession,
       });
   const mixed =
     a.active.some((i) => i.branch === 'assassin') && a.active.some((i) => i.branch === 'archer');

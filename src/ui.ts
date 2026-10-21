@@ -1,3 +1,4 @@
+import { updateBossView } from './boss-view';
 import {
   SUPPLY_SECONDS,
   SPRING_HEAL,
@@ -71,6 +72,8 @@ import { statusButton, statusDetails, type StatusSide } from './battle-status';
 import { visibleAssets } from './resource-plan';
 import { missingAssets, preloadAssets } from './loading';
 import { registerCharacterParts } from './character-parts';
+import { explorationAudio, type ExplorationAudio } from './audio';
+import { ExplorationSounds, exploring } from './exploration-sounds';
 import type {
   Attribute,
   GameState,
@@ -144,10 +147,13 @@ export class UI {
   private trialNode = -1;
   private statusSide: StatusSide | null = null;
   private talentBubble: HTMLElement | null = null;
+  private sounds: ExplorationSounds;
   constructor(
     public game: Game,
     private replaceState: (s: GameState) => void,
+    private audio: ExplorationAudio = explorationAudio,
   ) {
+    this.sounds = new ExplorationSounds(audio);
     this.profession = game.state.run.profession;
     // An old paused save must resume now that pause is no longer a player control.
     if (game.state.phase === 'combat') game.state.isRunning = true;
@@ -192,6 +198,7 @@ export class UI {
         }
       },
       this.motion,
+      (sound) => this.audio.effect(sound),
     );
     this.root.parentElement!.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.hideTalent();
@@ -316,6 +323,7 @@ export class UI {
         else {
           const error = this.game.chooseEvent(d.event);
           if (!error && /^dig-\d+$/.test(d.event)) {
+            this.audio.effect('explore-dig');
             this.digFeedbackCell = Number(d.event.slice(4));
             this.digFeedbackUntil = Date.now() + 380;
           }
@@ -336,6 +344,8 @@ export class UI {
       } else if (d.speed) this.game.state.speed = Number(d.speed) as 1 | 2 | 4;
       else if (d.action) this.action(d.action);
       else return;
+      if (exploring(this.game.state.phase) && !d.action?.startsWith('audio-'))
+        this.audio.effect('explore-ui-confirm');
       this.render();
       this.persist();
     });
@@ -620,6 +630,19 @@ export class UI {
       this.close();
     }
     if (action === 'settings') this.settings();
+    if (action === 'audio-music') {
+      this.audio.setSettings({ music: !this.audio.settings.music });
+      this.settings();
+    }
+    if (action === 'audio-effects') {
+      this.audio.setSettings({ effects: !this.audio.settings.effects });
+      this.settings();
+    }
+    if (action === 'audio-retry') {
+      void this.audio.preload().then(() => {
+        if ((document.getElementById('modal') as HTMLDialogElement).open) this.settings();
+      });
+    }
     if (action === 'close') this.close();
     if (action === 'export') {
       this.persist();
@@ -758,8 +781,11 @@ export class UI {
         previous === 'event' &&
         s.phase === 'combat' &&
         ['boss', 'elite'].includes(this.game.currentEvent()!.kind)
-      )
+      ) {
         this.transitionUntil = Date.now() + (this.motion.reduced ? 0 : 680 / s.speed);
+        this.audio.effect('explore-boss-warning');
+        this.audio.effect('explore-encounter');
+      }
       this.showPack =
         ['opening', 'combat'].includes(s.phase) ||
         (s.phase === 'camp' &&
@@ -885,6 +911,8 @@ export class UI {
         this.motion.pulse(document.getElementById('point-redeem'), 'reforge-notify', 220, false);
     }
     document.getElementById('combat-hud')!.hidden = !active;
+    this.sounds.sync(this.game, this.showPack && !this.resultPlaying, this.wheel);
+    this.root.dataset.audio = JSON.stringify(this.audio.diagnostics);
   }
   get holdingJourney() {
     return (
@@ -983,6 +1011,7 @@ export class UI {
       this.transitionNode = s.run.index;
       s.run.storyElapsed = storyDuration(this.game.currentEvent()!);
       this.transitionUntil = Date.now() + (this.motion.reduced ? 0 : 680 / s.speed);
+      this.audio.effect('explore-encounter');
     }
     panel.classList.toggle(
       'encounter-approach',
@@ -1179,6 +1208,10 @@ export class UI {
         } else effects.innerHTML = html;
       }
     }
+    updateBossView(
+      el.querySelector('.battle-scene'),
+      s.phase === 'combat' ? s.combat.runtime : null,
+    );
     if (this.statusSide) {
       const body = document.getElementById('modal-body')!,
         html = statusDetails(s, this.statusSide);
@@ -1305,10 +1338,14 @@ export class UI {
       if (main) main.textContent = this.recycling.credited ? '点数已回收' : '回收装备中';
     }
     footer.dataset.readiness = waiting ? 'waiting' : ready ? 'ready' : 'decision';
-    if (notifyContinue)
+    if (notifyContinue) {
       this.motion.pulse(footer.querySelector('.footer-main button'), 'continue-ready', 650, false);
-    if (notifyReforge)
+      this.audio.effect('explore-journal-ready');
+    }
+    if (notifyReforge) {
       this.motion.pulse(footer.querySelector('#point-redeem'), 'reforge-notify', 650, false);
+      this.audio.effect('explore-reforge-ready');
+    }
   }
   private journey() {
     const s = this.game.state;
@@ -1548,6 +1585,7 @@ export class UI {
     const fresh = this.game.feedback.filter((f) => f.serial > this.lastFeedback);
     if (!fresh.length) return;
     this.lastFeedback = fresh[fresh.length - 1].serial;
+    this.sounds.feedback(this.game, fresh);
     const totals = new Map<string, { kind: string; amount: number; id: string }>();
     const fired = new Set<string>();
     const activated = new Set<string>();
@@ -1571,6 +1609,10 @@ export class UI {
         this.motion.pulse(document.getElementById('combat-hud'), 'tome-fired', 500);
     }
     for (const id of activated) {
+      if (id.startsWith('minion:')) {
+        this.motion.pulse(document.querySelector(`[data-minion="${id}"]`), 'minion-attacking', 260);
+        continue;
+      }
       if (isEnemySource(id)) {
         const rig = this.motion.rig('enemy');
         if (rig) rig.dataset.activationSource = id;
@@ -1880,6 +1922,21 @@ export class UI {
   private settings() {
     this.modal(
       '<h2>设置</h2>' +
+        '<div class="audio-options"><button data-action="audio-music" aria-pressed="' +
+        this.audio.settings.music +
+        '">探索音乐：' +
+        (this.audio.settings.music ? '开' : '关') +
+        '</button><button data-action="audio-effects" aria-pressed="' +
+        this.audio.settings.effects +
+        '">探索音效：' +
+        (this.audio.settings.effects ? '开' : '关') +
+        '</button>' +
+        (!this.audio.supported
+          ? '<small>当前浏览器暂不支持声音播放</small>'
+          : this.audio.failed
+            ? '<button class="audio-retry" data-action="audio-retry">重试音频加载</button>'
+            : '') +
+        '</div>' +
         (['opening', 'initial', 'camp', 'journey', 'event', 'reward'].includes(
           this.game.state.phase,
         )
@@ -1982,6 +2039,7 @@ export class UI {
     this.pack.setLocked(false);
     delete this.root.dataset.recycling;
     this.motion.reset();
+    this.sounds.reset();
     this.hideTalent();
     this.statusSide = null;
     this.trialNode = -1;

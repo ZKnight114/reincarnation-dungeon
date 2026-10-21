@@ -210,7 +210,7 @@ test('skip presentation produces identical discrete fight results and stops for 
   assert.equal(b.state.run.autoExplore, false);
   assert.equal(b.state.phase, 'camp');
 });
-test('item resonance changes real attacks and advanced followup adds damage without recursive extra hits', () => {
+test('item resonance changes real attacks and low-health followup adds damage without recursive extra hits', () => {
   const make = (keys: any[]) => {
     const g = start();
     g.state.inventory = [g.makeItem('warrior_blade_2', 4)];
@@ -218,9 +218,10 @@ test('item resonance changes real attacks and advanced followup adds damage with
     placeFree(g, g.state.inventory[0].id);
     g.state.run.resonances = keys;
     advanceCamp(g);
-    g.state.enemy!.hp = g.state.enemy!.maxHp = 1e8;
+    g.state.enemy!.hp = 4e7;
+    g.state.enemy!.maxHp = 1e8;
     g.state.enemy!.attack = 0;
-    Object.assign(g.state.combat.runtime!.enemy, { hp: 1e8, maxHp: 1e8, attack: 0 });
+    Object.assign(g.state.combat.runtime!.enemy, { hp: 4e7, maxHp: 1e8, attack: 0 });
     while (g.state.combat.runtime!.heroActions < 5) g.advanceTurn();
     return g;
   };

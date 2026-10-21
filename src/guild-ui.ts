@@ -9,6 +9,7 @@ import { heroArt } from './scene';
 import type { GameState, Profession } from './types';
 import { tomeArt, uiControl, uiIcon } from './ui-art';
 import { tomeSkills } from './skills';
+import { shieldActionScale } from './combat-balance';
 
 export type TomeFilter = Profession | 'all';
 type Meta = GameState['meta'];
@@ -29,26 +30,27 @@ export const tomeAttributeText = (t: Tome, level: number) =>
     .join(' · ');
 function skill(t: Tome, level: number) {
   const text = readableEffect(t.skillStages[Math.max(0, level - 1)]);
-  const split = text.indexOf('：');
-  return split < 0
-    ? { name: t.skillName || '自动回合技能', text }
-    : { name: text.slice(0, split), text: text.slice(split + 1) };
+  const name = t.skillName || '自动回合技能';
+  return { name, text: text.startsWith(name + '：') ? text.slice(name.length + 1) : text };
 }
 
 /** Compact selection preview; coefficients come from the actual combat skill. */
 export function tomePreviewText(id: string, level: number) {
   const s = tomeSkills(id, level)[0];
-  const percent = (value: number) => `${Math.round(value * 100)}%`;
+  const percent = (value: number) => `${+(value * 100).toFixed(2)}%`;
   const effects = s.actions
     .filter(
       (a) =>
         !a.when &&
-        ['damage', 'shield', 'heal'].includes(a.kind) &&
+        ['damage', 'shield', 'heal', 'regen'].includes(a.kind) &&
         (a.kind !== 'damage' || (a.a ?? 0) > 0),
     )
     .map((a) => {
-      if (a.kind === 'shield') return `${percent(a.h!)}生命护盾`;
-      if (a.kind === 'heal') return `${percent(a.h!)}生命治疗（每战至多${a.limit}次）`;
+      if (a.kind === 'shield')
+        return `${percent(a.h! * shieldActionScale('hero', s.cooldown))}生命护盾`;
+      if (a.kind === 'heal')
+        return `${percent(a.h!)}生命治疗${a.unlimited ? '' : `（每战至多${a.limit}次）`}`;
+      if (a.kind === 'regen') return `后续${a.duration}回合各回复${percent(a.h!)}生命`;
       return `${a.hits ? a.hits + '次×' : ''}${percent(a.a!)}攻击${a.type === 'magic' ? '法伤' : '物伤'}`;
     });
   const synergy: Record<string, string> = {
@@ -57,7 +59,7 @@ export function tomePreviewText(id: string, level: number) {
     warrior_shield_tome: '消耗部分护盾追加伤害。',
     mage_flame_tome: '施加灼烧；已有灼烧时追加伤害。',
     mage_ice_tome: '施加减速；已有减速时穿防。',
-    mage_arcane_tome: '目标同时灼烧、减速时追加伤害。',
+    mage_arcane_tome: '辅助生效蓄星能，消耗星能追加法伤。',
     rogue_poison_tome: '施毒；已有毒时追加真实伤害。',
     rogue_ranged_tome: '施加标记增幅手弩；已有标记时增伤。',
     rogue_shadow_tome: '烟幕下追加伤害。',
